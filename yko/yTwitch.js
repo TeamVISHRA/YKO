@@ -10,15 +10,15 @@ module.exports = function (Y) {
 	const S = this;
 	S.conf = Y.conf.twitch;
   S.im = Y.im.twitch;
+  const COPMS = {};
 	S.init = () => {
     Y.tr4('init');
-	  const POOL = {};
 	  for (let k of ['ytChat']) {
       let key = (k.match(/^yt(.+)/))[1];
 		  S[key] = () => {
-			  if (POOL[key]) return POOL[key];
+			  if (COPMS[key]) return COPMS[key];
 			  let JS = require(`./Twitch/${k}.js`);
-			  return (POOL[key] = new JS (Y, S));
+			  return (COPMS[key] = new JS (Y, S));
 		  };
       Y.tr4('init: Create component', key);
 	  }
@@ -26,7 +26,7 @@ module.exports = function (Y) {
      || Y.REQ1() == 'Discord') S.Chat().init();
 	};
   S.preparFake = () => {
-    for (let o of Object.values(POOL))
+    for (let o of Object.values(COPMS))
     { if (o.preparFake) o.preparFake() }
   };
 }

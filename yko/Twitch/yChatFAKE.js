@@ -11,22 +11,22 @@ module.exports = function (Y, P) {
   S.say = (...args) => { Y.tr('TMIfake:say', args) };
   const ON = {};
   S.on = (key, v) => {
-    Y.tr('TMIfake:on', type);
+    Y.tr1('TMIfake:on', key);
     ON[key] = v;
   };
   S.ON = () => { return ON };
   S.connect = () => {
-    if (ON.connected) ON.connected('addr:FAKE', 12345);
-    Y.tr('TMIfake:connect');
+    if (ON.connected) ON.connected('<FAKEaddr>', 12345);
+    Y.tr1('TMIfake:connect');
   }
   S.disconnect = () => { Y.tr('TMIfake:disconnect') };
   S.evMessage = (msg, o) => {
     if (! ON.message) Y.throw(`Unknown on.message`);
     if (! o) { o = {
-        say: TF.say,
-        channel: '#fake',
-        username: 'fakeuser',
-        'display-name': 'FakeUser'
+      say: S.say,
+      channel: '#milkyvishra',    // connect channel.
+      username: 'fakeuser',       // post user.
+      'display-name': 'FAKEuser'  // post user.
     } }
     return ON.message(o.channel, o, msg, false);
   };

@@ -81,9 +81,9 @@ exports.box = {
   },
   container: {
     cash: {
-      default_life: 60,							// 分
-      min_life:      5,							// 分
-      max_life: (6* (30* (24* 60)))	// 分
+      default_life: 60,              // 分
+      min_life:      5,              // 分
+      max_life: (6* (30* (24* 60)))  // 分
     }
   },
   list: {

@@ -3,10 +3,10 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'TOOL.js';
-const ver = `yko/${my} v190926.01`;
+const ver = `yko/${my} v190930.01`;
 //
 const MOMENT = require('moment'),
-   TM_FORMAT = '/DD HH:mm:ss';
+TM_FORMAT = '/DD HH:mm:ss';
 //
 let Y;
 module.exports = function (y) {
@@ -63,28 +63,27 @@ module.exports = function (y) {
 };
 //
 const JS = {};
-let FS, KMOJI, CRYPT, ENCODE;
 function fs ()
-  { return JS.fs || (JS.fs = require('fs')) }
+{ return JS.fs || (JS.fs = require('fs')) }
 function kuromoji ()
-  { return JS.kmoji || (JS.kmoji = require('kuromoji')) }
+{ return JS.kmoji || (JS.kmoji = require('kuromoji')) }
 function crypto ()
-  { return JS.crypt || (JS.crypt = require('crypto')) }
+{ return JS.crypt || (JS.crypt = require('crypto')) }
 function encodeJP ()
-  { return JS.enc || (JS.enc = require('encoding-japanese')) }
+{ return JS.enc || (JS.enc = require('encoding-japanese')) }
 //
 function digest (str) {
   let result;
   return Try([() => {
     var hash = crypto().createHash('sha256')
-	  hash.update(str, 'utf8');
-	  result = hash.digest('base64');
+    hash.update(str, 'utf8');
+    result = hash.digest('base64');
   }]) ? result : false;
 }
 function encrypt (str) {
   let secret;
   return Try([() => {
-	  let crypt = require('crypto');
+    let crypt = require('crypto');
     let cip = crypto().createCipher('aes256', salt);
     secret = cip.update(str, 'utf8', 'hex');
     secret += cip.final('hex');
@@ -93,10 +92,10 @@ function encrypt (str) {
 function decrypt (sec) {
   let str;
   return Try([() => {
-	  let crypt = require('crypto');
+    let crypt = require('crypto');
     let dec = crypt.createDecipher('aes256', salt);
-	  str = dec.update(sec,'hex','utf8');
-	  str += dec.final('utf8');
+    str = dec.update(sec,'hex','utf8');
+    str += dec.final('utf8');
   }]) ? str : false;
 }
 function create_ticket () {
@@ -109,7 +108,7 @@ function time_msec () {
   return moment().milliseconds();
 }
 function unix (t) {
-	return t ? MOMENT.unix(t) : MOMENT().unix();
+  return t ? MOMENT.unix(t) : MOMENT().unix();
 }
 function unix_add (n, o) {
   if (! n) Y.throw(ver, 'Losing argument');
@@ -117,25 +116,25 @@ function unix_add (n, o) {
 }
 function unix_form (n, f) {
   if (! n) Y.throw(ver, 'Losing argument');
-	return MOMENT.unix(n).format(f || TM_FORMAT);
+  return MOMENT.unix(n).format(f || TM_FORMAT);
 }
 function time_form (n, f) {
-	return MOMENT(n || undefined).format(f || TM_FORMAT);
+  return MOMENT(n || undefined).format(f || TM_FORMAT);
 }
 function canonical (v) {
-	if (!v) return '';
-	return String(v).replace(/\r?\n/g, '')
-		              .replace(/\s+/g, ' ').trim() || '';
+  if (!v) return '';
+  return String(v).replace(/\r?\n/g, '')
+  .replace(/\s+/g, ' ').trim() || '';
 }
 function p0 (n, l) {
-		if (! l) l = 2;
-    return ( Array(l).join('0') + n ).slice(-l);
+  if (! l) l = 2;
+  return ( Array(l).join('0') + n ).slice(-l);
 }
 function z2h (s) {
   if (! s) return '';
-	s = s.replace(/[Ａ-Ｚａ-ｚ０-９！-～]/g, o => {
-		return String.fromCharCode(o.charCodeAt(0) - 0xfee0);
-	});
+  s = s.replace(/[Ａ-Ｚａ-ｚ０-９！-～]/g, o => {
+    return String.fromCharCode(o.charCodeAt(0) - 0xfee0);
+  });
   return s.replace(/”/g, '"') .replace(/’/g, "'")
   .replace(/‘/g, '`') .replace(/￥/g, '\\') .replace(/　/g, ' ');
 }
@@ -148,45 +147,45 @@ function a2A (s) {
 function Zcut (str, n, ident) {
   if (! n) Y.throw(ver, 'Insufficient arguments');
   str = canonical(str);
-	let [b, result] = [0, ''];
-	for (let v of Object.values( str.split('') )) {
-		v.match(/[\!-\~ ]/) ? ++b : (b += 2);
-		if (b <= n) result += v;
-	}
+  let [b, result] = [0, ''];
+  for (let v of Object.values( str.split('') )) {
+    v.match(/[\!-\~ ]/) ? ++b : (b += 2);
+    if (b <= n) result += v;
+  }
   if (ident && b > n) result += ident;
-	return result;
+  return result;
 }
 function countZ (str) {
   str = canonical(str);
   let b = 0;
-	for (let v of Object.values( str.split('') ))
-    { v.match(/[\!-\~ ]/) ? ++b : (b += 2) }
+  for (let v of Object.values( str.split('') ))
+  { v.match(/[\!-\~ ]/) ? ++b : (b += 2) }
   return b;
 };
 function sec2form (n) {
   let str;
   if (Number(n) > 60) {
-  		let hh, mm, ss;
-  		mm = Math.floor(n / 60);
-  		ss = (n % 60);
-  		if (mm > 60) {
-  			str = Math.floor(mm / 60) + '時間'
-  			    + this.p0(mm % 60) + '分' + p0(ss) + '秒';
-  		} else {
-  			str = mm + '分' + this.p0(ss) + '秒';
-  		}
+    let hh, mm, ss;
+    mm = Math.floor(n / 60);
+    ss = (n % 60);
+    if (mm > 60) {
+      str = Math.floor(mm / 60) + '時間'
+      + this.p0(mm % 60) + '分' + p0(ss) + '秒';
+    } else {
+      str = mm + '分' + this.p0(ss) + '秒';
+    }
   } else {
-  		str = n + '秒';
+    str = n + '秒';
   }
   return str;
 }
 function min2form (n) {
   let str;
-	if (Number(n) > 60) {
-		str = Math.floor(n / 60) + '時間' + p0(n % 60) + '分';
-	} else {
-		str = n + '分';
-	}
+  if (Number(n) > 60) {
+    str = Math.floor(n / 60) + '時間' + p0(n % 60) + '分';
+  } else {
+    str = n + '分';
+  }
   return str;
 }
 function FSread (path, cr, err) {
@@ -205,13 +204,13 @@ function FSreadJson (path, cr, err) {
   return txt2json(FSread(path, cr, err));
 }
 function FSwriteJson (path, json, cr, err) {
-	return FSwrite(path, json2txt(json), cr, err);
+  return FSwrite(path, json2txt(json), cr, err);
 }
 function FSunlink (path) {
-	let status;
-	try { fs().unlinkSync(path); status = true }
-	catch (err) { status = false, Y.tr2('FSunlink', err) }
-	return status;
+  let status;
+  try { fs().unlinkSync(path); status = true }
+  catch (err) { status = false, Y.tr2('FSunlink', err) }
+  return status;
 }
 function txt2json (txt) {
   return JSON.parse(txt);
@@ -221,79 +220,80 @@ function json2txt (json) {
 }
 function is_object (o) {
   return (o != null
-    && ! Array.isArray(o) && typeof o == 'object');
+  && ! Array.isArray(o) && typeof o == 'object');
 }
 function clone (o) {
   return Object.create(o);
 }
 function reset (o) {
-    for(var key in o){ delete o[key] }
+  for(var key in o){ delete o[key] }
 }
 function quest (v, keys) {
   Y.tr3('quest', keys);
-	for (let k of keys) {
-		if (! k in v) return undefined;
-		v = v[k];
-	}
-	return v;
+  for (let k of keys) {
+//		if (! k in v) return undefined;
+    if (v[k] === undefined) return undefined;
+    v = v[k];
+  }
+  return v;
 }
 function shuffle (a) {
   for (var i = a.length - 1; i > 0; i--) {
-      var r = Math.floor(Math.random() * (i + 1));
-      var tmp = a[i];
-      a[i] = a[r];
-      a[r] = tmp;
+    var r = Math.floor(Math.random() * (i + 1));
+    var tmp = a[i];
+    a[i] = a[r];
+    a[r] = tmp;
   }
   return a;
 }
 function push2cut (b, i, n) {
-	b.push(i);
-	return array2cut(b, n);
+  b.push(i);
+  return array2cut(b, n);
 }
 function array2cut (b, n) {
-	if (! n || n < 2) Y.throw(ver, 'Abnormal argument');
-	if (b.length > n) b.splice(0, (b.length - n));
-	return b;
-};
+  if (! n || n < 2) Y.throw(ver, 'Abnormal argument');
+  if (b.length > n) b.splice(0, (b.length - n));
+  return b;
+}
 function encode (buf, result) {
   if (! result) { result =
     (c, t, b) => { return { char:c, text:c, invalid:b } };
   }
   const Char = encodeJP().detect(buf); // || 'UTF8';
-	if (! Char || Char == 'BINARY')
-      { return result(Char, '', true) }
+  if (! Char || Char == 'BINARY')
+    { return result(Char, '', true) }
   if ( Char == 'UNICODE' || Char == 'UTF8'
     || Char == 'UTF32'   || Char == 'ASCII' )
-      { return result(Char, buf.toString(), false) }
+    { return result(Char, buf.toString(), false) }
   const Text = encodeJP().convert
-      (buf, { to: 'UNICODE', from: Char, type: 'string' });
-	return result(Char, Text, false);
-};
+    (buf, { to: 'UNICODE', from: Char, type: 'string' });
+  return result(Char, Text, false);
+}
 function tmpl (tmpl, obj) {
   if (! tmpl) Y.throw('Unknown template');
-	return tmpl.replace(/<\s*([^<>\r\n\t]+)\s*>/g, (tmp, fr) => {
-	  let [o, args] = [(obj || {})];
+  return tmpl.replace(/<\s*([^<>\r\n\t]+)\s*>/g, (tmp, fr) => {
+    let [o, args] = [(obj || {})];
     fr = fr.trim();
     if (fr.match(/([^\(]+)\s*\(\s*([^\)]+)\s*\)/)) {
       [fr, args] = [RegExp.$1.trim(), RegExp.$2];
       args = args.trim().split(/\s*\,\s*/);
     }
-		for (let key of fr.split(/\s*\.\s*/)) {
+    for (let key of fr.split(/\s*\.\s*/)) {
       o = (! o[key] && o[key] != 0) ? tmp : o[key];
       if (typeof o == 'function') return o(args || '');
       if (typeof o != 'object') return o;
-		}
-		return tmp;
-	});
+    }
+    return tmp;
+  });
 }
 function Try (Fmain, Ferr) {
-	try {
-		return Fmain();
-	} catch (error) {
+  try {
+    return Fmain();
+  } catch (error) {
     return Ferr ? Ferr(error) : Y.tr(ver, error);
-	}
+  }
 }
 function sleep (n) {
-	let start = MOMENT().unix();
-	while (true) { if ((MOMENT().unix() - start) > n) break }
+  let start = MOMENT().unix();
+  while (true) { if ((MOMENT().unix() - start) > n) break }
 }

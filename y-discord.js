@@ -71,7 +71,7 @@ Y.init(
 );
 
 // ===== < Debug > =====
-Y.preperFake();
+Y.preparFake();
 //Y.Discord.Tester().CronJob('DiscordRSS');
 //Y.Discord.Tester().Exec( Y.Discord.Guild().join );
 //Y.Discord.Tester().App('Help', 'help 1569267288');
