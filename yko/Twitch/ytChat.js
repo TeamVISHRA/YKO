@@ -80,9 +80,11 @@ function build_component () {
     return CLIENT;
   };
   S.disconnect = () => {
+    if (! CLIENT) return;
     try { CLIENT.disconnect() }
     catch (e) { Y.tr('disconnect: Warning', e) };
     CLIENT = false;
+    Y.tr3('disconnect');
   };
   Y.onRollback(S.disconnect);
 }
@@ -103,104 +105,105 @@ function build_dispatch (F) {
     Y.tr3('Message:ignore - list', c.ignoreNames);
     if (c.ignoreNames
       && c.ignoreNames.find(o=> o == check)) {
-        Y.tr3('Message:ignore - hit', check);
-        return S.finish();
-      }
-      const is = Y.brain.isCall(msg);
-      if (is.answer) {
-        S.say(S.channel(), S.dispName(), is.answer);
-        S.toDiscord(S.channel(), S.dispName(), is.answer);
-        return S.finish();
-      }
-      //		await Y.box.any('twitch-member',
-      //		{ id:S.channel(), name:S.Msg().username }).then( box => {
-      //			S.box = box.isNew() ? initBOX() : box;
-      //		});
-      return F(S, is);
-    };
-  }
-  function initBOX (box) {
-    box.set('createTimeStamp', Y.tool.unix());
-    box.set('LimitData', {}); // name:{ limit:(unix), value:(...) }
-    return box;
-  }
-  function cleanBox () {
-    if (! S.box) Y.throw(`'S.box' is not create`);
-    const Now = Y.tool.unix();
-    const Box = S.box.get('LimitData');
-    for (let [k, v] of Object.entries(Box)) {
-      if (! v.limit || v.limit < Now) delete Box[k];
+      Y.tr3('Message:ignore - hit', check);
+      return S.finish();
     }
-    return S.box.set('LimitData', Box);
-  }
-  function build_engine () {
-    S.start = (context, channel, msg) => {
-      Y.start();
-      TMP = {
-        $name: (context['display-name']
-        || context.username
-        || 'N/A' )
-      };
-      S.handler = S.context = () => { return context };
-      S.channel  = () => { return channel };
-      S.content  = () => { return msg };
-      S.dispName = () => { return TMP.$name };
-      S.username = () => { return context.username };
-    };
-    S.reply = (msg) => {
-      let handler = S.handler();
-      if (handler) return handler.say(MSG_WRAP(msg));
-      return S.say(S.channel(), msg);
-    };
-    S.tmp = () => { return TMP };
-    const Reset = () => {
-      TMP = {};
-      S.dispName = S.username = S.channel =
-      S.handler  = S.context  = S.content = false;
-    };
-    S.rollback = () => {
-      Reset();
-      Y.rollback();
-    };
-    S.finish = () => {
-      //		Reset();
-      Y.finish();
-    };
-    S.every = (is) => {
-      S.toDiscord(S.channel(), S.dispName(), S.content());
-      S.finish();
-    };
-    S.toDiscord = async (ch, uname, msg) => {
-      Y.tr3('toDiscord');
-      let chName = channelKey(ch);
-      let c;
-      await Y.sysDATA
-      .cash(['twitch', 'channels', chName, 'toDiscord'])
-      .then( db => { c = db.value });
-      Y.tr3('toDiscord', 'check');
-      if (! c || ! c.webhook) {
-        Y.tr3('toDiscord', 'Cancel( Unknown config )');
-        return;
-      }
-      Y.tr7('toDiscord', c);
-      const w = c.webhook;
-      Y.tr6('toDiscord - webhook', w);
-      Y.Discord.webhook([w.id, w.token], T.tmpl(c.message, {
-        name: (uname || '(N/A)'), message: (msg || '')
-      }));
-    };
-    const ENGINE = () => {
-      try {
-        S.connect();
-      } catch (err) {
-        Y.rollback();
-        Y.tr('catch error:', err);
-        setTimeout(ENGINE, 10000);
-      }
-    };
-    Y.engine(ENGINE);
-    P.run = () => { return Y.run(S.connect()) };
-  }
-  function channelKey (channel) {
-    return T.A2a(channel.match(/^\#(.+)/) ? RegExp.$1 : channel);
+    const is = Y.brain.isCall(msg);
+    if (is.answer) {
+      S.say(S.channel(), S.dispName(), is.answer);
+      S.toDiscord(S.channel(), S.dispName(), is.answer);
+      return S.finish();
+    }
+    //		await Y.box.any('twitch-member',
+    //		{ id:S.channel(), name:S.Msg().username }).then( box => {
+    //			S.box = box.isNew() ? initBOX() : box;
+    //		});
+    return F(S, is);
   };
+}
+function initBOX (box) {
+  box.set('createTimeStamp', Y.tool.unix());
+  box.set('LimitData', {}); // name:{ limit:(unix), value:(...) }
+  return box;
+}
+function cleanBox () {
+  if (! S.box) Y.throw(`'S.box' is not create`);
+  const Now = Y.tool.unix();
+  const Box = S.box.get('LimitData');
+  for (let [k, v] of Object.entries(Box)) {
+    if (! v.limit || v.limit < Now) delete Box[k];
+  }
+  return S.box.set('LimitData', Box);
+}
+function build_engine () {
+  S.start = (context, channel, msg) => {
+    Y.start();
+    TMP = {
+      $name: (context['display-name']
+      || context.username
+      || 'N/A' )
+    };
+    S.handler = S.context = () => { return context };
+    S.channel  = () => { return channel };
+    S.content  = () => { return msg };
+    S.dispName = () => { return TMP.$name };
+    S.username = () => { return context.username };
+  };
+  S.reply = (msg) => {
+    let handler = S.handler();
+    if (handler) return handler.say(MSG_WRAP(msg));
+    return S.say(S.channel(), msg);
+  };
+  S.tmp = () => { return TMP };
+  const Reset = () => {
+    TMP = {};
+    S.dispName = S.username = S.channel =
+    S.handler  = S.context  = S.content = false;
+  };
+  S.rollback = () => {
+    Reset();
+    Y.rollback();
+  };
+  S.finish = () => {
+    //		Reset();
+    Y.finish();
+  };
+  S.every = (is) => {
+    S.toDiscord(S.channel(), S.dispName(), S.content());
+    S.finish();
+  };
+  S.toDiscord = async (ch, uname, msg) => {
+    Y.tr3('toDiscord');
+    let chName = channelKey(ch);
+    let c;
+    await Y.sysDATA
+    .cash(['twitch', 'channels', chName, 'toDiscord'])
+    .then( db => { c = db.value });
+    Y.tr3('toDiscord', 'check');
+    if (! c || ! c.webhook) {
+      Y.tr3('toDiscord', 'Cancel( Unknown config )');
+      return;
+    }
+    Y.tr7('toDiscord', c);
+    const w = c.webhook;
+    Y.tr6('toDiscord - webhook', w);
+    Y.Discord.webhook([w.id, w.token], T.tmpl(c.message, {
+      name: (uname || '(N/A)'), message: (msg || '')
+    }));
+  };
+  const ENGINE = () => {
+    try {
+      S.connect();
+    } catch (err) {
+      Y.rollback();
+      Y.tr('catch error:', err);
+      setTimeout(ENGINE, 10000);
+    }
+  };
+  Y.engine(ENGINE);
+  P.run = () => { return Y.run(S.connect()) };
+}
+function channelKey (channel) {
+  return T.A2a
+  (channel.match(/^\#(.+)/) ? RegExp.$1 : channel);
+}

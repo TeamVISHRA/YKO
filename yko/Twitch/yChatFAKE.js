@@ -8,19 +8,20 @@ const ver = `yko/Twitch/${my} v190929.01`;
 module.exports = function (Y, P) {
   this.ver = ver;
 	const S = this;
-  S.say = (...args) => { Y.tr('TMIfake:say', args) };
+  S.say = (...args) => { Y.tr('say', args) };
   const ON = {};
   S.on = (key, v) => {
-    Y.tr1('TMIfake:on', key);
+    Y.tr3('on', key);
     ON[key] = v;
   };
-  S.ON = () => { return ON };
   S.connect = () => {
     if (ON.connected) ON.connected('<FAKEaddr>', 12345);
-    Y.tr1('TMIfake:connect');
+    Y.tr3('connect');
   }
-  S.disconnect = () => { Y.tr('TMIfake:disconnect') };
-  S.evMessage = (msg, o) => {
+  S.disconnect = () => { Y.tr3('TMIfake:disconnect') };
+	//
+  S.$ON = () => { return ON };
+  S.$evMessage = (msg, o) => {
     if (! ON.message) Y.throw(`Unknown on.message`);
     if (! o) { o = {
       say: S.say,

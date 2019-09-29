@@ -21,4 +21,4 @@ Y.preparFake();
 //
 Y.Twitch.run()
 //
-.then(test=> { test.evMessage('あいうえお') });
+.then(test=> { test.$evMessage('あいうえお') });

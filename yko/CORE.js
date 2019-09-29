@@ -124,11 +124,11 @@ module.exports = function (ARGS) {
   };
   if (! ARGS) ARGS = {};
   if (! ARGS.sysdata) ARGS.sysdata = Y.conf.sysDATA.keys;
-  const JS = {};
+  const CORES = {};
   for (let k of ['BOX', 'TOOL', 'BRAIN', 'SYSDATA', 'WEB']) {
     let key = k.toLowerCase();
-    JS[key] = require(`./${k}.js`);
-    Y[key] = new JS[key] (Y, ARGS[key]);
+    CORES[key] = require(`./${k}.js`);
+    Y[key] = new CORES[key] (Y, ARGS[key]);
   }
   Y.sysDATA = Y.sysdata;
   Y.anyDATA = (keys) => { return new JS.sysdata (Y, keys) };
@@ -165,6 +165,7 @@ module.exports = function (ARGS) {
       if (! noInit) INITS.unshift(Y[k[1]]);
     }
     for (let o of INITS) { o.init() }
+    for (let k in CORES) { if (Y[k].init) Y[k].init() }
   };
   let ENGINE = () => { Y.tr('??? (?o?) hoe ...!?') };
   Y.engine = (f) => { ENGINE = f };

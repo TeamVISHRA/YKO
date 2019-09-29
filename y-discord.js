@@ -61,6 +61,12 @@ Y.on('cron_count', (H, count, Now) => {
     //		H.Job('DiscordRSS').run(); // DEBUG
   }
 });
+Y.brain.on('command_alias', ()=> {
+  return [
+    ['[サさ][イい][コこ][ロろ]', 'dice'],
+    ['計測', 'sp'],
+  ];
+});
 
 // ===== < INIT > =====
 Y.init(
@@ -71,7 +77,7 @@ Y.init(
 );
 
 // ===== < Debug > =====
-Y.preparFake();
+//Y.preparFake();
 //Y.Discord.Tester().CronJob('DiscordRSS');
 //Y.Discord.Tester().Exec( Y.Discord.Guild().join );
 //Y.Discord.Tester().App('Help', 'help 1569267288');

@@ -13,7 +13,7 @@ module.exports = function (y, p) {
 //
 function build_component () {
   Y.tr4('build_component');
-	const B = P.bot;
+	const B = P.client();
 	S.get_user = (id) => {
 		if (! id) Y.throw(ver, "Unknown 'user id'");
     Y.tr2('get_user', id);

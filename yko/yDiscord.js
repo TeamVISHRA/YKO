@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'yDiscord.js';
-const ver = `yko/${my} v190928.01`;
+const ver = `yko/${my} v190930.01`;
 //
 const Discord = require('discord.js');
 //
@@ -23,10 +23,6 @@ module.exports = function (y) {
       'ydTester'
     ]);
   };
-  S.webhook = ([id, token], str) => {
-    const wh = new Discord.WebhookClient(id, token);
-    return wh.send(str);
-  };
   S.devel_guildID = () => {
     Y.tr2('devel_guildID : '   + S.im.devel.guild );
     return S.im.devel.guild;
@@ -38,6 +34,14 @@ module.exports = function (y) {
   S.devel_userID = () => {
     Y.tr2('devel_userID : '    + S.im.devel.userID );
     return S.im.devel.userID;
+  };
+  let CLIENT;
+  S.client = () => {
+    return CLIENT || (CLIENT = new Discord.Client());
+  };
+  S.webhook = ([id, token], str) => {
+    const wh = new Discord.WebhookClient(id, token);
+    return wh.send(str);
   };
 };
 function build_component (comps) {
@@ -61,7 +65,6 @@ function build_engine () {
   Y.tr4('build_engine');
   S.buildDataID = (guild) => { return `_YKO_DISCORD_${guild}_` };
   S._export_build_engine_ = () => { return build_engine };
-	S.client = S.bot = new Discord.Client();
   S.dbGuild = new dbGuild();
   S.send2callback = send2callback;
   Y.runners(() => { S.dbGuild.refresh() });
@@ -69,25 +72,26 @@ function build_engine () {
   const ON = Y.ON();
   const ENGINE = () => {
 		try {
-    	S.bot.on('ready', n => {
+      const BOT = S.client();
+    	BOT.on('ready', n => {
         for (let f of Y.RUNNERS()) { Y.tr5(f); f() }
         Y.tr('[[[ Connect ... Discord Client ]]]',
              '<<' + (Y.im.location || 'remote') + '>>');
-        Y.tr5('Token', S.im.token);
+        Y.tr7('Token', S.im.token);
     	});
 			if (ON.discord_message)
-          S.bot.on('message', baseDispatch(ON.discord_message));
+          BOT.on('message', baseDispatch(ON.discord_message));
       if (ON.discord_join_guild)
-					S.bot.on('guildMemberAdd', ON.discord_join_guild);
+					BOT.on('guildMemberAdd', ON.discord_join_guild);
 			if (ON.discord_exit_guild)
-					S.bot.on('guildMemberRemove', ON.discord_exit_guild);
+					BOT.on('guildMemberRemove', ON.discord_exit_guild);
 			if (ON.discord_warn)
-					S.bot.on('warn', ON.discord_warn);
+					BOT.on('warn', ON.discord_warn);
 			if (ON.discord_debug)
-					S.bot.on('debug', ON.discord_debug);
+					BOT.on('debug', ON.discord_debug);
 			if (ON.discord_error)
-					S.bot.on('error', ON.discord_error);
-			S.bot.login(S.im.token);
+					BOT.on('error', ON.discord_error);
+			BOT.login(S.im.token);
 		} catch (err) {
 			Y.rollback();
 			Y.tr('---< Warning >------------------------------');
@@ -102,8 +106,8 @@ function baseDispatch (func) {
   const MSG = S.Message();
   const botAction = Y.ON.discord_bot_action || (() => {});
 	return H => {
-    Y.tr5('Message handler:');
-    Y.tr5(H);
+    Y.tr7('Message handler:');
+    Y.tr7(H);
 		if (H.author.bot) return botAction(S, MSG, H);
     return new Promise ( resolve => {
       const is = MSG.start(H);
@@ -167,7 +171,7 @@ function dbGuild () {
     let Devel = S.im.devel.guild || '';
     Y.tr2('dbGuild:refresh - devel ch', Devel);
     let Guilds = {};
-    await S.bot.guilds.forEach( async g => {
+    await S.client().guilds.forEach( async g => {
       let GD = Guilds[g.id] = {};
       Y.tr3('dbGuild:refresh - guid id', g.id);
       Y.tr5(GD);

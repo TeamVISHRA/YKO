@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'BRAIN.js';
-const ver = `yko/${my} v190926.01`;
+const ver = `yko/${my} v190930.01`;
 //
 let Y, S, T;
 module.exports = function (y) {
@@ -35,7 +35,26 @@ module.exports = function (y) {
       callWakeup: wokReg
     }
   };
-  //
+  const ON = {};
+  S.on = (key, f) => { ON[key] = f };
+  let ALIAS;
+  S.init = () => {
+    if (! ON.command_alias) {
+      Y.tr3('on.command_alias', 'empty');
+      ALIAS = (str) => { return str };
+      return;
+    }
+    const Alias = ON.command_alias();
+    for (let v of Alias) {
+      if (! v[0] || ! v[1]) Y.then(`Check 'on.command_alias'`);
+      v[0] = new RegExp('^\s*' + v[0] + '\s*(.*)');
+    }
+    ALIAS = (str) => {
+      for (let v of Alias)
+      { if (str.match(v[0])) return `${v[1]} ${RegExp.$1}` }
+      return str;
+    };
+  };
   let Talk;
   S.talk = (keys) => {
     if (! Talk) Talk = require('./BRAIN/ybTalk.js');
@@ -90,7 +109,7 @@ module.exports = function (y) {
     if (str.match(callReg)) {
       if (str = RegExp.$1) {
         Y.tr2('isCall: YKO call', str);
-        if (str = str.match(yclReg)) {
+        if (str = ALIAS(str).match(yclReg)) {
           Y.tr2('isCall: cmd call', str[1]);
           return {
             cmd: T.A2a(str[1]),
