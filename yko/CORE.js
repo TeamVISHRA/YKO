@@ -55,6 +55,34 @@ module.exports = function (ARGS) {
       for (let v of Object.values(err)) { Y.c(v) }
       return { stacks: stacks };
     };
+    const Level = Y.im.debug_level || 0;
+    Y.tr('YKO - debug_level', Level);
+    for (let i of [1,2,3,4,5,6,7]) {
+      Y[`tr${i}`] = (Level != 0 && i <= Level) ? Y.tr : () => {};
+    }
+    Y.throw = (arg, ...mor) => {
+      const err = new Error().stack;
+      const stacks = err.split(/\s+at\s+/);
+      let point = '';
+      for (let v of stacks.splice(2, stacks.length)) {
+        if (v) { v = v.trim();
+          if (v.match(/\/(yko\/[^\)]+)\:\d+\)\s*$/)) {
+            point += '> ' + RegExp.$1 + '\n';
+          } else if (v.match(/(y\-[^/\)]+)\:\d+\)\s*$/)) {
+            point += '> ' + RegExp.$1 + '\n';
+            //					break;
+          }
+        }
+      }
+      if (mor) {
+        arg += s + Object.values(mor)
+        .join('\n-----------------------------------\n');
+      }
+      Y.tr(`throw:\n${arg}\n===================================`);
+      Y.tr(point || "'Stack Trace' is empty.");
+      //		Y.rollback();
+      throw true;
+    };
     Y.tmp = {};
     const FLOW = { START:[], ROLLBACK:[], FINISH:[] };
     const sen = '-----------------------------------';
@@ -86,34 +114,6 @@ module.exports = function (ARGS) {
       Y.tmp = {};
       Y.tr3(`>>> finish ...(Debug)\n${sen}`);
       return true;
-    };
-    const Level = Y.im.debug_level || 0;
-    Y.tr('YKO - debug_level', Level);
-    for (let i of [1,2,3,4,5,6,7]) {
-      Y[`tr${i}`] = (Level != 0 && i <= Level) ? Y.tr : () => {};
-    }
-    Y.throw = (arg, ...mor) => {
-      const err = new Error().stack;
-      const stacks = err.split(/\s+at\s+/);
-      let point = '';
-      for (let v of stacks.splice(2, stacks.length)) {
-        if (v) { v = v.trim();
-          if (v.match(/\/(yko\/[^\)]+)\:\d+\)\s*$/)) {
-            point += '> ' + RegExp.$1 + '\n';
-          } else if (v.match(/(y\-[^/\)]+)\:\d+\)\s*$/)) {
-            point += '> ' + RegExp.$1 + '\n';
-            //					break;
-          }
-        }
-      }
-      if (mor) {
-        arg += s + Object.values(mor)
-        .join('\n-----------------------------------\n');
-      }
-      Y.tr(`throw:\n${arg}\n===================================`);
-      Y.tr(point || "'Stack Trace' is empty.");
-      //		Y.rollback();
-      throw true;
     };
     Y.exit = (cd) => {
       Y.rollback();
