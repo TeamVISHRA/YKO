@@ -1,0 +1,44 @@
+{
+  "name": "yko",
+  "version": "1.0.0",
+  "description": "Discord Chat BOT",
+  "main": "yko/CORE.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.3",
+    "discord.js": "^11.5.1"
+    "encoding-japanese": "^1.0.30",
+    "feedparser": "^2.2.9",
+    "follow-redirects": "^1.9.0",
+    "here": "^0.0.2",
+    "http": "^0.0.0",
+    "https": "^1.0.0",
+    "kuromoji": "^0.1.2",
+    "log4js": "^5.1.0",
+    "moment": "^2.24.0",
+    "mongodb": "^3.3.2",
+    "request-promise": "^4.2.4",
+    "request": "^2.88.0",
+    "tmi.js": "^1.4.5",
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MilkyVishra/YKO.git"
+  },
+  "keywords": [
+    "Discord",
+    "BOT"
+  ],
+  "author": "MilkyVishra",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MilkyVishra/YKO/issues"
+  },
+  "homepage": "https://github.com/MilkyVishra/YKO#readme"
+}
