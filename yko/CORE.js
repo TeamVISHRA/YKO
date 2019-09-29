@@ -164,14 +164,8 @@ module.exports = function (ARGS) {
       for (let o of INITS) { o.init() }
     };
     let ENGINE = () => { Y.tr('??? (?o?) hoe ...!?') };
-    Y.engine = (f) => {
-      Y.tr5('engine');
-      ENGINE = f;
-    };
-    Y.run = () => {
-      Y.tr5('run');
-      ENGINE();
-    };
+    Y.engine = (f) => { ENGINE = f };
+    Y.run = () => { ENGINE() };
     Y.switchConsole = () => { Y.c = console.log };
     Y.tr(ver, '>>> Ready .....');
   };
