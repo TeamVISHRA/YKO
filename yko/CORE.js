@@ -168,6 +168,10 @@ module.exports = function (ARGS) {
     Y.run = () => { ENGINE() };
     Y.switchConsole = () => { Y.c = console.log };
     Y.tr(ver, '>>> Ready .....');
+		Y.preparFake = () => {
+			for (let o of INITS)
+			{ if (o.preparFake) o.preparFake() }
+		}
   };
   function Logger (c) {
     return {

@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'yTwitch.js';
-const ver = `yko/${my} v190926.01`;
+const ver = `yko/${my} v190929.01`;
 //
 module.exports = function (Y) {
   this.ver = ver;
@@ -25,4 +25,8 @@ module.exports = function (Y) {
     if (Y.REQ1() == 'Twitch'
      || Y.REQ1() == 'Discord') S.Chat().init();
 	};
+  S.preparFake = () => {
+    for (let o of Object.values(POOL))
+    { if (o.preparFake) o.preparFake() }
+  };
 }
