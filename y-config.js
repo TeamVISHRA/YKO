@@ -1,13 +1,17 @@
 //
 const MSG = messgae();
 //
-exports.sysDATA = {
-	keys: {
-    type: 'system',
-    id:   '__YKO_SYSTEM__',
-    name: '__YKO_SYSTEM_DATA__'
-	}
-};
+exports.log4js = {
+	appenders: { debug: {
+		type: 'file',
+		filename: './YKO.log',
+		pattern: 'YYYYMMDD'
+	} },
+	categories: { default: {
+		appenders: ['debug'],
+		level : 'all'
+	} }
+}
 exports.discord = {
 	log: {
 		'384997595149500416': { // サタデーナイト
@@ -47,6 +51,13 @@ exports.twitch = {
 				}
 			}
 		}
+	}
+};
+exports.sysDATA = {
+	keys: {
+    type: 'system',
+    id:   '__YKO_SYSTEM__',
+    name: '__YKO_SYSTEM_DATA__'
 	}
 };
 exports.brain = {
