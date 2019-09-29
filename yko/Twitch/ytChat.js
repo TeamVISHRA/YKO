@@ -63,7 +63,7 @@ function build_connect () {
 		});
 		CLIENT.on('connected', (addr, port) => {
 			ON.twitch_chat_connected(addr, port);
-			Y.tr(`Connect ... Twitch Chat:${addr}:${port}`);
+			Y.tr(`[[[ Connect ... Twitch Chat:${addr}:${port} ]]]`);
 		});
 		let F; if (F = ON.twitch_chat_message) {
 			Y.tr1("ON ... 'twitch_chat_message'");

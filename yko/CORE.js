@@ -197,7 +197,7 @@ module.exports = function (ARGS) {
 		ENGINE();
 	};
 	Y.switchConsole = () => { Y.c = console.log };
-	Y.tr(ver, '[[[[[ Ready ]]]]]');
+	Y.tr(ver, '>>> Ready .....');
 };
 function Logger (c) {
 	return {

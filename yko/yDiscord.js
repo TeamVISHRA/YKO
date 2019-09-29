@@ -71,7 +71,7 @@ function build_engine () {
 		try {
     	S.bot.on('ready', n => {
         for (let f of Y.RUNNERS()) { Y.tr5(f); f() }
-        Y.tr('Connect ... Discord Client',
+        Y.tr('[[[ Connect ... Discord Client ]]]',
              '<<' + (Y.im.location || 'remote') + '>>');
         Y.tr5('Token', S.im.token);
     	});
