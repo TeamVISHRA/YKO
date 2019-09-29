@@ -31,35 +31,28 @@ module.exports = function (ARGS) {
 		Y.log = log4js.getLogger('debug');
 		Y.c = (s) => { Y.log.trace(s) };
 	}
-//	Y.tr = (s, o) => {
-	Y.tr = async (s, o) => {
+	Y.tr = async (...args) => {
 		const trace = new Error().stack;
 		const stacks = trace.split(/\s+at\s+/);
-//	Y.c(stacks);
 		stacks[2].match(/([^\/]+)\:\d+\)?\s*$/);
 		let pref = RegExp.$1;
-		if (o || o == 0) {
-			if (! s && s != 0) s = '???';
-			let disp = '';
-			if (typeof o == 'object') {
-				try {
-					disp = Y.tool.o2json(o);
-					if (disp.length <= 5) {
-						Y.c(`${pref}> ${s}`);
-						Y.c(o);
-					} else {
-						Y.c(`${pref}> ${s} ${disp}`);
-					}
-				}	catch (e) {
-						Y.c(`${pref}> ${s} "${o}"`);
+		let [op, err] = [[], []];
+		for (let v of Object.values(args)) {
+			if (typeof v == 'object') {
+				if (v instanceof Array) {
+					op.push('[' + v.map(x=> `"${x}"`).join(',') + ']');
+				} else {
+					try {
+						let txt = Y.tool.json2txt(v);
+						if (txt.length <= 5) { err.push(v)  }
+														else { op.push(txt) }
+					} catch (e)            { err.push(v)  }
 				}
-			} else { Y.c(`${pref}> ${s} "${o}"`) }
-		} else if (typeof s == 'object') {
-			Y.c(`${pref}>`);
-			Y.c(s);
-		} else {
-			Y.c(`${pref}> "${s}"`);
+			} else { op.push(`"${v}"`) }
 		}
+		Y.c(`${pref}> ` + op.join(op.length > 2
+				? '\n------------------------------\n': ' , ') );
+		for (let v of Object.values(err)) { Y.c(v) }
 		return { stacks: stacks };
 	};
 	Y.tmp = {};
@@ -134,8 +127,8 @@ module.exports = function (ARGS) {
 			}
 		}
 		if (mor) {
-			const s = '\n-----------------------------------\n';
-			arg += s + Object.values(mor).join(s);
+			arg += s + Object.values(mor)
+					.join('\n-----------------------------------\n');
 		}
 		Y.tr(`throw:\n${arg}\n===================================`);
 		Y.tr(point || "'Stack Trace' is empty.");
