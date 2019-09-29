@@ -43,6 +43,14 @@ module.exports = function (y) {
     const wh = new Discord.WebhookClient(id, token);
     return wh.send(str);
   };
+  S.preparFake = () => {
+    Y.tr3('preparFake');
+    const Fake= require('./Discord/ydFAKE.js');
+    S.webhook = (token, str) => { Y.tr('webhook', token, str) };
+    S.client = () => {
+      return CLIENT || (CLIENT = new Fake (Y, S));
+    };
+  };
 };
 function build_component (comps) {
   Y.tr4('build_component');
@@ -73,7 +81,7 @@ function build_engine () {
   const ENGINE = () => {
 		try {
       const BOT = S.client();
-    	BOT.on('ready', n => {
+    	BOT.on('ready', x => {
         for (let f of Y.RUNNERS()) { Y.tr5(f); f() }
         Y.tr('[[[ Connect ... Discord Client ]]]',
              '<<' + (Y.im.location || 'remote') + '>>');

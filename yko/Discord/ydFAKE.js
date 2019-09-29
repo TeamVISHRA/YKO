@@ -9,6 +9,9 @@ let S, Y, P;
 module.exports = function (y, p) {
   this.ver = ver;
 	[S, Y, P] = [this, y, p];
+  S.$guildID   = P.im.devel.guild;
+  S.$channelID = P.im.devel.channel;
+  S.$userID    = P.im.devel.userID;
   baseHandler(S);
   const ON = {};
   S.on = (key, v) => {
@@ -16,9 +19,11 @@ module.exports = function (y, p) {
     ON[key] = v;
   };
 	S.login = (token) => {
-		if (ON.ready) ON.ready(new ClientHandler ());
-	}
-	//
+		if (ON.ready) ON.ready(S);
+	};
+  S.delete = () => {
+    Y.tr('FAKE <message-delete>');
+  };
   S.$ON = () => { return ON };
 	S.$evMessage = (msg) => {
 		if (! ON.message) Y.throw('Unknown on.message');
@@ -43,8 +48,8 @@ module.exports = function (y, p) {
 function GuildHandler () {
 	const H = this;
   H.nickname = '<FakeNick>';
-  H.user  = S.users.get('297079697668571146');
-  H.guild = S.guilds.get('384997595149500416');
+  H.user  = S.users.get(S.$userID);
+  H.guild = S.guilds.get(S.$guildID);
 	return H;
 }
 function MessageHandler () {
@@ -53,33 +58,33 @@ function MessageHandler () {
 }
 function baseHandler (H) {
 	H.users = new Map([
-    ['297079697668571146', {
+    [S.$userID, {
 			bot: false,
-      id: '297079697668571146',
-			username:'FakeUser',
-			avatarURL:'<avatarURL>',
+      id: S.$userID,
+			username:'<FakeUser>',
+			avatarURL:'http://<avatarURL>',
 			discriminator: 12345,
 			lastMessageID: false,
 			lastMessage: false,
-      send: (s) => { return send('user-send', s) }
+      send: (s) => { return send('FAKE <user-send>', s) }
 		} ]
 	]);
   H.channels = new Map([
-    ['606506515050004480', {
-      id: '606506515050004480',
-      send: (s) => { return send('channel-send', s) }
+    [S.$channelID, {
+      id: S.$channelID,
+      send: (s) => { return send('FAKE <channel-send>', s) }
     } ]
   ]);
 	H.guilds = new Map([
-    ['384997595149500416', {
-		  id: '384997595149500416',
+    [S.$guildID, {
+		  id: S.$guildID,
 		  name:'<FAKE_GUILD>',
-		  iconURL:'<ICON_URL>',
-		  ownerID:'297079697668571146',
+		  iconURL: '<ICON_URL>',
+		  ownerID: S.$userID,
 		  memberCount: 100,
-		  systemChannelID: '606506515050004480',
-		  joinedTimestamp: 10000000000,
-      send: (s) => { return send('user-send', s) },
+		  systemChannelID: S.$channelID,
+		  joinedTimestamp: (Y.tool.unix() * 1000),
+      send: (s) => { return send('FAKE <user-send>', s) },
       members: H.users,
       channels: H.channels,
 		  roles: new Map([
@@ -92,9 +97,13 @@ function baseHandler (H) {
 	return H;
 }
 function send (key, msg) {
-  Y.tr(key, msg);
-  return Promise.resolv({
-    delete: () => { Y.tr('send', 'message-delete') },
-    edit: () => { Y.tr('send', 'message-edit') }
+  Y.tr(key, msg, '..... <<FAKE>>');
+  return new Promise ( resolve => {
+    return resolve({
+      delete: () =>
+      { Y.tr('FAKE <delete>', 'message-delete') },
+      edit: () =>
+      { Y.tr('FAKE <edit>', 'message-edit') }
+    });
   });
 }

@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const ver = `y-discord.js v190929.01`;
-//
+
 const yko = require('./yko/CORE.js');
 const Y = new yko ();
 
@@ -47,7 +47,7 @@ Y.on('cron_day', (H, day, Now) => {
 });
 Y.on('cron_minute', (H, minute, Now) => {
   if ((minute% 3) == 0) {
-    H.Job('DiscordRSS').run();	// Main
+//    H.Job('DiscordRSS').run();	// Main
   }
   if ((minute% 10) == 0) {
     H.exec(Y.Discord.dbGuild.refresh);
@@ -58,7 +58,7 @@ Y.on('cron_count', (H, count, Now) => {
   if ((count% 6) == 0) {
     H.exec(Y.box.cleanCash);
     H.exec(Y.brain.cleanSleep);
-    //		H.Job('DiscordRSS').run(); // DEBUG
+		H.Job('DiscordRSS').run(); // DEBUG
   }
 });
 Y.brain.on('command_alias', ()=> {
@@ -67,21 +67,15 @@ Y.brain.on('command_alias', ()=> {
     ['計測', 'sp'],
   ];
 });
-
-// ===== < INIT > =====
+// ===== < INIT > ========
 Y.init(
-  'yDiscord :init',
-  'yTwitch :init',
-  'yHTTP :init',
-  'yCRON :init'
+  'yDiscord:init',
+  'yTwitch:init',
+  'yHTTP:init',
+  'yCRON:init'
 );
-
-// ===== < Debug > =====
+// ===== < Debug > =======
 //Y.preparFake();
-//Y.Discord.Tester().CronJob('DiscordRSS');
-//Y.Discord.Tester().Exec( Y.Discord.Guild().join );
-//Y.Discord.Tester().App('Help', 'help 1569267288');
-//Y.Discord.Tester().message(500, ['わは', 'わはははｈ']);
-
 // ===== < Execute > =====
-Y.Discord.run();
+Y.Discord.run()
+//.then(test=> { test.$evMessage('あいうえお') });

@@ -21,6 +21,7 @@ module.exports = function (y, p) {
     }
   }
   S.preparFake = () => {
+    Y.tr3('preparFake');
     const FAKE = require('./yChatFAKE.js');
     S.tmi = () => { return new FAKE (Y, S) };
   };

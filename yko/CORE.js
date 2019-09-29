@@ -176,8 +176,8 @@ module.exports = function (ARGS) {
   Y.switchConsole = () => { Y.c = console.log };
   Y.tr(ver, '>>> Ready .....');
 	Y.preparFake = () => {
-		for (let o of INITS)
-		{ if (o.preparFake) o.preparFake() }
+		for (let k of REQUIRES)
+      { if (Y[k].preparFake) Y[k].preparFake() }
 	}
 };
 function Logger (c) {
