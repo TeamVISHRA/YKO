@@ -58,6 +58,9 @@ module.exports = function (ARGS) {
     Y.tmp = {};
     const FLOW = { START:[], ROLLBACK:[], FINISH:[] };
     const sen = '-----------------------------------';
+    Y.onStart    = (f) => { FLOW.START.push(f)    };
+    Y.onRollback = (f) => { FLOW.ROLLBACK.push(f) };
+    Y.onFinish   = (f) => { FLOW.FINISH.push(f)   };
     Y.start = (args) => {
       Y.tr3(`${sen}\n>>> start ...(Debug)`);
       Y.tmp = { $START: 1 };
@@ -112,9 +115,6 @@ module.exports = function (ARGS) {
       //		Y.rollback();
       throw true;
     };
-    Y.onStart    = (f) => { FLOW.START.push(f)    };
-    Y.onRollback = (f) => { FLOW.ROLLBACK.push(f) };
-    Y.onFinish   = (f) => { FLOW.FINISH.push(f)   };
     Y.exit = (cd) => {
       Y.rollback();
       process.exit( cd != null ? cd : 0 );
