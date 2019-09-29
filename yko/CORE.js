@@ -45,7 +45,7 @@ module.exports = function (ARGS) {
           try {
             let txt = Y.tool.json2txt(v);
             if (txt.length <= 5) { err.push(v)  }
-            else { op.push(txt) }
+            else                 { op.push(txt) }
           } catch (e)            { err.push(v)  }
         }
       } else { op.push(`"${v}"`) }
@@ -57,7 +57,9 @@ module.exports = function (ARGS) {
     };
     Y.tmp = {};
     const FLOW = { START:[], ROLLBACK:[], FINISH:[] };
+    const sen = '-----------------------------------';
     Y.start = (args) => {
+      Y.tr3(`${sen}\n>>> start ...(Debug)`);
       Y.tmp = { $START: 1 };
       Y.box.begin();
       for (let F of FLOW.START) { F(args) };
@@ -67,50 +69,25 @@ module.exports = function (ARGS) {
       for (let F of FLOW.ROLLBACK) { F() };
       Y.box.rollback();
       Y.tmp = {};
+      Y.tr3(`>>> rollback ...(Debug)\n${sen}`);
       return true;
     };
     Y.finish = () => {
       if (! Y.tmp.$START) {
-        Y.tr2('Y.tmp', 'Nothing');
+        Y.tr3('Y.tmp', 'Nothing');
+        Y.tr3(`Warning: finish didn't exec ...(Debug)\n${sen}`);
         return false;
       }
       for (let F of FLOW.FINISH) { F() };
       Y.box.commit();
       Y.tmp = {};
+      Y.tr3(`>>> finish ...(Debug)\n${sen}`);
       return true;
     };
-    let Level;
-    if (Level = Y.im.debug_level) {
-      Y.tr('YKO - debug_level', Level);
-      let start    = Y.start;
-      let rollback = Y.rollback;
-      let finish   = Y.finish;
-      Y.start = () => {
-        Y.c('-----------------------------------');
-        Y.tr(">>> start ...(Debug)");
-        return start();
-      };
-      Y.rollback = () => {
-        rollback();
-        Y.tr(">>> rollback ...(Debug)");
-        Y.c('-----------------------------------');
-        return false;
-      };
-      Y.finish = () => {
-        if (finish()) {
-          Y.tr(">>> finish ...(Debug)");
-          Y.c('-----------------------------------');
-          return true;
-        } else {
-          Y.tr("Warning: finish didn't exec ...(Debug)");
-          return false;
-        }
-      };
-      for (let i of [1,2,3,4,5,6,7]) {
-        Y[`tr${i}`] = (i <= Level) ? Y.tr : () => {};
-      }
-    } else {
-      for (let i of [1,2,3,4,5,6,7]) { Y[`tr${i}`] = () => {} }
+    const Level = Y.im.debug_level || 0;
+    Y.tr('YKO - debug_level', Level);
+    for (let i of [1,2,3,4,5,6,7]) {
+      Y[`tr${i}`] = (Level != 0 && i <= Level) ? Y.tr : () => {};
     }
     Y.throw = (arg, ...mor) => {
       const err = new Error().stack;
@@ -168,25 +145,31 @@ module.exports = function (ARGS) {
     const INITS = [];
     Y.inits = () => { return INITS };
     //
-    Y.init = (setup) => {
+    Y.init = (...setup) => {
       for (let name of setup) {
         let noInit;
-        if (typeof name == 'string') { noInit = name = [name] }
-        let j = require('./' + name[0] + '.js');
-        let k = name[0].match(/^y(.+)/);
+        if (typeof name == 'string') {
+          if (name.match(/([^\:\s]+)\s*\:\s*init/i)) {
+            name = [RegExp.$1];
+          } else {
+            noInit = name = [name];
+          }
+        }
+        let j = require('./' + name[0].trim() + '.js');
+        let k = name[0].match(/^\s*y([^\s]+)/);
         Y[k[1]] = new j (Y);
         REQUIRES.push(k[1]);
         if (! noInit) INITS.unshift(Y[k[1]]);
       }
       for (let o of INITS) { o.init() }
     };
-    let ENGINE = () => { Y.c('??? (?o?) hoe ...!?') };
+    let ENGINE = () => { Y.tr('??? (?o?) hoe ...!?') };
     Y.engine = (f) => {
-      Y.tr4('engine');
+      Y.tr5('engine');
       ENGINE = f;
     };
     Y.run = () => {
-      Y.tr4('run');
+      Y.tr5('run');
       ENGINE();
     };
     Y.switchConsole = () => { Y.c = console.log };

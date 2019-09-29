@@ -63,7 +63,12 @@ Y.on('cron_count', (H, count, Now) => {
 });
 
 // ===== < INIT > =====
-Y.init([['yDiscord'], ['yTwitch'], ['yHTTP'], ['yCRON']]);
+Y.init(
+	'yDiscord :init',
+	'yTwitch :init',
+	'yHTTP :init',
+	'yCRON :init'
+);
 
 // ===== < Debug > =====
 //Y.Discord.Tester().CronJob('DiscordRSS');

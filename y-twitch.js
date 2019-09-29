@@ -15,6 +15,6 @@ Y.on('twitch_chat_message', (TC, is) => {
 	}
 });
 //
-Y.init([['yTwitch'], 'yDiscord']);
+Y.init('yTwitch :init', 'yDiscord');
 //
 Y.Twitch.run();
