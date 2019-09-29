@@ -55,9 +55,9 @@ exports.twitch = {
 };
 exports.sysDATA = {
 	keys: {
-    type: 'system',
-    id:   '__YKO_SYSTEM__',
-    name: '__YKO_SYSTEM_DATA__'
+		type: 'system',
+		id:   '__YKO_SYSTEM__',
+		name: '__YKO_SYSTEM_DATA__'
 	}
 };
 exports.brain = {
@@ -120,14 +120,14 @@ function messgae () {
 		}
 	};
 	msg.discord.join1 = here(/*
-<name> へようこそ!!
-
-わたしは、👆でお仕事をしてるボットです。
-
-「#🔰はじめに読んでね」に目を通しててから、
-「#🔰welcom」に自己紹介を投稿して下さい。
-
-それでは、今後とも宜しくお願い致します。
-*/).unindent();
-	return msg;
-};
+		<name> へようこそ!!
+		
+		わたしは、👆でお仕事をしてるボットです。
+		
+		「#🔰はじめに読んでね」に目を通しててから、
+		「#🔰welcom」に自己紹介を投稿して下さい。
+		
+		それでは、今後とも宜しくお願い致します。
+		*/).unindent();
+		return msg;
+	};
