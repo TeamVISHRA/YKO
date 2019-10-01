@@ -22,10 +22,9 @@ module.exports = function (Y, P, args) {
     DEBUG = () => { return true };
     DBGCH = (ch) => { return ch };
   }
-	S.run = async () => {
-		Y.start();
+	S.run = async (X, label) => {
     let Discord;
-    await Y.sysDATA.noCash(['discord'])
+    await X.sysDATA.noCash(['discord'])
                    .then( db => { Discord = db.value });
     Y.tr5('run - sysDATA', Discord);
 		for (let [id, G] of Object.entries(Discord.guilds)) {
@@ -39,17 +38,17 @@ module.exports = function (Y, P, args) {
       Y.tr4('run:for - RSS sites', C.sites);
 			C.id = id;
 			C.dbKey = {
-				id: Y.Discord.buildDataID(id),
+				id: X.Discord.buildDataID(id),
 				name: '_CRON_RSS_READER__'
 			};
-			S._RSS_(C);
+			return S._RSS_(X, C, label);
 		}
 	};
-	S._RSS_ = async (C) => {
+	S._RSS_ = async (X, C, label) => {
     Y.tr5('_RSS_:C = ', C);
 		const T = Y.tool;
 		let BOX;
-		await Y.box.any('cron', C.dbKey).then( box => { BOX = box });
+		await X.box.any('cron', C.dbKey).then( box => { BOX = box });
 		let historys = BOX.isNew() ? [] : BOX.get('historys');
 		const rssGet = new Promise( rsv => {
 			let [count, rssNow] = [0, []];
@@ -117,7 +116,7 @@ module.exports = function (Y, P, args) {
         Y.tr2('_RSS_:output - send ch', C.toCH);
         const SEND = (o) =>
         { Y.Discord.Client().channel_send(DBGCH(C.toCH), o) };
-        Y.web.get(output.url).then( bd => {
+        X.web().get(output.url).then( bd => {
           const og = bd.ogp();
           let url = bd.pageURL() || output.url;
           if (bd.invalid() || bd.char() == 'UTF32') {
@@ -144,11 +143,11 @@ module.exports = function (Y, P, args) {
             SEND({ embed: embed });
 		      }
 				  BOX.preper();
-          Y.finish();
+          X.finish();
         });
 			} else {
         Y.tr2('_RSS_:output - (There are no new arrivals.)');
-			  Y.finish();
+			  X.finish();
       }
 		});
 	};

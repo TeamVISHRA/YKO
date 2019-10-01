@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'yCRON.js';
-const ver = `yko/${my} v190929.01`;
+const ver = `yko/${my} v191001.01`;
 //
 let S, Y, T;
 module.exports = function (y) {
@@ -20,21 +20,32 @@ module.exports = function (y) {
 		}
 	};
 };
+function FINISH (X, comp) {
+  if (X.tmp.$START) {
+    if (comp && comp.Promise) {
+      comp.then(o=> { X.finish() })
+          .catch(e=> { X.rollback(); X.throw(ver, e) });
+    } else {
+      X.finish();
+  } }
+};
 function build_component () {
   Y.tr4('build_component');
-  const POOL = {};
   S.Job = (name, args) => {
-    Y.tr2('Start Job = >> CRON <<', name);
-    if (POOL[name]) return POOL[name];
-    let j = require(`./CRON/yc${name}.js`);
-    POOL[name] = new j (Y, S, args);
-    return POOL[name];
+    const JS = require(`./CRON/yc${name}.js`);
+    Y.start(name).then( X => {
+      Y.tr2('>>> Start Job', `${name}:${X.ver}`);
+      const Comp = new JS (Y, S, args);
+//      FINISH(X, Comp.run(X) );
+      Comp.run(X)
+      .catch(e=> { X.rollback(); X.throw(ver, e) });
+    });
   };
-  S.exec = async (func) => {
-    Y.tr2('Start exec = >> CRON <<');
-    Y.start();
-    await func();
-    return Y.finish();
+  S.exec = (label, func) => {
+    Y.start(label).then( X => {
+      Y.tr2('>>> Start exec', `${label}:${X.ver}`);
+      FINISH(X, func(X) );
+    });
   };
   const CRON = {
     count: 0,
@@ -71,7 +82,6 @@ function build_component () {
       }
       if (Now.count >= S.conf.count.max) CRON.count = 0;
 		} catch (err) {
-			Y.rollback();
 			Y.throw(ver, err);
 		};
 	};

@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'WEB.js';
-const ver = `yko/${my} v190928.01`;
+const ver = `yko/${my} v191001.01`;
 //
 const metaReg = new RegExp(/<meta\s+[^>\n]+charset=([^\"\']+)/im);
 //
@@ -11,31 +11,28 @@ let Y, T, S;
 module.exports = function (y) {
 	this.ver = ver;
 	[S, Y, T] = [this, y, y.tool];
-	const JS = {};
-	S.http  = () =>
-			{ return JS.http  || (JS.http = require('http')) };
-	S.https = () =>
-			{ return JS.https || (JS.https = require('https')) };
-	S.follow = () =>
-	{ return JS.follow || (JS.follow = require('follow-redirects')) };
+	S.http   = () => { return require('http')  };
+	S.https  = () => { return require('https') };
+	S.follow = () => { return require('follow-redirects') };
 	S.requestPromise = S.request = () =>
-	{ return JS.request || (JS.request = require('request-promise')) };
-	S.parser = () =>
-			{ return JS.parser || (JS.parser = require('cheerio')) };
+									 { return require('request-promise') };
+	S.parser = () => { return require('cheerio') };
 	//
 	S.getContent = (o) => {
 		Y.tr1('getContent');
-		if (! o) {
-			Y.tr('getContent', 'Unknown args');
-			return { invalid:1, html:'', res:{ error: 'Unknown args' } };
-		}
-		const url = typeof o == 'object' ? o.url : o;
-		if (! url.match(/^http(s?)\:\/\//)) {
-			Y.tr('Invalid URL');
-			return { invalid:1, html:'', res:{ error: 'Invalid URL', url: url } };
-		}
-		const Http = RegExp.$1 ? S.follow().https : S.follow().http;
 		return new Promise ((resolve, reject) => {
+			if (! o) {
+				Y.tr('getContent', 'Unknown args');
+				return reject
+				({ invalid:1, html:'', res:{ error: 'Unknown args' } });
+			}
+			const url = typeof o == 'object' ? o.url : o;
+			if (! url.match(/^http(s?)\:\/\//)) {
+				Y.tr('Invalid URL');
+				return reject
+				({ invalid:1, html:'', res:{ error: 'Invalid URL', url: url } });
+			}
+			const Http = RegExp.$1 ? S.follow().https : S.follow().http;
 			Http.get(o, res => {
 				const Chunks = [];
 				res.on('data', c => { Chunks.push(c) });

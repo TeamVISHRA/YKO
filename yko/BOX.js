@@ -3,11 +3,12 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'BOX.js';
-const ver = `yko/${my} v190926.01`;
+const ver = `yko/${my} v191001.01`;
 //
-module.exports = function (Y) {
+let S, Y;
+module.exports = function (y) {
   this.ver = ver;
-	const S = this;
+	[S, Y] = [this, y];
   S.conf = Y.conf.box;
   if (! S.conf.db) Y.throw("'Y.conf.box.db' is undefined");
   const J = require('./BOX/yb' + S.conf.db + '.js');

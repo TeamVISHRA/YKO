@@ -3,7 +3,9 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'SYSDATA.js';
-const ver = `yko/${my} v190926.01`;
+const ver = `yko/${my} v191001.01`;
+//
+const BOX = require('./BOX.js');
 //
 let Y, YS, T;
 module.exports = function (y, KEYS) {
@@ -15,11 +17,13 @@ module.exports = function (y, KEYS) {
 				|| Y.throw(ver, 'Unknown type.');
 	const LIMIT = SYSKEY.limit || SYSKEY.life || 15; // minute
 	const POOL = {};
+	YS.box = new BOX (Y);
 	YS.POOL = POOL;
+	//
 	YS.noCash = async (keys) => {
 		Y.tr1('noCash');
 		let Db;
-		await Y.box.any(TYPE, SYSKEY).then( db => {
+		await YS.box.any(TYPE, SYSKEY).then( db => {
 			Y.tr3('noCash:Y.box.any()', SYSKEY);
 			Db = db.isNew() ? {}: new noCash (db, keys);
 		});
@@ -31,7 +35,7 @@ module.exports = function (y, KEYS) {
 		let Db = POOL[KEY];
 		if (Db && Db.$Limit < Y.tool.time_u()) Db = false;
 		if (! Db) {
-			await Y.box.any(SYSKEY.type, SYSKEY).then( db => {
+			await YS.box.any(SYSKEY.type, SYSKEY).then( db => {
 				Y.tr3('cash:Y.box.any()', SYSKEY);
 				const Limit = Y.tool.time_u_add(LIMIT, 'm');
 				Db = POOL[KEY] = db.isNew()
@@ -71,6 +75,7 @@ function noCash (H, KEYS) {
 		const UPDATE = () => {
 			H.update();
 			H.preper();
+			YS.box.commit();
 		};
 		const REMOVE = () => {
 			if (! S.$deleteOK())

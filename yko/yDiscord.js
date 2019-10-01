@@ -12,7 +12,7 @@ module.exports = function (y) {
   this.ver = ver;
 	[S, Y, T] = [this, y, y.tool];
 	S.conf = Y.conf.discord;
-  S.im = Y.im.discord;
+  S.im   = Y.im.discord;
 	S.init = () => {
     Y.tr4('init');
     build_component([
@@ -57,11 +57,11 @@ function build_component (comps) {
   const COMPS = {};
   for (let k of comps) {
     const key = (k.match(/^yd(.+)/))[1];
-	  S[key] = (a) => {
-		  if (COMPS[key]) return COMPS[key];
-		  const js = require('./Discord/' + k +'.js');
-      COMPS[key] = new js (Y, S, a);
-		  return COMPS[key];
+	  S[key] = () => {
+      return COMPS[key] || (() => {
+		    const js = require('./Discord/' + k +'.js');
+        return (COMPS[key] = new js (Y, S));
+      })();
 	  };
   }
   if (Y.REQ1() == 'Discord') {
@@ -111,30 +111,25 @@ function build_engine () {
   S.run = Y.run;
 }
 function baseDispatch (func) {
-  const MSG = S.Message();
   const botAction = Y.ON.discord_bot_action || (() => {});
 	return H => {
     Y.tr7('Message handler:');
     Y.tr7(H);
-		if (H.author.bot) return botAction(S, MSG, H);
-    return new Promise ( resolve => {
-      const is = MSG.start(H);
-      if (! is || is.sleep) return resolve();
+		if (H.author.bot) return botAction(S, H);
+    let Xm;
+    Y.start().then( X => {
+      Xm = X.Discord.Message();
+      const is = Xm.start(H);
+      if (! is || is.sleep) return;
 	    if (is.answer) {
-        MSG.send(is.answer);
-        MSG.toTwitch(MSG.nickname(), H.content).then(o => {
-          if (o) {
-            setTimeout(() =>
-              { MSG.toTwitch('YKO', is.answer) }, 300);
-          }
-        })
+        Xm.send(is.answer);
+        S.Message().toTwitch(Xm, Xm.nickname(), H.content)
         return resolve();
       } else {
-        return resolve( func(MSG, is) );
+        return resolve( func(Xm, is) );
       }
-    })
-    .catch (err => {
-      MSG.rollback();
+    }).catch (err => {
+      if (Xm) Xm.rollback();
       Y.throw(ver, err);
     });
 	};

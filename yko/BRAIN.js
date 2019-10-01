@@ -95,6 +95,7 @@ module.exports = function (y) {
         delete SLEEP[k];
       }
     }
+    return true;
   };
   S.wokeup = (c, b) => {
     return new _WOKEUP_(SLEEP, c, b);

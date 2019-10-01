@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ytChat.js';
-const ver = `yko/Twitch/${my} v190929.01`;
+const ver = `yko/Twitch/${my} v191001.01`;
 //
 let Y, P, S, T;
 module.exports = function (y, p) {
@@ -94,7 +94,7 @@ function build_dispatch (F) {
   return async (ch, h, msg, self) => {
     //	if (self) return; // bot call << This doesn't work
     Y.tr3(`event status`, `"${ch}", "${self}", "${msg}"`);
-    Y.tr5('context', h);
+    Y.tr7('context', h);
     S.start(h, ch, msg);
     let c;
     const chKey = channelKey(ch);

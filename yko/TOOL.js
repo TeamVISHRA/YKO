@@ -3,10 +3,11 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'TOOL.js';
-const ver = `yko/${my} v190930.01`;
+const ver = `yko/${my} v191001.01`;
 //
 const MOMENT = require('moment'),
-TM_FORMAT = '/DD HH:mm:ss';
+        UTIL = require('util'),
+   TM_FORMAT = '/DD HH:mm:ss';
 //
 let Y;
 module.exports = function (y) {
@@ -49,6 +50,7 @@ module.exports = function (y) {
   T.FSunlink = T.fs_unlink = FSunlink;
   T.FSreadJson = T.fs_r_json = FSreadJson;
   T.FSwriteJson = T.fs_w_json = FSwriteJson;
+  T.inspect = UTIL.inspect;
   T.is_object = is_object;
   T.clone = clone;
   T.reset = reset;

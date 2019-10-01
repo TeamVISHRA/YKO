@@ -32,12 +32,9 @@ function build_component () {
   }: (msg) => { return msg };
   //
   S.tmp = () => { return TMP };
-  const APP = {};
 	S.App = (k, arg) => {
-		if (APP[k]) return APP[k];
-		const LIB = require(`./App/yda${k}.js`);
-		APP[k] = new LIB (Y, S, arg);
-		return APP[k];
+		const JS = require(`./App/yda${k}.js`);
+		return new JS (Y, S, arg);
 	};
   S.devel_guildID   = P.devel_guildID;
   S.devel_channelID = P.devel_channelID;
@@ -150,6 +147,12 @@ function build_component () {
     return (H.guild.roles.find('name', name) || false);
   };
   // === test ==========================================
+  S.guildID   = () => {
+    return (TMP.guild_id || H.guild.id || '');
+  };
+  S.channelID = () => {
+    return (TMP.channelId || H.channel.id || '');
+  };
   const W_CHECK = (wo, h, id) => {
     if (S.guildOnerID() == S.userID()) return true;
     return false;
@@ -157,57 +160,48 @@ function build_component () {
   const W_BOW = (wo) => {
     S.send(wo.greeting(), 20);
   };
-  S.guildID   = () => {
-    return (TMP.guild_id || H.guild.id || '');
-  };
-  S.channelID = () => {
-    return (TMP.channelId || H.channel.id || '');
-  };
 	S.start = (handler) => {
-    Y.start(handler);
     [H, TMP] = [handler, {}];
     let type;
     if (S.type() == 'dm') {
-      TMP.guild_id = TMP.channel_id = '';
-      TMP.user_id = H.user.id;
       S.isDM = () => { return true };
+      TMP.guild_id = TMP.channel_id = '';
+      TMP.user_id  = H.user.id;
       S.guildID = S.channelID = () => { return '' };
       S.userID = () => { return TMP.user_id };
       Y.tr2('<Meaage>.channel.type:' + (type = 'DM'));
     } else {
-      TMP.guild_id = H.guild.id;
-      type = TMP.channel_id = H.channel.id;
-      TMP.user_id = H.author.id;
       S.isDM = () => { return false };
+      TMP.guild_id = H.guild.id;
+      TMP.user_id = H.author.id;
       S.guildID  = () => { return TMP.guild_id };
       S.channelID = () => { return TMP.channel_id };
       S.userID = () => { return TMP.user_id };
+      type = TMP.channel_id = H.channel.id;
     }
     if (Y.brain.isSleep(type, S.userID())) {
       return Y.brain.wokeup(W_CHECK, W_BOW)
-                    .Try(type, S.userID(), H.content);
+                   .Try(type, S.userID(), H.content);
     }
     return Y.brain.isCall(H.content);
 	};
-  S.rollback = Y.rollback;
-  S.finish   = Y.finish;
   S.every = () => {
     S.toTwitch();
   };
-  S.toTwitch = async (uname, msg, nocheck) => {
-    if (S.isDM()) return false;
+  S.toTwitch = async (Xm, uname, msg, nocheck) => {
+    if (Xm.isDM()) return false;
     Y.tr1('toTwitch');
     let c;
     await Y.sysDATA
-        .cash(['discord', 'guilds', S.guildID(), 'toTwitch'])
+        .cash(['discord', 'guilds', Xm.guildID(), 'toTwitch'])
         .then( db => { c = db.value });
     Y.tr4('sysCash: ', c);
     if (! c) return false;
     Y.tr2('toTwitch', 'check');
-    if (! nocheck && S.channelID() != c.fromCH) return;
-    msg = T.byte2cut((msg || S.content()), 400, '...');
+    if (! nocheck && Xm.channelID() != c.fromCH) return;
+    msg = T.byte2cut((msg || Xm.content()), 400, '...');
     return Y.Twitch.Chat().say(c.toCH, T.tmpl(c.message,
-        { name: (uname || S.nickname()), message: msg }) )
+        { name: (uname || Xm.nickname()), message: msg }) )
         .then(o => { return [c.fromCH, c.toCH, msg] });
   };
 }
