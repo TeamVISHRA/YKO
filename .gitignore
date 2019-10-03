@@ -1,6 +1,7 @@
 test/
 node_modules/
 build/
+yko-old/
 now.js
 package-lock.json
 
