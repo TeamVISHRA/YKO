@@ -1,16 +1,18 @@
 //
-// yko/WEB.js
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'WEB.js';
-const ver = `yko/${my} v191001.01`;
+const ver = `yko/${my} v191008.01`;
 //
 const metaReg = new RegExp(/<meta\s+[^>\n]+charset=([^\"\']+)/im);
 //
-let Y, T, S;
-module.exports = function (y) {
-	this.ver = ver;
-	[S, Y, T] = [this, y, y.tool];
+module.exports.Unit = function (Y, R, Ref) {
+  const S = this;
+    S.ver = ver;
+   S.root = R;
+    S.Ref = Ref;
+  const T = Y.tool;
+  //
 	S.http   = () => { return require('http')  };
 	S.https  = () => { return require('https') };
 	S.follow = () => { return require('follow-redirects') };
@@ -29,17 +31,18 @@ module.exports = function (y) {
 			const url = typeof o == 'object' ? o.url : o;
 			if (! url.match(/^http(s?)\:\/\//)) {
 				Y.tr('Invalid URL');
-				return reject
-				({ invalid:1, html:'', res:{ error: 'Invalid URL', url: url } });
+				return reject({ invalid:1, html:'',
+            res:{ error: 'Invalid URL', url: url } });
 			}
-			const Http = RegExp.$1 ? S.follow().https : S.follow().http;
+			const Http =
+          RegExp.$1 ? S.follow().https : S.follow().http;
 			Http.get(o, res => {
 				const Chunks = [];
 				res.on('data', c => { Chunks.push(c) });
 				res.on('end', () => {
 					const Result = T.encode(Buffer.concat(Chunks),
 						(c, h, e) => {
-							return { char:c, html:(h || ''), invalid:e };
+							return { invalid:e, html:(h || ''), char:c };
 						});
 					Result.res = res;
 					return resolve(Result);
@@ -55,24 +58,24 @@ module.exports = function (y) {
 		let result;
 		await S.getContent(o).then ( re => { result = re })
 												 .catch( re => { result = re });
-		return new _HTML_ (result);
+		return new HTML (Y, S, result, T);
 	};
 }
-function _HTML_ (RE) {
+function HTML (Y, S, RE, T) {
 	Y.tr1('CharCode', RE.char);
 	const CS = this;
 	const Length = RE.html ? RE.html.length : 0;
 	Y.tr1('Content Length', Length);
-	CS.invalid = () => { return RE.invalid };
-	CS.status = CS.res = () => { return RE.res };
-	CS.headers = () => { return RE.res.headers };
-	CS.httpVersion = () => { return RE.res.httpVersion };
-	CS.statusCode = () => { return RE.res.statusCode };
+	      CS.invalid = () => { return RE.invalid };
+CS.status = CS.res = () => { return RE.res };
+	      CS.headers = () => { return RE.res.headers };
+	  CS.httpVersion = () => { return RE.res.httpVersion };
+	   CS.statusCode = () => { return RE.res.statusCode };
 	CS.statusMessage = () => { return RE.res.statusMessage };
-	CS.responseURL =
-	CS.responseUrl = () => { return RE.res.responseUrl };
-	CS.char = () => { return RE.char };
-	CS.html = () => { return RE.html };
+	  CS.responseURL =
+	  CS.responseUrl = () => { return RE.res.responseUrl };
+	         CS.char = () => { return RE.char };
+	         CS.html = () => { return RE.html };
 	CS.contentLength = () => { return Length };
 	//
 	CS.seo    = () => { return Base().seo };

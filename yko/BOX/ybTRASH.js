@@ -1,8 +1,9 @@
+'use strict'; 
 //
-// yko/BOX.js
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
-const ver = 'yko/ybTRASH.js v190907.01';
+const my  = 'ybTRASH.js';
+const ver = `yko/BOX/${my} v191005.01`;
 //
 module.exports = function (Y, P, DB) {
   this.ver = ver;

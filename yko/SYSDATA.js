@@ -1,98 +1,91 @@
+'use strict'; 
 //
-// yko/SYSDATA.js
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'SYSDATA.js';
-const ver = `yko/${my} v191001.01`;
+const ver = `yko/${my} v191008.01`;
 //
-const BOX = require('./BOX.js');
-//
-let Y, YS, T;
-module.exports = function (y, KEYS) {
-	this.ver = ver;
-	[YS, Y, T] = [this, y, y.tool];
-	const SYSKEY = KEYS
-				|| Y.throw(ver, 'Unknown key.');
-	const TYPE = SYSKEY.type
-				|| Y.throw(ver, 'Unknown type.');
-	const LIMIT = SYSKEY.limit || SYSKEY.life || 15; // minute
-	const POOL = {};
-	YS.box = new BOX (Y);
-	YS.POOL = POOL;
-	//
-	YS.noCash = async (keys) => {
+module.exports.Unit = function (Y, R, Ref, KEYS) {
+  const S = this;
+	S.ver = ver;
+  S.root = R;
+  S.KEYS = KEYS;
+  S.conf = Y.conf.sysdata;
+  S.SYSKEY = KEYS
+			|| S.conf.keys || Y.throw(ver, 'Unknown keys.');
+  S.TYPE  = S.SYSKEY.type || Y.throw(ver, 'Unknown type.');
+  S.LIMIT = S.SYSKEY.limit
+      || S.SYSKEY.life || S.conf.limit || 15; // minute
+  const T = Y.tool;
+  S.GC = Ref.CASH || (Ref.CASH = T.c(null));
+  S.noCash = async (ks) => {
 		Y.tr1('noCash');
 		let Db;
-		await YS.box.any(TYPE, SYSKEY).then( db => {
-			Y.tr3('noCash:Y.box.any()', SYSKEY);
-			Db = db.isNew() ? {}: new noCash (db, keys);
+		await R.box.any(S.TYPE, S.SYSKEY).then( H => {
+			Y.tr3('noCash:Y.box.any()', S.SYSKEY);
+			Db = H.isNew() ? {}: new noCash (Y, S, ks, H, T);
 		});
 		return Db;
 	};
-	YS.cash = async (keys) => {
+	S.cash = async (keys) => {
 		Y.tr1('cash');
-		const KEY = keys.join('@');
-		let Db = POOL[KEY];
-		if (Db && Db.$Limit < Y.tool.time_u()) Db = false;
-		if (! Db) {
-			await YS.box.any(SYSKEY.type, SYSKEY).then( db => {
-				Y.tr3('cash:Y.box.any()', SYSKEY);
-				const Limit = Y.tool.time_u_add(LIMIT, 'm');
-				Db = POOL[KEY] = db.isNew()
-							? { $Limit: Limit }
-							: new cash (db, keys, KEY, Limit);
+		const e =
+      { keys: keys, key: ('CA:' + keys.join('@')) };
+    return S.GC[e.key] || (async () => {
+			await R.box.any(S.TYPE, S.SYSKEY).then( H => {
+				Y.tr3('cash:Y.box.any()', S.SYSKEY);
+        e.limit = T.unix_add(S.LIMIT, 'm');
+				e.Db = H.isNew() ? { $Limit: e.limit }
+						              : new cash (Y, S, e, H, T);
+        S.GC[KEY] = T.clone(e.Db);
 			});
-		}
-		return Db;
+      return S.GC[KEY];
+    })();
 	};
-	YS.cleanCash = async () => {
+	S.cleanCash = async () => {
 		Y.tr1('cleanCash');
-		const Now = Y.tool.time_u();
-		for (let [k, v] of Object.entries(POOL)) {
-			if (v.$Limit < Now) delete POOL[k];
-		}
+		const Now = T.unix();
+		for (let [k, v] of T.e(R))
+        { if (v.$Limit < Now) delete R[k] }
 		return true;
 	};
 }
-function cash (H, KEYS, KEY, LIMIT) {
-	const S = this;
-	const VALUE = T.quest(H.ref(), KEYS);
-	const CLEAR = () => {
-		if (POOL[KEY]) delete POOL[KEY];
-	};
+function cash (Y, S, e, H, T) {
+	const CA = this,
+	   VALUE = T.quest(H.ref(), KEYS),
+	   CLEAR = () => { if (S.GC[e.key]) delete S.GC[e.key] };
 	if (VALUE) {
-		S.$aleady = true;
-		S.value = VALUE;
-		S.$clear = () => { return CLEAR() };
-		S.$handler = () => { return H };
+		 CA.$aleady = true;
+		   CA.value = VALUE;
+		  CA.$clear = () => { return CLEAR() };
+		CA.$handler = () => { return H };
 	}
-	S.$Limit = LIMIT;
+	CA.$Limit = e.limit;
 }
-function noCash (H, KEYS) {
-	const S = this;
-	const VALUE = T.quest(H.ref(), KEYS);
+function noCash (Y, S, KEYS, H, T) {
+	const CA = this,
+	   VALUE = T.quest(H.ref(), KEYS);
 	if (VALUE) {
 		const UPDATE = () => {
 			H.update();
 			H.preper();
-			YS.box.commit();
 		};
 		const REMOVE = () => {
-			if (! S.$deleteOK())
+			if (! CA.$deleteOK())
 					Y.throw(ver, 'Data that cannot be deleted.');
-			let keys = T.clone(KEYS);
-			let last = keys.pop();
+			let keys  = T.clone(KEYS);
+			let last  = keys.pop();
 			let child = T.quest(H.ref(), keys);
 			if (child && last in child) {
 				delete child[last];
 				UPDATE();
 			}
 		};
-		S.$aleady = true;
-		S.value = VALUE;
-		S.$update = () => { return UPDATE() };
-		S.$delete = () => { return REMOVE() };
-		S.$handler = () => { return H };
-		S.$deleteOK = () => { return VALUE.deleteOK };
+		  CA.$aleady = true;
+		    CA.value = VALUE;
+		  CA.$update = () => { return UPDATE() };
+		  CA.$delete = () => { return REMOVE() };
+		 CA.$handler = () => { return H };
+		CA.$deleteOK = () => { return VALUE.deleteOK };
 	}
 }

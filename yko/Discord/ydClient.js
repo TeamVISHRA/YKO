@@ -1,18 +1,14 @@
 //
-// yko/Discord/ydClient.js
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
-const ver = 'yko/Discord/ydClient.js v190916.01';
+const my  = 'ydClient.js';
+const ver = `yko/Discord/${my} v191008.01`;
 //
-let S, Y, P;
-module.exports = function (y, p) {
-  this.ver = ver;
-	[S, Y, P] = [this, y, p];
-  if (Y.REQ1() == 'Discord') build_component();
-};
-//
-function build_component () {
-  Y.tr4('build_component');
+module.exports = function (Y, P) {
+  const S = this;
+    S.ver = `${ver} (${y.ver})`;
+  const R = S.root = P.root;
+    S.Ref = P.Ref;
 	const B = P.client();
 	S.get_user = (id) => {
 		if (! id) Y.throw(ver, "Unknown 'user id'");
@@ -61,7 +57,7 @@ function build_component () {
 		// --- <member>.send()
 	};
   let SEND, SYSTEMCHID;
-  if (Y.debug() && P.im.debug_level && P.im.debug_level > 1) {
+  if (Y.debug() && Y.im.debug_level && Y.im.debug_level > 1) {
     const dv = P.im.devel;
     const send = SEND;
     SEND = (ch, msg, a) => {

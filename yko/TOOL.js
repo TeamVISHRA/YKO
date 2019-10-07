@@ -1,67 +1,78 @@
+'use strict'; 
 //
-// yko/TOOL.js
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'TOOL.js';
-const ver = `yko/${my} v191001.01`;
+const ver = `yko/${my} v191004.01`;
 //
 const MOMENT = require('moment'),
-        UTIL = require('util'),
    TM_FORMAT = '/DD HH:mm:ss';
 //
 let Y;
 module.exports = function (y) {
-  this.ver = ver; Y = y;
-  const T = this;
-  //
-  T.moment   = MOMENT;
-  T.fs       = fs;
+    this.ver = ver;
+     const T = this,
+           Y = y;
+    T.moment = MOMENT;
+      T.util = util;
+        T.fs = fs;
   T.kuromoji = kuromoji;
-  T.crypto   = T.crypt = crypto;
+    T.crypto = T.crypt = crypto;
   T.encodeJP = encodeJP;
+      T.util = util;
   //
-  T.digest = digest;
-  T.encrypt = encrypt;
-  T.decrypt = decrypt;
-  T.create_ticket = create_ticket;
-  T.ini2hex = ini2hex;
-  T.time_msec = time_msec;
-  T.unix = T.time_u = unix;
-  T.unix_add = unix_add;
-  T.time_u_add = T.unix_add;
-  T.unix_form = unix_form;
+  T.c = (o) => { return Object.create(o)  };
+  T.k = (o) => { return Object.kyes(o)    };
+  T.v = (o) => { return Object.values(o)  };
+  T.e = (o) => { return Object.entries(o) };
+  //
+    T.time_msec = time_msec;
+         T.unix = T.time_u = unix;
+     T.unix_add = T.time_u_add = unix_add;
+    T.unix_form = unix_form;
   T.time_u_form = T.unix_form;
-  T.time_form = time_form;
+    T.time_form = time_form;
+  //
   T.canonical = T.canon = canonical;
-  T.p0  = p0;
-  T.z2h = z2h;
-  T.A2a = A2a;
-  T.a2A = a2A;
-  T.Zcut = Zcut;
-  T.byte2cut = T.Zcut;
-  T.countZ = T.zTwoCount = countZ;
+         T.p0 = p0;
+        T.z2h = z2h;
+        T.A2a = A2a;
+        T.a2A = a2A;
+       T.Zcut = T.byte2cut  = Zcut;
+     T.countZ = T.zTwoCount = countZ;
+     T.encode = encode;
+  //
   T.sec2form = sec2form;
   T.min2form = min2form;
+      T.tmpl = tmpl;
+  //
   T.txt2json = T.j2obj  = txt2json;
   T.json2txt = T.o2json = json2txt;
-  T.FSread  = T.fs_r = FSread;
-  T.FSwrite = T.fs_w = FSwrite;
-  T.FSappend = T.fs_a = FSappend;
-  T.FSunlink = T.fs_unlink = FSunlink;
-  T.FSreadJson = T.fs_r_json = FSreadJson;
+  //
+       T.FSread = T.fs_r = FSread;
+      T.FSwrite = T.fs_w = FSwrite;
+     T.FSappend = T.fs_a = FSappend;
+     T.FSunlink = T.fs_unlink = FSunlink;
+   T.FSreadJson = T.fs_r_json = FSreadJson;
   T.FSwriteJson = T.fs_w_json = FSwriteJson;
-  T.inspect = UTIL.inspect;
+  //
   T.is_object = is_object;
-  T.clone = clone;
-  T.reset = reset;
-  T.quest = quest;
-  T.shuffle = shuffle;
-  T.push2cut = push2cut;
+      T.clone = clone;
+      T.reset = reset;
+      T.quest = quest;
+  //
+    T.shuffle = shuffle;
+   T.push2cut = push2cut;
   T.array2cut = array2cut;
-  T.encode = encode;
-  T.tmpl = tmpl;
+    T.inspect = (a,b,c,d) => { return util().inspect(a,b,c,d) };
+  //
   T.Try = Try;
-  T.sleep = sleep;
+  //
+        T.digest  = digest;
+        T.encrypt = encrypt;
+        T.decrypt = decrypt;
+  T.create_ticket = create_ticket;
+        T.ini2hex = ini2hex;
 };
 //
 const JS = {};
@@ -73,6 +84,8 @@ function crypto ()
 { return JS.crypt || (JS.crypt = require('crypto')) }
 function encodeJP ()
 { return JS.enc || (JS.enc = require('encoding-japanese')) }
+function util ()
+{ return JS.util || (JS.util = require('util')) }
 //
 function digest (str) {
   let result;
@@ -222,10 +235,10 @@ function json2txt (json) {
 }
 function is_object (o) {
   return (o != null
-  && ! Array.isArray(o) && typeof o == 'object');
+    && ! Array.isArray(o) && typeof o == 'object');
 }
 function clone (o) {
-  return Object.create(o);
+  return Object.assign(Object.create(null), o);;
 }
 function reset (o) {
   for(var key in o){ delete o[key] }

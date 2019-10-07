@@ -1,5 +1,5 @@
 {
-  "name": "yko",
+  "name": "yko.js",
   "version": "1.0.0",
   "description": "Discord Chat BOT",
   "main": "yko/CORE.js",
@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "cheerio": "^1.0.0-rc.3",
-    "discord.js": "^11.5.1"
+    "discord.js": "^11.5.1",
     "encoding-japanese": "^1.0.30",
     "feedparser": "^2.2.9",
     "follow-redirects": "^1.9.0",
@@ -19,9 +19,10 @@
     "log4js": "^5.1.0",
     "moment": "^2.24.0",
     "mongodb": "^3.3.2",
-    "request-promise": "^4.2.4",
     "request": "^2.88.0",
+    "request-promise": "^4.2.4",
     "tmi.js": "^1.4.5",
+    "utils": "^0.3.1"
   },
   "devDependencies": {},
   "scripts": {

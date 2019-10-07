@@ -1,20 +1,20 @@
 //
-// yko/Discord/ydMessage.js
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ydMessage.js';
-const ver = `yko/Discord/${my} v190929.01`;
+const ver = `yko/Discord/${my} v191008.01`;
 //
-let S, Y, P, T;
-module.exports = function (y, p) {
-  this.ver = ver;
-	[S, Y, P, T] = [this, y, p, y.tool];
-  if (Y.REQ1() == 'Discord') build_component();
-};
-//
-function build_component () {
+module.exports = function (Y, P) {
+   const U = this;
+     U.ver = ver;
+   const R = U.root = P.root;
+  U.parent = P;
+   const T = Y.tool;
+ U.App = (name, args) => {
+		const JS = require(`./App/yda${name}.js`);
+		return new JS (Y, U, args);
+	};
 	let [TMP, H] = [{}];
-  const G = { toTwitch: {} };
   const MSG_WARP = Y.debug() ? (msg) => {
     const Stamp = '(Debug in progress)';
     if (typeof msg == 'object') {
@@ -31,88 +31,108 @@ function build_component () {
     }
   }: (msg) => { return msg };
   //
-  S.tmp = () => { return TMP };
-	S.App = (k, arg) => {
-		const JS = require(`./App/yda${k}.js`);
-		return new JS (Y, S, arg);
+  const W_CHECK = (wo, h, id) => {
+    if (U.guildOnerID() == U.userID()) return true;
+    return false;
+  };
+  const W_BOW = (wo) => { U.send('おはよう！！', 20) };
+  U.start = (handler) => {
+    [H, TMP] = [handler, {}];
+    let type;
+    if (U.type() == 'dm') {
+     U.isDM       = () => { return true };
+      TMP.guild_id = TMP.channel_id = '';
+      TMP.user_id  = H.user.id;
+     U.guildID =U.channelID = () => { return '' };
+     U.userID = () => { return TMP.user_id };
+      Y.tr3('<Meaage>.channel.type:' + (type = 'DM'));
+    } else {
+     U.isDM       = () => { return false };
+      TMP.guild_id = H.guild.id;
+      TMP.user_id  = H.author.id;
+      U.guildID    = () => { return TMP.guild_id };
+      U.channelID  = () => { return TMP.channel_id };
+      U.userID     = () => { return TMP.user_id };
+      type = TMP.channel_id = H.channel.id;
+    }
+    if (R.brain.isSleep(type, U.userID())) {
+      return R.brain.wokeup(W_CHECK, W_BOW)
+                   .Try(type, U.userID(), H.content);
+    }
+    return R.brain.isCall(H.content);
 	};
-  S.devel_guildID   = P.devel_guildID;
-  S.devel_channelID = P.devel_channelID;
-  S.devel_userID    = P.devel_userID;
-  //
-  S.isDM = () => {};
-  S.type = () => { return H.channel.type };
-  S.guildName = () => {
-    return S.isDM() ? '(N/A)': H.guild.name;
+  U.type = () => { return H.channel.type };
+  U.guildName = () => {
+    return U.isDM() ? '(N/A)': H.guild.name;
   };
-  S.guildOnerID = () => {
-    return S.isDM() ? '(N/A)': H.guild.ownerID;
+  U.guildOnerID = () => {
+    return U.isDM() ? '(N/A)': H.guild.ownerID;
   };
-  S.guildIconURL = () => {
-    return S.isDM() ? '': (H.guild.iconURL || '');
+  U.guildIconURL = () => {
+    return U.isDM() ? '': (H.guild.iconURL || '');
   };
-  S.guildMemberCount = () => {
-    return S.isDM() ? 0 : (H.guild.memberCount || 0);
+  U.guildMemberCount = () => {
+    return U.isDM() ? 0 : (H.guild.memberCount || 0);
   };
-  S.nickname = () => { return S.isDM()
-    ? S.username(): (H.member.nickname || S.username());
+  U.nickname = () => { return U.isDM()
+    ? U.username(): (H.member.nickname || U.username());
   };
-  S.channelName = () => {
-    return S.isDM() ? '(N/A)': H.channel.name;
+  U.channelName = () => {
+    return U.isDM() ? '(N/A)': H.channel.name;
   };
-  S.username = () => {
-    return S.isDM() ? H.user.username: H.author.username;
+  U.username = () => {
+    return U.isDM() ? H.user.username: H.author.username;
   };
-  S.discriminator = () => {
-    return S.isDM() ? H.user.discriminator
+  U.discriminator = () => {
+    return U.isDM() ? H.user.discriminator
                   : H.author.discriminator;
   };
-  S.avatarURL = () => {
-    return S.isDM() ? H.user.avatarURL : H.author.avatarURL;
+  U.avatarURL = () => {
+    return U.isDM() ? H.user.avatarURL : H.author.avatarURL;
   };
-  S.account = () => {
-    let name = S.username()
+  U.account = () => {
+    let name = U.username()
              || Y.throw(ver, 'Unknown username');
-    let disc = S.discriminator()
+    let disc = U.discriminator()
              || Y.throw(ver, 'Unknown discriminator');
     return `${name}#${disc}`;
   };
-  S.channelGET = (id) => {
-    Y.tr2('channelGET', id);
+  U.channelGET = (id) => {
+    Y.tr3('channelGET', id);
     return H.guild.channels.get(id);
   };
-  S.userGET = (id) => {
-    Y.tr2('userGET', id);
+  U.userGET = (id) => {
+    Y.tr3('userGET', id);
     return H.users.get(id);
   };
-  S.setDMnotice = (n) => {
-    Y.tr1('setDMnotice');
+  U.setDMnotice = (n) => {
+    Y.tr3('setDMnotice');
     if (! n && n != 0) return TMP.setDMnotice;
     TMP.setDMnotice = n == 1 ? 'ＤＭを送ったよ!!': n;
     return TMP.setDMnotice;
   };
-  S.DMsend = (msg, a) => {
-    if (! S.isDM() && S.setDMnotice()) {
-      Y.tr2('DMsend (notice):' + TMP.setDMnotice);
-      S.reply(TMP.setDMnotice, a);
+  U.DMsend = (msg, a) => {
+    if (! U.isDM() && U.setDMnotice()) {
+      Y.tr3('DMsend (notice):' + TMP.setDMnotice);
+      U.reply(TMP.setDMnotice, a);
     }
-    Y.tr2(`<Message>.author.send:`, msg);
+    Y.tr3(`<Message>.author.send:`, msg);
     return H.author.send( MSG_WARP(msg) );
   };
-  S.channelSend = (id, msg, a) => {
-    let ch = S.channelGET(id)
+  U.channelSend = (id, msg, a) => {
+    let ch = U.channelGET(id)
           || Y.throw(ver, 'Invalid channel ID');
-    Y.tr2(`<channel>.Send: [${id}]`, msg);
+    Y.tr3(`<channel>.Send: [${id}]`, msg);
     return SEND(m=> { return ch.send(m) }, msg, a);
   };
-  S.send = (msg, a) => {
-    if (S.isDM()) return S.DMsend(msg, a);
-    Y.tr2(`<Message>.channel.send:`, msg);
+  U.send = (msg, a) => {
+    if (U.isDM()) return U.DMsend(msg, a);
+    Y.tr3(`<Message>.channel.send:`, msg);
     return SEND(m=> { return H.channel.send(m) }, msg, a);
   };
-  S.reply = (msg, a) => {
-    if (S.isDM()) return S.DMsend(msg, a);
-    Y.tr2(`<Message>.reply: ${msg}`);
+  U.reply = (msg, a) => {
+    if (U.isDM()) return U.DMsend(msg, a);
+    Y.tr3(`<Message>.reply: ${msg}`);
     return SEND(m=> { return H.reply(m) }, msg, a);
   };
   let SEND = (func, msg, a) => {
@@ -121,87 +141,61 @@ function build_component () {
   if (Y.debug()
       && P.im.debug_level && P.im.debug_level > 1) {
     const DBGsend = SEND;
-    const id = S.devel_channelID();
+    const id = U.devel_channelID();
     SEND = (func, msg, a) => {
-      ch = S.channelGET(id);
-      Y.tr2('Debug Channel: ' + id);
+      ch = U.channelGET(id);
+      Y.tr3('Debug Channel: ' + id);
       return DBGsend(m=> { return ch.send(m) }, msg, a);
     };
   }
-  S.content = () => { return H.content || '' };
-  S.handler = () => { return H };
-  S.delete  = () => { H.delete() };
+  U.content = () => { return H.content || '' };
+  U.handler = () => { return H };
+  U.delete  = () => { H.delete() };
   // === test ==========================================
-  S.reAction = (react) => {
+  U.reAction = (react) => {
     Y.tr1('reAction');
     return H.react(react);
   };
-  S.findGuildMember = (id) => {
-    if (S.isDM()) return false;
+  U.findGuildMember = (id) => {
+    if (U.isDM()) return false;
     Y.tr2('<Message>.guild.members.find', id);
     return (H.guild.members.find('name', id) || false);
   };
-  S.findGuildRole = (name) => {
-    if (S.isDM()) return false;
+  U.findGuildRole = (name) => {
+    if (U.isDM()) return false;
     Y.tr2('<Message>.guild.roles.find', name);
     return (H.guild.roles.find('name', name) || false);
   };
   // === test ==========================================
-  S.guildID   = () => {
+  U.guildID   = () => {
     return (TMP.guild_id || H.guild.id || '');
   };
-  S.channelID = () => {
+  U.channelID = () => {
     return (TMP.channelId || H.channel.id || '');
   };
-  const W_CHECK = (wo, h, id) => {
-    if (S.guildOnerID() == S.userID()) return true;
-    return false;
-  };
-  const W_BOW = (wo) => {
-    S.send(wo.greeting(), 20);
-  };
-	S.start = (handler) => {
-    [H, TMP] = [handler, {}];
-    let type;
-    if (S.type() == 'dm') {
-      S.isDM = () => { return true };
-      TMP.guild_id = TMP.channel_id = '';
-      TMP.user_id  = H.user.id;
-      S.guildID = S.channelID = () => { return '' };
-      S.userID = () => { return TMP.user_id };
-      Y.tr2('<Meaage>.channel.type:' + (type = 'DM'));
-    } else {
-      S.isDM = () => { return false };
-      TMP.guild_id = H.guild.id;
-      TMP.user_id = H.author.id;
-      S.guildID  = () => { return TMP.guild_id };
-      S.channelID = () => { return TMP.channel_id };
-      S.userID = () => { return TMP.user_id };
-      type = TMP.channel_id = H.channel.id;
-    }
-    if (Y.brain.isSleep(type, S.userID())) {
-      return Y.brain.wokeup(W_CHECK, W_BOW)
-                   .Try(type, S.userID(), H.content);
-    }
-    return Y.brain.isCall(H.content);
-	};
-  S.every = () => {
-    S.toTwitch();
-  };
-  S.toTwitch = async (Xm, uname, msg, nocheck) => {
-    if (Xm.isDM()) return false;
-    Y.tr1('toTwitch');
-    let c;
-    await Y.sysDATA
-        .cash(['discord', 'guilds', Xm.guildID(), 'toTwitch'])
+  if (Y.rack.has('Twitch')) {
+    U.toTwitch = async (uname, msg, nocheck) => {
+      if (U.isDM()) return false;
+      Y.tr3('toTwitch');
+      let c;
+      await R.sysDB()
+        .cash(['discord', 'guilds', U.guildID(), 'toTwitch'])
         .then( db => { c = db.value });
-    Y.tr4('sysCash: ', c);
-    if (! c) return false;
-    Y.tr2('toTwitch', 'check');
-    if (! nocheck && Xm.channelID() != c.fromCH) return;
-    msg = T.byte2cut((msg || Xm.content()), 400, '...');
-    return Y.Twitch.Chat().say(c.toCH, T.tmpl(c.message,
-        { name: (uname || Xm.nickname()), message: msg }) )
+      Y.tr5('sysCash: ', c);
+      if (! c) return false;
+      Y.tr3('toTwitch', 'check');
+      if (! nocheck && U.channelID() != c.fromCH) return;
+      msg = T.byte2cut((msg || U.content()), 400, '...');
+      return R.Twitch.Chat().say(c.toCH, T.tmpl(c.message,
+        { name: (uname || U.nickname()), message: msg }) )
         .then(o => { return [c.fromCH, c.toCH, msg] });
+    };
+  } else {
+    U.toTwitch = () => {};
+  }
+  U.every = () => {
+    Y.tr3('every');
+    U.toTwitch(U.nickname(), U.content());
+    R.finish();
   };
 }

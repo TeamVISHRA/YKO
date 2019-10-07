@@ -1,13 +1,17 @@
+'use strict'; 
 //
-// yko/ybCONTAINER.js
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
-const ver = 'yko/ybCONTAINER.js v190919.01';
+const my  = 'ybCONTAINER.js';
+const ver = `yko/BOX/${my} v191008.01`;
 //
 module.exports = function (Y, P, DB) {
-  this.ver = ver;
-	const S = this;
-  S.conf = P.conf.container;
+   const S = this;
+     S.ver = ver;
+    S.conf = P.conf.container;
+  S.parent = P;
+      S.DB = DB;
+	 const T = Y.tool;
 	S.view = (a) => {
     Y.tr4('view');
     if (! a.type) Y.throw('type unknown.');
@@ -18,16 +22,16 @@ module.exports = function (Y, P, DB) {
   	return new Promise ( rsv => {
     	return DB.findOne
       	({ type: a.type, id: a.id, name: a.name })
-      	.then( r => { rsv( new _BOX_ (Y, P, S, DB, a, r)) });
+      	.then( r => { rsv( new BOX(Y, S, a, r, T)) });
     });
 	};
-  S.list = (a) => {
+  S.list = (args) => {
     Y.tr4('list');
-    if (! a.type) Y.throw('type unknown.');
-    if (! a.id)   Y.throw('id unknown.');
+    if (! args.type) Y.throw('type unknown.');
+    if (! args.id)   Y.throw('id unknown.');
   	return new Promise ( rsv => {
-    	return DB.findMeny({ type: a.type, id: a.id })
-        .then( r => { rsv( new _LIST_ (Y, P, S, DB, a, r)) });
+    	return DB.findMeny({ type: args.type, id: args.id })
+      .then( list => { rsv( new LIST(Y, S, args, list, T)) });
     });
   };
   S.cleanCash = async () => {
@@ -40,19 +44,19 @@ module.exports = function (Y, P, DB) {
     return result;
   };
 };
-function _LIST_ (Y, P, S, DB, a, r) {
+function LIST (Y, S, Args, list, T) {
   let LIST = this;
-  const TYPE = a.type;
-  const ID   = a.id;
+  const TYPE = Args.type;
+  const ID   = Args.id;
   let VALUE;
-  if (r && r.length > 0) {
-    VALUE = r;
+  if (list && list.length > 0) {
+    VALUE = list;
     LIST.hit = () => { return true };
     LIST.ref = () => { return VALUE };
-    LIST.export = () => { return Object.create(VALUE) };
+    LIST.export = () => { return T.clone(VALUE) };
     LIST.get = (name) => {
-      const box = VALUE.find(o=> o.name == name);
-      return box ? new _BOX_ (Y, P, S, DB, a, box) : false;
+      const db = VALUE.find(o=> o.name == name);
+      return db ? new BOX (args, db) : false;
     };
     LIST.list = (col) => {
       const result = [];
@@ -82,32 +86,32 @@ function _LIST_ (Y, P, S, DB, a, r) {
       return count;
     };
     LIST.pop = () => {
-      const box = VALUE.pop();
-      if (! box) return false;
-      return new _BOX_ (Y, P, S, DB, a, box);
+      const db = VALUE.pop();
+      if (! db) return false;
+      return new BOX (Args, db);
     };
     LIST.unshift = () => {
-      const box = VALUE.unshift();
-      if (! box) return false;
-      return new _BOX_ (Y, P, S, DB, a, box);
+      const db = VALUE.unshift();
+      if (! db) return false;
+      return new BOX (Args, db);
     };
   } else {
     LIST.hit = () => { return false };
     VALUE = [];
   }
 }
-function _BOX_ (Y, P, S, DB, a, r) {
-  let BOX = this;
-  const T = Y.tool;
-  const TYPE = a.type;
-  const ID   = a.id;
-  const NAME = a.name;
-  let [TMP, _ID, VALUE, UNIQUE] = [{}, ''];
-  if (r) {
-    _ID = r._id;
-    VALUE = r.value;
-    BOX.timeModify = () => { return r.timeModify };
-    BOX.timeChange = () => { return r.timeChange };
+function BOX (Y, S, Args, Db, T) {
+  const BOX = this,
+       TYPE = Args.type,
+         ID = Args.id,
+       NAME = Args.name;
+  let TMP = {}, _ID = '';
+  let VALUE, UNIQUE;
+  if (Db) {
+    _ID = Db._id;
+    VALUE = Db.value;
+    BOX.timeModify = () => { return Db.timeModify };
+    BOX.timeChange = () => { return Db.timeChange };
     BOX.aleady = () => { return true  };
     BOX.isNew  = () => { return false };
     UNIQUE = { _id: _ID };
@@ -129,27 +133,27 @@ function _BOX_ (Y, P, S, DB, a, r) {
   BOX.update = (n) => { return (UPDATE = true) };
   BOX.isUpdate = () => { return UPDATE ? true : false };
 	//
-  BOX.has = (k) => {
-    return (k in VALUE);
+  BOX.has = (key) => {
+    return (key in VALUE);
   };
   BOX.exist = BOX.has;
-  BOX.get = (k) => {
-    return VALUE[k];
+  BOX.get = (key) => {
+    return VALUE[key];
   };
-  BOX.set = (k, v) => {
+  BOX.set = (key, value) => {
     BOX.update();
-    return VALUE[k] = v;
+    return VALUE[key] = value;
   };
   BOX.keys = () => {
-    return Object.keys(VALUE);
+    return T.k(VALUE);
   };
   BOX.json = () => { return T.o2json(VALUE) };
-  BOX.inport = (o) => {
-    o.__inport__ = true; delete o.__inport__;
+  BOX.inport = (obj) => {
+    obj.__inport__ = true; delete obj.__inport__;
     BOX.update();
-    return (VALUE = o);
+    return (VALUE = obj);
   };
-  BOX.export = () => { return Object.create(VALUE) };
+  BOX.export = () => { return T.clone(VALUE) };
   BOX.clone  = BOX.export;
   BOX.ref = () => { return VALUE };
   //
@@ -175,7 +179,7 @@ function _BOX_ (Y, P, S, DB, a, r) {
         db.timeLimit = false;
       }
       Y.tr5('preper', db);
-      P.regist(o => { return DB.updateOne(UNIQUE, db) });
+      S.parent.regist(o => { return S.DB.updateOne(UNIQUE, db) });
     } else {
       if (! BOX.type
          || BOX.type == 'trash') Y.throw(ver, 'Illegal processing');
@@ -187,67 +191,68 @@ function _BOX_ (Y, P, S, DB, a, r) {
         db.timeLimit = false;
       }
       Y.tr3('preper:insert');
-      Y.tr5('preper', db);
-      P.regist(o => { return DB.insertOne(db) });
+      Y.tr7('preper', db);
+      S.parent.regist(o => { return S.DB.insertOne(db) });
     }
     UPDATE = false;
     return BOX;
   };
   BOX.commit = async () => {
 //    BOX.preper();
-    await P.commit().then(o=> { BOX.close() });
+    await S.parent.commit().then(o=> { BOX.close() });
     return true;
   };
   BOX.close = () => { BOX = false };
   //
-  if (TYPE != 'system')
-  _NEXT_COMPONENT_(Y, P, S, DB, BOX, T, TYPE, ID, NAME);
-}
-function _NEXT_COMPONENT_ (Y, P, S, DB, BOX, T, TYPE, ID, NAME) {
-  BOX.inc = (k, n) => {
-    BOX.update();
-    if (VALUE[k] == undefined) VALUE[k] = 0;
-    return (VALUE[k] += Number(n || 1));
-  };
-  BOX.dec = (k, n) => {
-    BOX.update();
-    if (VALUE[k] == undefined) VALUE[k] = 0;
-    return (VALUE[k] -= Number(n || 1));
-  };
-  BOX.push = (k, v) => {
-    BOX.update();
-    if (! VALUE[k]) VALUE[k] = [];
-    return VALUE[k].push(v);
-  };
-  BOX.shift = (k, v) => {
-    BOX.update();
-    if (! VALUE[k]) VALUE[k] = [];
-    return VALUE[k].shift(v);
-  };
-  BOX.pop = (k) => {
-    BOX.update();
-    return VALUE[k].pop();
-  };
-  BOX.unshift = (k) => {
-    BOX.update();
-    return VALUE[k].unshift();
-  };
-  BOX.func = (k, f) => {
-    return f(VALUE[k]);
-  };
-  BOX.del = (k) => {
-    BOX.update();
-    return delete VALUE[k];
-  };
-  BOX.remove = async () => {
-    Y.tr3('remove');
-    if (! UNIQUE)
-        Y.throw(ver, 'Target data h does not exist.');
-    let db = { type: 'trash',
-        ago: TYPE, value: VALUE, timeChange: T.time_u() };
-    // Equivalent to preper
-    P.regist(o => { return DB.updateOne(UNIQUE, db) });
-    return BOX;
-//    return await P.commit();
-  };
+  if (TYPE != 'system') {
+    BOX.inc = (key, n) => {
+      BOX.update();
+      if (VALUE[key] == undefined) VALUE[key] = 0;
+      return (VALUE[key] += Number(n || 1));
+    };
+    BOX.dec = (key, n) => {
+      BOX.update();
+      if (VALUE[key] == undefined) VALUE[key] = 0;
+      return (VALUE[key] -= Number(n || 1));
+    };
+    BOX.push = (key, v) => {
+      BOX.update();
+      if (! VALUE[key]) VALUE[key] = [];
+      return VALUE[key].push(v);
+    };
+    BOX.shift = (key, v) => {
+      BOX.update();
+      if (! VALUE[key]) VALUE[key] = [];
+      return VALUE[key].shift(v);
+    };
+    BOX.pop = (key) => {
+      BOX.update();
+      return VALUE[key].pop();
+    };
+    BOX.unshift = (key) => {
+      BOX.update();
+      return VALUE[key].unshift();
+    };
+    BOX.func = (key, f) => {
+      return f(VALUE[key]);
+    };
+    BOX.del = (key) => {
+      return
+      (! VALUE[key] && VALUE[key] != 0) ? false : (() => {
+        BOX.update();
+        return delete VALUE[key];
+      }) ();
+    };
+    BOX.remove = async () => {
+      Y.tr3('remove');
+      if (! UNIQUE)
+          Y.throw(ver, 'Target data h does not exist.');
+      let db = { type: 'trash',
+          ago: TYPE, value: VALUE, timeChange: T.time_u() };
+      // Equivalent to preper
+      S.parent.regist(o => { return DB.updateOne(UNIQUE, db) });
+      return BOX;
+//      return await P.commit();
+    };
+  }
 }

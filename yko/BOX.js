@@ -1,25 +1,25 @@
+'use strict'; 
 //
-// yko/BOX.js
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'BOX.js';
-const ver = `yko/${my} v191001.01`;
+const ver = `yko/${my} v191008.01`;
 //
-let S, Y;
-module.exports = function (y) {
-  this.ver = ver;
-	[S, Y] = [this, y];
-  S.conf = Y.conf.box;
+module.exports.Unit = function (Y, R, Ref) {
+	const S = this;
+    S.ver = ver;
+   S.root = R;
+   S.conf = Y.conf.box;
   if (! S.conf.db) Y.throw("'Y.conf.box.db' is undefined");
   const J = require('./BOX/yb' + S.conf.db + '.js');
   const DB = new J (Y, S);
   const POOL = {};
   for (let k of ['CONTAINER', 'LIST', 'TRASH']) {
     S[k] = () => {
-      if (POOL[k]) return POOL[k];
-      let lib = require(`./BOX/yb${k}.js`);
-      POOL[k] = new lib (Y, S, DB);
-      return POOL[k];
+      return POOL[k] || (() => {
+        let lib = require(`./BOX/yb${k}.js`);
+        return (POOL[k] = new lib (Y, S, DB));
+      })();
     };
   }
 //  S.list = (a) => {
@@ -81,7 +81,7 @@ module.exports = function (y) {
           if (++count >= PREPERS.length) return true;
         });
       }
-      return S.begin();
+      return (PREPERS = []);
     }
   };
   S.close = () => {

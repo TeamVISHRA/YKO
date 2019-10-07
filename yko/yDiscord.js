@@ -1,182 +1,200 @@
+'use strict'; 
 //
-// yko/yDiscord.js
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'yDiscord.js';
-const ver = `yko/${my} v190930.01`;
+const ver = `yko/${my} v191008.01`;
 //
 const Discord = require('discord.js');
+const AdminRoleLevel = 1920000000;
 //
-let S, Y, T;
-module.exports = function (y) {
-  this.ver = ver;
-	[S, Y, T] = [this, y, y.tool];
-	S.conf = Y.conf.discord;
-  S.im   = Y.im.discord;
-	S.init = () => {
-    Y.tr4('init');
-    build_component([
-      'ydClient',
-      'ydMessage',
-      'ydGuild',
-      'ydMemberDB',
-      'ydTester'
-    ]);
-  };
-  S.devel_guildID = () => {
-    Y.tr2('devel_guildID : '   + S.im.devel.guild );
-    return S.im.devel.guild;
-  };
-  S.devel_channelID = () => {
-    Y.tr2('devel_channelID : ' + S.im.devel.channel );
-    return S.im.devel.channel;
-  };
-  S.devel_userID = () => {
-    Y.tr2('devel_userID : '    + S.im.devel.userID );
-    return S.im.devel.userID;
-  };
-  let CLIENT;
-  S.client = () => {
-    return CLIENT || (CLIENT = new Discord.Client());
-  };
-  S.webhook = ([id, token], str) => {
-    const wh = new Discord.WebhookClient(id, token);
-    return wh.send(str);
-  };
-  S.preparFake = () => {
-    Y.tr3('preparFake');
-    const Fake= require('./Discord/ydFAKE.js');
-    S.webhook = (token, str) => { Y.tr('webhook', token, str) };
-    S.client = () => {
-      return CLIENT || (CLIENT = new Fake (Y, S));
-    };
-  };
-};
-function build_component (comps) {
-  Y.tr4('build_component');
-  const COMPS = {};
-  for (let k of comps) {
-    const key = (k.match(/^yd(.+)/))[1];
-	  S[key] = () => {
-      return COMPS[key] || (() => {
-		    const js = require('./Discord/' + k +'.js');
-        return (COMPS[key] = new js (Y, S));
-      })();
-	  };
-  }
-  if (Y.REQ1() == 'Discord') {
-    build_engine();
-  } else {
-  }
+let STATE = 'Normal';
+//
+module.exports.Super = function (Y, Ref) {
+  const S = this;
+    S.ver = `${ver} :S`;
+	 S.conf = Y.conf.discord;
+     S.im = Y.im.discord;
+    S.Ref = Ref;
+  build_super_comp(Y, S, Y.tool);
 }
-function build_engine () {
-  Y.tr4('build_engine');
-  S.buildDataID = (guild) => { return `_YKO_DISCORD_${guild}_` };
-  S._export_build_engine_ = () => { return build_engine };
-  S.dbGuild = new dbGuild();
-  S.send2callback = send2callback;
-  Y.runners(() => { S.dbGuild.refresh() });
-  //
-  const ON = Y.ON();
+module.exports.Unit = function (Y, R, Ref) {
+  const U = this;
+    U.ver = `${ver} :U`;
+   U.root = R;
+	 U.conf = Y.conf.discord;
+     U.im = Y.im.discord;
+    U.Ref = Ref;
+  Ref.$unit   (U);
+  Ref.$onFake (U);
+}
+module.exports.init = function (y, rd) {
+  rd.$unit = isSleep(y)
+      ? (u) => { u.webhook = onWebhookFake(y) }
+      : (u) => { u.webhook = onWebhook(y) };
+}
+module.exports.onFake = function (y, rd) {
+  rd.$onFake =
+        (u) => { u.webhook = onWebhookFake(y) };
+}
+function build_super_comp (Y, S, T) {
+  let CLIENT;
+  S.client = () =>
+    { return CLIENT || (CLIENT = new Discord.Client()) };
+  S.askGuild = new askGuild(Y, S, T);
+  S.onFake = () => {
+    Y.tr3('onFake');
+    const Fake = require('./Discord/ydFAKE.js');
+    S.client = () =>
+      { return CLIENT || (CLIENT = new Fake (Y, S)) };
+    S.Ref.$onFake = (u) => { u.webhook = onWebhookFake(Y) };
+    STATE = 'Fake';
+  };
+  S.init = () => { init_super(Y, S, T) };
+}
+function init_super (Y, S, T) {
+  const ON = Y.rack.get('ON'),
+   RUNNERS = Y.rack.get('RUNNERS');
   const ENGINE = () => {
 		try {
       const BOT = S.client();
     	BOT.on('ready', x => {
-        for (let f of Y.RUNNERS()) { Y.tr5(f); f() }
-        Y.tr('[[[ Connect ... Discord Client ]]]',
-             '<<' + (Y.im.location || 'remote') + '>>');
-        Y.tr7('Token', S.im.token);
+        S.askGuild.refresh();
+        for (let [key, func] of T.e(RUNNERS)) {
+          Y.tr3(`'${key}' started running.`);
+          func();
+        }
+        connectMessage(Y, S);
     	});
+      let func;
 			if (ON.discord_message)
-          BOT.on('message', baseDispatch(ON.discord_message));
-      if (ON.discord_join_guild)
-					BOT.on('guildMemberAdd', ON.discord_join_guild);
-			if (ON.discord_exit_guild)
-					BOT.on('guildMemberRemove', ON.discord_exit_guild);
-			if (ON.discord_warn)
-					BOT.on('warn', ON.discord_warn);
-			if (ON.discord_debug)
-					BOT.on('debug', ON.discord_debug);
-			if (ON.discord_error)
-					BOT.on('error', ON.discord_error);
+        BOT.on('message', baseMessage(Y, S, T, ON));
+      if (func = ON.discord_join_guild)
+        BOT.on('guildMemberAdd', baseGuild(Y, S, T, func));
+			if (func = ON.discord_exit_guild)
+        BOT.on('guildMemberRemove', baseGuild(Y, S, T, func));
+			if (ON.discord_warn)  BOT.on('warn',  ON.discord_warn);
+			if (ON.discord_debug)	BOT.on('debug', ON.discord_debug);
+			if (ON.discord_error)	BOT.on('error', ON.discord_error);
 			BOT.login(S.im.token);
 		} catch (err) {
-			Y.rollback();
 			Y.tr('---< Warning >------------------------------');
-			Y.tr(err);
+			Y.tr(S.ver, err);
     	setTimeout(ENGINE, 10000);
 		}
   };
 	Y.engine(ENGINE);
-  S.run = Y.run;
+  S.run = () => {
+    return Y.run(()=> { return S.client() });
+  };
+  S.Ref.$unit = prepare_unit_comp(Y);
+  if (isSleep(Y)) {
+    S.Ref.$onFake = (u) => { u.webhook = onWebhookFake(Y) };
+  }
+  S.init = false;
 }
-function baseDispatch (func) {
-  const botAction = Y.ON.discord_bot_action || (() => {});
+function prepare_unit_comp (Y) {
+  return (U) => {
+    Y.tr3('build_unit_comp');
+    let COMPS = Y.tool.c(null);
+    for (let k of
+    ['ydClient','ydMessage','ydGuild','ydMemberDB']) {
+      const key = (k.match(/^yd(.+)/))[1];
+      U[key] = () => {
+        return COMPS[key] || (() => {
+  	      const js = require(`./Discord/${k}.js`);
+          return (COMPS[key] = new js (Y, U));
+        })();
+      };
+    }
+             U.client = () => { return Y.Discord.client() };
+        U.buildDataID = (Gid) => { return `DISCORD_${Gid}` };
+      U.devel_guildID = () => { return U.im.devel.guild };
+    U.devel_channelID = () => { return U.im.devel.channel };
+       U.devel_userID = () => { return U.im.devel.userID };
+           U.askGuild = Y.Discord.askGuild;
+            U.webhook = onWebhook(Y);
+      U.send2callback = send2callback;
+  };
+}
+function baseMessage (Y, S, T, ON) {
+  const botAction = ON.discord_bot_action || (() => {});
 	return H => {
     Y.tr7('Message handler:');
     Y.tr7(H);
 		if (H.author.bot) return botAction(S, H);
-    let Xm;
-    Y.start().then( X => {
-      Xm = X.Discord.Message();
-      const is = Xm.start(H);
+    let R;
+    Y.start(my).then( unitRoot => {
+      R = unitRoot;
+      const ydM = R.Discord.Message();
+      const is = ydM.start(H);
       if (! is || is.sleep) return;
 	    if (is.answer) {
-        Xm.send(is.answer);
-        S.Message().toTwitch(Xm, Xm.nickname(), H.content)
-        return resolve();
-      } else {
-        return resolve( func(Xm, is) );
+        ydM.send(is.answer);
+        return ydM.toTwitch('me', is.answer);
       }
+      return ON.discord_message(ydM, is);
     }).catch (err => {
-      if (Xm) Xm.rollback();
-      Y.throw(ver, err);
+      let v;
+      if (R) { R.rollback(); v = R.ver }
+      Y.throw((v || S.ver), err);
     });
 	};
+}
+function baseGuild (Y, S, T, func) {
+  return H => {
+    Y.tr7('Guild handler:');
+    Y.tr7(H);
+    let R;
+    Y.start(my).then( unitRoot => {
+      R = unitRoot;
+      const ydG = R.Discord.Guild();
+      ydG.start(H);
+      return func(ydG);
+    }).catch (err => {
+      let v;
+      if (R) { R.rollback(); v = R.ver }
+      Y.throw((v || S.ver), err);
+    });
+  };
 }
 function send2callback (a) {
   if (! a) return () => { return true };
   if (typeof a == 'function') return a;
-  return (h) => {
+  return H => {
     let remove = () => {
       Y.tr3('callback (send)');
-      h.delete();
+      H.delete();
     };
     setTimeout(remove, (Number(a) * 1000));
   };
 }
-function dbGuild () {
+function askGuild (Y, S, T) {
   const DB = this;
-  const AdminRoleLevel = 1920000000;
-  let GUILDS = {};
+  let GUILDS;
   DB.get = async (buildID) => {
-    Y.tr1('dbGuild:get');
+    Y.tr1('askGuild:get');
     let GD;
     await DB.cash().then( g => { GD = g[buildID] });
     return GD
   };
   DB.list = async () => {
-    Y.tr1('dbGuild:list');
+    Y.tr1('askGuild:list');
     let GD;
     await DB.cash().then( g => { GD = g });
-    return Object.keys(GD);
+    return T.k(GD);
   };
-  let refreshInterval = T.unix_add(10, 'm');
   DB.cash = async () => {
-    Y.tr1('dbGuild:cash');
-    if (GUILDS && refreshInterval < T.unix()) return GUILDS;
-    await DB.refresh()
-      .then(x=> { refreshInterval = T.unix_add(10, 'm') });
     return GUILDS;
   };
   DB.refresh = async () => {
-    Y.tr1('dbGuild:refresh');
+    Y.tr1('askGuild:refresh');
     let Devel = S.im.devel.guild || '';
-    Y.tr2('dbGuild:refresh - devel ch', Devel);
+    Y.tr2('askGuild:refresh - devel ch', Devel);
     let Guilds = {};
     await S.client().guilds.forEach( async g => {
       let GD = Guilds[g.id] = {};
-      Y.tr3('dbGuild:refresh - guid id', g.id);
+      Y.tr3('askGuild:refresh - guid id', g.id);
       Y.tr5(GD);
       for (let k of ['id', 'name', 'iconURL', 'ownerID',
     		'memberCount', 'systemChannelID', 'joinedTimestamp']) {
@@ -187,13 +205,13 @@ function dbGuild () {
       GD.GAMES   = {};
       await g.roles.forEach(ro => {
 			  if (ro.permissions > AdminRoleLevel) {
-          Y.tr4('dbGuild:refresh - role', ro.name);
+          Y.tr4('askGuild:refresh - role', ro.name);
 				  GD.EXPERTS[ro.id] = { id: ro.id, name: ro.name,
     			  permissions: ro.permissions, color: ro.color };
         }
-  	    if (ro.name.match(/^([\!-\~]+)\@player$/i)) {
-  		    let alias = Y.tool.a2A(RegExp.$1);
-          Y.tr4('dbGuild:refresh - game', alias);
+  	    if (ro.name.match(/^([\!-\~]+)\@play(?:er)?$/i)) {
+  		    let alias = T.a2A(RegExp.$1);
+          Y.tr4('askGuild:refresh - game', alias);
   		    GD.GAMES[ro.id] =
             { id: ro.id, name: ro.name, alias: alias };
   	    }
@@ -202,4 +220,26 @@ function dbGuild () {
     });
   };
   DB.inport = (obj) => { GUILDS = obj };
+}
+function isSleep (y) {
+  if (y.debug()) {
+    STATE = 'Debug';
+    if (y.im.discord.sleep) return true;
+  }
+  return false;
+}
+function onWebhook (y) {
+  return async ([id, token], str) => {
+    const wh = new Discord.WebhookClient(id, token);
+    return wh.send(str);
+  };
+}
+function onWebhookFake (y) {
+  return async (token, str) => {
+    return y.tr('webhook', token, str);
+  };
+}
+function connectMessage (Y, S) {
+  Y.tr(`[[[ Connect ... Discord Client (${STATE}) ]]]`);
+  Y.tr7('Token', S.im.token);
 }

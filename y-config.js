@@ -1,6 +1,4 @@
 //
-const MSG = messgae();
-//
 exports.log4js = {
   appenders: { debug: {
     type: 'file',
@@ -13,47 +11,17 @@ exports.log4js = {
   } }
 }
 exports.discord = {
-  log: {
-    '384997595149500416': { // サタデーナイト
-      join: {
-        color: 0x0cb6e3,
-        ch: '610174166712451092', // 参加者
-        welcome: {
-          type1: MSG.discord.join1,
-          type2: MSG.discord.join2
-        }
-      },
-      exit: {
-        color: 0x411b70,
-        ch: '610174357502951425' // 退出者
-      }
-    }
-  },
-  toTwitch: {
-    '384997595149500416': { // サタデーナイト
-      tageteCH: '525924113420648458',	// twitch-live
-      toCH: 'milkyvishra'
-    }
-  }
 };
 exports.twitch = {
+  color: 7506394,
   url: { base: 'https://www.twitch.tv/' },
   api: {
     users: 'https://api.twitch.tv/helix/users',
   },
-  color: 7506394,
-  chat: {
-    toDiscord: {
-      'milkyvishra': {
-        webhook: {
-          id: '609208039182041098',
-          token: 'gt03QUm0D-2TnpQbLMpX_3vfGABKB_pvl0XmMv_27TeMdOIBxDTLQLEm929FbtrnuxHZ'
-        }
-      }
-    }
-  }
+  chat: {}
 };
-exports.sysDATA = {
+exports.sysdata = {
+  limit: 15, // minute
   keys: {
     type: 'system',
     id:   '__YKO_SYSTEM__',
@@ -111,23 +79,3 @@ exports.cron = {
     history: { size: 5000 }
   }
 };
-//
-function messgae () {
-  const here = require('here').here;
-  let msg = {
-    discord: {
-      join2: 'まず「#🔰はじめに読んでね」に目を通して下さい。'
-    }
-  };
-  msg.discord.join1 = here(/*
-    <name> へようこそ!!
-    
-    わたしは、👆でお仕事をしてるボットです。
-    
-    「#🔰はじめに読んでね」に目を通しててから、
-    「#🔰welcom」に自己紹介を投稿して下さい。
-    
-    それでは、今後とも宜しくお願い致します。
-    */).unindent();
-    return msg;
-  };
