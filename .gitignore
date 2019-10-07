@@ -3,6 +3,7 @@ node_modules/
 build/
 yko-old/
 now.js
+index.js
 package-lock.json
 
 # Logs

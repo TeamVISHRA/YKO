@@ -1,127 +1,235 @@
+'use strict'; 
 //
-// yko/Twitch/ytChat.js
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ytChat.js';
-const ver = `yko/Twitch/${my} v191001.01`;
+const ver = `yko/Twitch/${my} v191007.01`;
 //
-let Y, P, S, T;
-module.exports = function (y, p) {
-  this.ver = ver;
-  [S, Y, P, T] = [this, y, p, y.tool];
-  S.conf = P.conf.chat;
-  S.im = P.im.chat;
-  build_component();
-  //
+module.exports.Super = function (Y, Sp, Cd) {
+  const S = this;
+  S.ver  = `${ver} :S`;
+  S.conf = Sp.conf.chat;
+  S.im   = Sp.im.chat;
+  S.parent = S.boss = Sp;
+  build_super_component(Y, S, Cd);
+  S.say = Cd.comps.say;
+}
+module.exports.Unit = function (Y, Up, Cd) {
+  const U = this;
+  U.ver  = `${ver} :U`;
+  U.conf = Up.conf.chat;
+  U.im   = Up.im.chat;
+  U.unit = Up.unit;
+  U.parent = U.boss = Up;
+  Cd.$unit(Y, U, Cd);
+  Cd.$onFake(Y, U, Cd);
+  U.toDiscord = Cd.comps.toDiscord(U.unit);
+}
+module.exports.init = function (Y, Sp, Cd) {
+  this.im = Sp.im.chat;
+  build_base_comp(Y, this, Cd);
+  create_unit_func(Y, Cd);
+}
+module.exports.onFake = function (Y, Sp, Cd) {
+}
+function build_super_component (Y, S, Cd) {
   S.init = () => {
-    if (Y.REQ1() == 'Discord') {
-      Y.runners(S.connect);
-    } else {
-      build_engine();
-    }
+    const comps = build_base_comp(Y, S, Cd);
+    build_super_comp_next(Y, S, comps, Cd);
+    create_unit_func(Y, Cd);
+    Y.on('Rollback', comps.disconnect);
+    S.init = false;
   }
-  S.preparFake = () => {
-    Y.tr3('preparFake');
-    const FAKE = require('./yChatFAKE.js');
-    S.tmi = () => { return new FAKE (Y, S) };
+}
+function build_base_comp (Y, xx, Cd) {
+  const comps = Cd.comps = Y.tool.c(null);
+  comps.tmi = () => {
+    const TMI = require('tmi.js');
+    return new TMI.client({
+      identity: {
+        username: im.loginID,
+        password: im.oauthToken
+      },
+      channels: im.tagetChannels
+    };
   };
-  if (Y.debug() && S.im.debug_sleep) S.preparFake();
-};
-let MSG_WRAP;
-function build_component () {
-  Y.tr3('build_component');
-  const APP = {};
-  S.App = (k, arg) => {
-    if (APP[k]) return APP[k];
-    const LIB = require(`./App/yta${k}.js`);
-    APP[k] = new LIB (Y, S, arg);
-    return APP[k];
-  };
-  MSG_WRAP = Y.debug() ? (msg) => {
-    return `${msg} (Debug)`;
-  }: (msg) => { return msg };
-  S.say = (ch, msg) => {
-    S.connect().then( async o => {
+  comps.say = (ch, msg) => {
+    comps.connect().then( async o => {
       o.say(ch, msg);
       return o;
     });
-  };
-  const ON = Y.ON();
+  });
+  const ON = Y.rack.get('ON');
   for (let k of ['connected', 'ignoreAction']) {
     if (! ON[`twitch_chat_${k}`])
     ON[`twitch_chat_${k}`] = () => {};
   }
+  const CM = ON.twitch_chat_message;
+  if (! CM) Cd.imGuest = true;
   let CLIENT;
-  S.client = S.bot = () => { return CLIENT };
-  S.tmi = () => {
-    const TMI = require('tmi.js');
-    return new TMI.client({
-      identity: {
-        username: S.im.loginID,
-        password: S.im.oauthToken
-      },
-      channels: S.im.tagetChannels
-    });
-  };
-  S.connect = async () => {
+  comps.connect = async () => {
     if (CLIENT) return CLIENT;
-    CLIENT = S.tmi();
+    CLIENT = comps.tmi();
     CLIENT.on('connected', (addr, port) => {
       ON.twitch_chat_connected(addr, port);
       Y.tr(`[[[ Connect ... Twitch Chat:${addr}:${port} ]]]`);
     });
-    let F; if (F = ON.twitch_chat_message) {
+    if (CM) {
+      Cd.MSG_WRAP = Y.debug() ? (msg) => {
+        return `${msg} (Debug)`;
+      }: (msg) => { return msg };
       Y.tr3("ON ... 'twitch_chat_message'");
-      CLIENT.on('message', build_dispatch(F));
+      CLIENT.on('message', build_dispatch(Y, CM));
     }
     await CLIENT.connect();
     Y.tr3('Twitch login status',
-           S.im.loginID, S.im.tagetChannels );
-    Y.tr7('password: ' + S.im.oauthToken);
+           xx.im.loginID, xx.im.tagetChannels );
+    Y.tr7('password: ' + xx.im.oauthToken);
     return CLIENT;
   };
-  S.disconnect = () => {
+  comps.disconnect = () => {
     if (! CLIENT) return;
     try { CLIENT.disconnect() }
     catch (e) { Y.tr('disconnect: Warning', e) };
     CLIENT = false;
     Y.tr3('disconnect');
   };
-  Y.onRollback(S.disconnect);
+  comps.start = (U, ch, h, msg) => { return {
+       next : true,
+    channel : ch,
+     handle : h,
+    message : msg
+  } };
+  return comps;
 }
-function build_dispatch (F) {
+function build_super_comp_next (Y, S, comps, Cd) {
+  const T = Y.tool;
+  comps.App = (name, args) => {
+    const Js = require(`./App/yta${name}.js`);
+    return new Js (y, u, args);
+  };
+  let U;
+  comps.start = async (u, ch, h, msg) => {
+    U = u;
+    const Uname = h['display-name'] || h.username || 'N/A';
+    U.handler  = () => { return h };
+    U.channel  = () => { return ch };
+    U.content  = () => { return msg };
+    U.dispName = () => { return Uname };
+    U.username = () => { return h.username };
+    let cf;
+    await U.unit.sysDB().cash
+      (['twitch', 'channels', filter(T, ch), 'chat'])
+      .then( c => { cf = c.value || { Empty: true } });
+    Y.tr6('twitch-config-data', cf);
+    const target = T.A2a(U.dispName());
+    Y.tr4('Message:ignore - target', check);
+    Y.tr4('Message:ignore - list', cf.ignoreNames);
+    if (cf.ignoreNames
+      && cf.ignoreNames.find(o=> o == check)) {
+      Y.tr3('Message:ignore - hit', check);
+      U.unit.finish();
+      return {};
+    }
+    const is = U.unit.brain.isCall(msg);
+    if (is.answer) {
+      U.reply(Uname, Cd.MSG_WRAP(is.answer));
+      U.toDiscord(ch, Uname, Cd.MSG_WRAP(is.answer));
+      return {};
+    }
+    is.next = true;
+    return is;
+  };
+  comps.reply = (msg) => {
+    const H = U.handler();
+    if (H) return H.say(Cd.MSG_WRAP(msg));
+    return U.say(U.channel(), msg);
+  };
+  comps.every = (is) => {
+    U.toDiscord
+      (U.unit, U.channel(), U.dispName(), U.content());
+    U.unit.finish();
+  };
+  Cd.toDiscord = (X) => {
+    return async (ch, uname, msg) => {
+      Y.tr3('toDiscord');
+      let chName = filter(T, ch);
+      let cf;
+      await X.sysDB()
+        .cash(['twitch', 'channels', chName, 'toDiscord'])
+        .then( c => { cf = c.value });
+      Y.tr4('toDiscord', 'check');
+      if (! cf || ! cf.webhook) {
+        Y.tr4('toDiscord', 'Cancel( Unknown config )');
+        return;
+      }
+      Y.tr6('toDiscord', cf);
+      const w = c.webhook;
+      Y.tr6('toDiscord - webhook', w);
+      X.Discord
+        .webhook([w.id, w.token], T.tmpl(cf.message, {
+          name : (uname || '(N/A)'),
+       message : (msg   || '...<None>')
+      }));
+    };
+  };
+  return comps;
+}
+function build_engine (Y, S, Cd) {
+  const ENGINE = () => {
+    try {
+      Cd.comps.connect();
+    } catch (err) {
+      Y.tr('Twitch:Chat error:', err);
+      setTimeout(ENGINE, 10000);
+    }
+  };
+  Y.engine(ENGINE);
+  S.parent.run = () => {
+    return Y.run(() => { return Cd.comps.connect() });
+  };
+}
+function build_dispatch (Y, CM) {
   Y.tr2('build_dispatch');
-  return async (ch, h, msg, self) => {
+  const T = Y.tool;
+  return (ch, h, msg, self) => {
     //	if (self) return; // bot call << This doesn't work
     Y.tr3(`event status`, `"${ch}", "${self}", "${msg}"`);
     Y.tr7('context', h);
-    S.start(h, ch, msg);
-    let c;
-    const chKey = channelKey(ch);
-    await Y.sysDATA.cash(['twitch', 'channels', chKey, 'chat'])
-    .then( conf => { c = conf.value || { $Empty: 0 } });
-    Y.tr4('twitch-config-data', c);
-    const check = T.A2a(S.dispName());
-    Y.tr3('Message:ignore - target', check);
-    Y.tr3('Message:ignore - list', c.ignoreNames);
-    if (c.ignoreNames
-      && c.ignoreNames.find(o=> o == check)) {
-      Y.tr3('Message:ignore - hit', check);
-      return S.finish();
-    }
-    const is = Y.brain.isCall(msg);
-    if (is.answer) {
-      S.say(S.channel(), S.dispName(), is.answer);
-      S.toDiscord(S.channel(), S.dispName(), is.answer);
-      return S.finish();
-    }
-    //		await Y.box.any('twitch-member',
-    //		{ id:S.channel(), name:S.Msg().username }).then( box => {
-    //			S.box = box.isNew() ? initBOX() : box;
-    //		});
-    return F(S, is);
+    let X;
+    Y.start(my).then( async x => {
+      X = x;
+      const U = X.Twitch.Chat;
+      const is = U.start(U, ch, h, msg);
+      if (is.next) CM(U, is);
+    }).catch(e=> {
+      if (X) X.rollback();
+      Y.throw(ver, e);
+    });
   };
 }
+function create_unit_func (Y, Cd) {
+  Cd.$unit = (U) => {
+    for (let [key, func] of Y.tool.e(Cd.comps))
+      { U[key] = func }
+  }
+}
+function filter (T, channel) {
+  return T.A2a
+  (channel.match(/^\#(.+)/) ? RegExp.$1 : channel);
+}
+
+
+
+module.exports = function (y, p) {
+  //
+  S.preparFake = () => {
+    Y.tr3('preparFake');
+    const FAKE = require('./yChatFAKE.js');
+    S.tmi = () => { return new FAKE (Y, S) };
+  };
+  if (Y.debug() && S.im.sleep) S.preparFake();
+};
 function initBOX (box) {
   box.set('createTimeStamp', Y.tool.unix());
   box.set('LimitData', {}); // name:{ limit:(unix), value:(...) }
@@ -135,76 +243,4 @@ function cleanBox () {
     if (! v.limit || v.limit < Now) delete Box[k];
   }
   return S.box.set('LimitData', Box);
-}
-function build_engine () {
-  S.start = (context, channel, msg) => {
-    Y.start();
-    TMP = {
-      $name: (context['display-name']
-      || context.username
-      || 'N/A' )
-    };
-    S.handler = S.context = () => { return context };
-    S.channel  = () => { return channel };
-    S.content  = () => { return msg };
-    S.dispName = () => { return TMP.$name };
-    S.username = () => { return context.username };
-  };
-  S.reply = (msg) => {
-    let handler = S.handler();
-    if (handler) return handler.say(MSG_WRAP(msg));
-    return S.say(S.channel(), msg);
-  };
-  S.tmp = () => { return TMP };
-  const Reset = () => {
-    TMP = {};
-    S.dispName = S.username = S.channel =
-    S.handler  = S.context  = S.content = false;
-  };
-  S.rollback = () => {
-    Reset();
-    Y.rollback();
-  };
-  S.finish = () => {
-    //		Reset();
-    Y.finish();
-  };
-  S.every = (is) => {
-    S.toDiscord(S.channel(), S.dispName(), S.content());
-    S.finish();
-  };
-  S.toDiscord = async (ch, uname, msg) => {
-    Y.tr3('toDiscord');
-    let chName = channelKey(ch);
-    let c;
-    await Y.sysDATA
-    .cash(['twitch', 'channels', chName, 'toDiscord'])
-    .then( db => { c = db.value });
-    Y.tr3('toDiscord', 'check');
-    if (! c || ! c.webhook) {
-      Y.tr3('toDiscord', 'Cancel( Unknown config )');
-      return;
-    }
-    Y.tr7('toDiscord', c);
-    const w = c.webhook;
-    Y.tr6('toDiscord - webhook', w);
-    Y.Discord.webhook([w.id, w.token], T.tmpl(c.message, {
-      name: (uname || '(N/A)'), message: (msg || '')
-    }));
-  };
-  const ENGINE = () => {
-    try {
-      S.connect();
-    } catch (err) {
-      Y.rollback();
-      Y.tr('catch error:', err);
-      setTimeout(ENGINE, 10000);
-    }
-  };
-  Y.engine(ENGINE);
-  P.run = () => { return Y.run(S.connect()) };
-}
-function channelKey (channel) {
-  return T.A2a
-  (channel.match(/^\#(.+)/) ? RegExp.$1 : channel);
 }
