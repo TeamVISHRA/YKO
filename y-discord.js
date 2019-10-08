@@ -15,13 +15,16 @@ if (ARGV.length > 0) {
   Y.onFake();
   switch (ARGV.shift()) {
     case 'evM':
-      CallBack = dbg => { dbg.$evMessage(ARGV.join(' ')) };
+      CallBack = x => { x.$evMessage(ARGV.join(' ')) };
       break;
     case 'evJoin':
-      CallBack = dbg => { dbg.$evJoinGuild() };
+      CallBack = x => { x.$evJoinGuild() };
       break;
     case 'evExit':
-      CallBack = dbg => { dbg.$evExitGuild() };
+      CallBack = x => { x.$evExitGuild() };
+      break;
+    case 'cron':
+      CallBack = x => { x.$Cron(...ARGV) };
       break;
   }
 }
@@ -68,7 +71,7 @@ Y.on('cron_day', (JOB, day, Now) => {
 });
 Y.on('cron_minute', (JOB, minute, Now) => {
   if ((minute% 3) == 0) {
-    JOB('DiscordRSS');	// Main
+//    JOB('DiscordRSS');	// Main
   }
   if ((minute% 10) == 0) {
     JOB('DiscordAskGuildRefresh');
@@ -79,7 +82,7 @@ Y.on('cron_count', (JOB, count, Now) => {
   if ((count% 2) == 0) {
     JOB('boxCleanCash');
     JOB('brainCleanSleep');
-//		JOB('DiscordRSS'); // DEBUG
+		JOB('DiscordRSS'); // DEBUG
   }
 });
 Y.on('brain_command_alias', ()=> {

@@ -133,9 +133,9 @@ function build_component (Y, S, Ref) {
         } else { return { answer: 'もしかして呼んだ？' } }
       } else { return { answer: '何か御用？' } }
     }
-    if ([,cmd,crum] = str.match(Reg.callCommand)) {
+    if (str = str.match(Reg.callCommand)) {
       Y.tr2('isCall: command call', str[1]);
-      return { cmd: T.A2a(cmd), crum: (crum || '') };
+      return { cmd: T.A2a(str[1]), crum: (str[2] || '') };
     }
     return {};
 	};

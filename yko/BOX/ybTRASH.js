@@ -3,7 +3,9 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ybTRASH.js';
-const ver = `yko/BOX/${my} v191005.01`;
+const ver = `yko/BOX/${my} v191008.01`;
+//
+const TYPE = 'trash';
 //
 module.exports = function (Y, P, DB) {
   this.ver = ver;
@@ -13,14 +15,14 @@ module.exports = function (Y, P, DB) {
     if (! a.name) Y.throw(ver, 'name unknown.');
     return new Promise ( resolve => {
       return DB.findOne
-        ({ type: 'trash', id: a.id, name: a.name })
+        ({ type: TYPE, id: a.id, name: a.name })
         .then( r => { resolve( new _TRASH_ (Y, S, DB, a, r)) });
     });
 	}
   S.clean = async () => {
-    const Comp = Y.tool.time_u_add(-10, 'd');
+    const Comp = Y.tool.unix_add(-10, 'd');
     let result = await DB.deleteMany({
-      type: { $eq: 'trash' },
+      type: { $eq: TYPE },
       timeChange: { $lt: Comp }
     });
     return result;
@@ -29,7 +31,7 @@ module.exports = function (Y, P, DB) {
 function _TRASH_ (Y, S, DB, a, r) {
   let TRA = this;
   if (r) {
-    TRA.export = () => { return Object.create(r.value) };
+    TRA.export = () => { return Y.tool.clone(r.value) };
     TRA.remove = () => {
       return new Promise ( resolve => {
         S._prepers_.push

@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'yCRON.js';
-const ver = `yko/${my} v191008.01`;
+const ver = `yko/${my} v191009.01`;
 //
 module.exports.Super = function (Y, Ref) {
   Y.throw(`I will not be Super !!`);
@@ -13,16 +13,24 @@ module.exports.onFake = function (Y, Ref) {
   if (RUN.CRON) delete RUN.CRON;
 };
 module.exports.Unit = function (Y, R, Ref) {
-  const U = this;
-    U.ver = `${my} :U`;
-   U.conf = Y.conf.cron;
-     U.im = Y.im.cron;
-   U.root = R;
-    U.Ref = Ref;
-  const Jobs = require(`./CRON/ycJOBS.js`);
-  const J = new Jobs (Y, U);
-  U.Jobs = (name, ...a) => { J[name](a) };
+   const U = this;
+     U.ver = `${my} :U`;
+    U.conf = Y.conf.cron;
+      U.im = Y.im.cron;
+    U.root = R;
+     U.Ref = Ref;
+    U.Jobs = Worker(Y, U);
 };
+function Worker (Y, U) {
+  let Wk;
+  return (name, ...a) => {
+    if (! Wk) {
+      const JS = require(`./CRON/ycJOBS.js`);
+      Wk = new JS.Worker (Y, U);
+    }
+    Wk[name](...a);
+  };
+}
 module.exports.init = function (Y, Ref) {
   const S = this;
     S.ver = `${ver} :S`;
@@ -45,6 +53,7 @@ function init (Y, S, Ref) {
     let key = 'cron_' + (typeof v == 'object' ? v.name : k);
     if (! ON[key]) ON[key] = () => {};
   }
+  const START = exports.START(Y, S);
   const JOB = () => {
     const Now = {
       count: ++CRON.count,
@@ -52,17 +61,6 @@ function init (Y, S, Ref) {
       D: T.time_form(0, 'D'),
       H: T.time_form(0, 'H'),
       m: T.time_form(0, 'm')
-    };
-    const START = (name, args) => {
-      let R;
-      Y.start(ver).then( unitRoot => {
-        R = unitRoot;
-        R.CRON.Jobs(name, args);
-      }).catch ( e => {
-        let v;
-        if (R) { R.rollback(); v = R.ver }
-        Y.throw((v || S.ver), e);
-      });
     };
     try {
       for (let [k, v] of T.e(Now)) {
@@ -90,4 +88,17 @@ function init (Y, S, Ref) {
     Y.tr(`[[[ Start CRON ]]]`);
     ClearToken = setInterval(JOB, S.conf.interval);
   });
+}
+module.exports.START = function (Y, S) {
+  return (name, args) => {
+    let R;
+    Y.start(ver).then( unitRoot => {
+      R = unitRoot;
+      R.CRON.Jobs(name, args);
+    }).catch ( e => {
+      let v;
+      if (R) { R.rollback(); v = R.ver }
+      Y.throw((v || S.ver), e);
+    });
+  };
 }

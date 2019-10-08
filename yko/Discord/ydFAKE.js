@@ -56,7 +56,15 @@ module.exports = function (y, p) {
     return ON.guildMemberRemove
                 ( nickname( GuildHandler() ) );
   };
-  S.$Exec = () => {
+  S.$Cron = (...name) => {
+    const CRON  = Y.rack.get('CRON').$JS;
+    const START = CRON.START(Y, S);
+    if (name == 'all' || name == '-a') {
+      const Ct = require('../CRON/ycJOBS.js');
+      for (let key in Ct.Collect()) { START(key) }
+    } else {
+      START(...name);
+    }
   };
 }
 function GuildHandler () {
