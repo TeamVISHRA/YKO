@@ -17,6 +17,12 @@ if (ARGV.length > 0) {
     case 'evM':
       CallBack = dbg => { dbg.$evMessage(ARGV.join(' ')) };
       break;
+    case 'evJoin':
+      CallBack = dbg => { dbg.$evJoinGuild() };
+      break;
+    case 'evExit':
+      CallBack = dbg => { dbg.$evExitGuild() };
+      break;
   }
 }
 Y.Discord.run().then(CallBack)

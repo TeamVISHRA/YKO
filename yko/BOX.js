@@ -5,14 +5,19 @@
 const my  = 'BOX.js';
 const ver = `yko/${my} v191008.01`;
 //
+module.exports.init = function (Y, Ref) {
+  const S = this;
+  S.conf = Y.conf.box;
+  if (! S.conf.db) Y.throw("'Y.conf.box.db' is undefined");
+  const JS = require(`./BOX/yb${S.conf.db}.js`);
+  Ref.DBdriver = new JS (Y, S);
+};
 module.exports.Unit = function (Y, R, Ref) {
-	const S = this;
+  const S = this;
     S.ver = ver;
    S.root = R;
    S.conf = Y.conf.box;
-  if (! S.conf.db) Y.throw("'Y.conf.box.db' is undefined");
-  const J = require('./BOX/yb' + S.conf.db + '.js');
-  const DB = new J (Y, S);
+  const DB = Ref.DBdriver;
   const POOL = {};
   for (let k of ['CONTAINER', 'LIST', 'TRASH']) {
     S[k] = () => {

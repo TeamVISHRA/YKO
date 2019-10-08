@@ -7,7 +7,7 @@ const ver = `yko/Discord/${my} v191008.01`;
 let S, Y, P;
 module.exports = function (y, p) {
   this.ver = ver;
-	[S, Y, P] = [this, y, p];
+  [S, Y, P] = [this, y, p];
   S.$guildID   = P.im.devel.guild;
   S.$channelID = P.im.devel.channel;
   S.$userID    = P.im.devel.userID;
@@ -17,20 +17,20 @@ module.exports = function (y, p) {
     Y.tr3('on', key);
     ON[key] = v;
   };
-	S.login = (token) => {
-		if (ON.ready) ON.ready(S);
-	};
+  S.login = (token) => {
+    if (ON.ready) ON.ready(S);
+  };
   S.delete = () => {
     Y.tr('FAKE <message-delete>');
   };
   S.$ON = () => { return ON };
   const evMSG = (type, msg) => {
-		if (! ON.message) Y.throw('Unknown on.message');
+    if (! ON.message) Y.throw('Unknown on.message');
     return ON.message( MessageHandler(type, msg) );
   };
-	S.$evMessage   = (msg) => { evMSG(false, msg) };
-	S.$evMessageDM = (msg) => { evMSG('dm',  msg) };
-	S.$evMessageBulk = (iv, ...o) => {
+  S.$evMessage   = (msg) => { evMSG(false, msg) };
+  S.$evMessageDM = (msg) => { evMSG('dm',  msg) };
+  S.$evMessageBulk = (iv, ...o) => {
     Y.tr('$evMessageBulk');
     if (! o || o.length < 1) Y.throw(ver, 'Unknown args');
     let [count, timer] = [0];
@@ -44,29 +44,29 @@ module.exports = function (y, p) {
     Bulk();
     if (o > 1) timer = setInterval(Bulk, (iv || 500));
     Y.tr(`=====< $evMessageBulk complete >=====`);
-	};
-	S.$evJoinGuild = () => {
-		if (! ON.guildMemberAdd)
-				Y.throw('Unknown on.guildMemberAdd');
+  };
+  S.$evJoinGuild = () => {
+    if (! ON.guildMemberAdd)
+        Y.throw('Unknown on.guildMemberAdd');
     return ON.guildMemberAdd( GuildHandler() );
-	};
-	S.$evExitGuild = () => {
-		if (! ON.guildMemberRemove)
-				Y.throw('Unknown on.guildMemberRemove');
-    const H = GuildHandler();
-    return ON.guildMemberRemove( nickname(H) );
-	};
+  };
+  S.$evExitGuild = () => {
+    if (! ON.guildMemberRemove)
+        Y.throw('Unknown on.guildMemberRemove');
+    return ON.guildMemberRemove
+                ( nickname( GuildHandler() ) );
+  };
   S.$Exec = () => {
   };
 }
 function GuildHandler () {
-	const H = baseHandler({});
+  const H = baseHandler({});
   H.user  = user();
   H.guild = guild();
 	return H;
 }
 function MessageHandler (type, msg) {
-	const H = baseHandler({});
+  const H = baseHandler({});
   H.content = msg;
   H.delete  = () => { Y.tr('<message-delete>') };
   H.reply   = (s) => { return send('[[ REPLY ]]', s) };

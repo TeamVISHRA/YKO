@@ -8,13 +8,14 @@ const ver = `yko/${my} v191008.01`;
 module.exports.Super = function (Y, Ref) {
   Y.throw(`I will not be Super !!`);
 };
-module.exports.onFake = function (y, Ref) {
-  if (Ref.has('CRON')) Ref.delete('CRON');
+module.exports.onFake = function (Y, Ref) {
+  const RUN = Y.rack.get('RUNNERS');
+  if (RUN.CRON) delete RUN.CRON;
 };
 module.exports.Unit = function (Y, R, Ref) {
   const U = this;
     U.ver = `${my} :U`;
-	 U.conf = Y.conf.cron;
+   U.conf = Y.conf.cron;
      U.im = Y.im.cron;
    U.root = R;
     U.Ref = Ref;
@@ -25,7 +26,7 @@ module.exports.Unit = function (Y, R, Ref) {
 module.exports.init = function (Y, Ref) {
   const S = this;
     S.ver = `${ver} :S`;
-	 S.conf = Y.conf.cron;
+   S.conf = Y.conf.cron;
      S.im = Y.im.cron;
   init(Y, S, Ref); 
 };
@@ -40,11 +41,11 @@ function init (Y, S, Ref) {
     m: { name: 'minute', value: T.time_form(0, 'm') }
   };
   const ON = Y.rack.get('ON');
-	for (let [k, v] of T.e(CRON)) {
+  for (let [k, v] of T.e(CRON)) {
     let key = 'cron_' + (typeof v == 'object' ? v.name : k);
-		if (! ON[key]) ON[key] = () => {};
-	}
-	const JOB = () => {
+    if (! ON[key]) ON[key] = () => {};
+  }
+  const JOB = () => {
     const Now = {
       count: ++CRON.count,
       M: T.time_form(0, 'M'),
@@ -77,10 +78,10 @@ function init (Y, S, Ref) {
         }
       }
       if (Now.count >= S.conf.count.max) CRON.count = 0;
-		} catch (err) {
-			Y.tr(ver, err);
-		};
-	};
+    } catch (err) {
+      Y.tr(ver, err);
+    };
+  };
   let ClearToken;
   Y.runners('CRON', ()=> {
     if (! S.conf.interval)

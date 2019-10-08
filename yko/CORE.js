@@ -111,7 +111,7 @@ module.exports = function (ARGS) {
         Ref.$JS.init(Y, Ref);
       }
     }
-    for (let j of ['brain']) {
+    for (let j of ['brain', 'box']) {
       const Ref = Gd.get(j);
       Ref.$JS.init(Y, Ref);
     }
