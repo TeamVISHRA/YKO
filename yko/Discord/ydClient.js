@@ -6,7 +6,7 @@ const ver = `yko/Discord/${my} v191008.01`;
 //
 module.exports = function (Y, P) {
   const S = this;
-    S.ver = `${ver} (${y.ver})`;
+    S.ver = `${ver} (${Y.ver})`;
   const R = S.root = P.root;
     S.Ref = P.Ref;
 	const B = P.client();

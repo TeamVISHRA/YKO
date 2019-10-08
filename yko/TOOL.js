@@ -3,15 +3,15 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'TOOL.js';
-const ver = `yko/${my} v191004.01`;
+const ver = `yko/${my} v191008.01`;
 //
 const MOMENT = require('moment'),
    TM_FORMAT = '/DD HH:mm:ss';
 //
 let Y;
 module.exports = function (y) {
-    this.ver = ver;
-     const T = this,
+     const T = this;
+       T.ver = ver;
            Y = y;
     T.moment = MOMENT;
       T.util = util;

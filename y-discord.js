@@ -19,10 +19,11 @@ if (ARGV.length > 0) {
       break;
   }
 }
-Y.Discord.run().then(CallBack);
+Y.Discord.run().then(CallBack)
+ .catch(e => { Y.throw(ver, e) });
 
 function include () {
-Y.init('yDiscord'); // 'yTwitch', 'yHTTP', 'yCRON'
+Y.init('yDiscord', 'yCRON'); // 'yTwitch', 'yHTTP', 
 }
 function advance () {
 // ===== < Discord > =====
@@ -54,25 +55,25 @@ Y.on('http_api_action', (request, responce) => {
 });
 
 // ===== < CRON > =====
-Y.on('cron_day', (X, yC, day, Now) => {
+Y.on('cron_day', (JOB, day, Now) => {
   if ((day% 10) == 0) {
-    yC.exec('DAY1', X.box.cleanTrash);
+    JOB('boxCleanTrash');
   }
 });
-Y.on('cron_minute', (X, yC, minute, Now) => {
+Y.on('cron_minute', (JOB, minute, Now) => {
   if ((minute% 3) == 0) {
-//    H.Job('DiscordRSS');	// Main
+    JOB('DiscordRSS');	// Main
   }
   if ((minute% 10) == 0) {
-    yC.exec('min1', X.Discord.expGuild.refresh);
-    yC.exec('min2', X.sysDB().cleanCash);
+    JOB('DiscordAskGuildRefresh');
+    JOB('sysDBcleanCash');
   }
 });
-Y.on('cron_count', (X, yC, count, Now) => {
+Y.on('cron_count', (JOB, count, Now) => {
   if ((count% 2) == 0) {
-    yC.exec('con1', X.box.cleanCash);
-    yC.exec('con2', X.brain.cleanSleep);
-		yC.Job('DiscordRSS'); // DEBUG
+    JOB('boxCleanCash');
+    JOB('brainCleanSleep');
+//		JOB('DiscordRSS'); // DEBUG
   }
 });
 Y.on('brain_command_alias', ()=> {

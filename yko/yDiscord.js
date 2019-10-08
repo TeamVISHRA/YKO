@@ -28,14 +28,14 @@ module.exports.Unit = function (Y, R, Ref) {
   Ref.$unit   (U);
   Ref.$onFake (U);
 }
-module.exports.init = function (y, rd) {
-  rd.$unit = isSleep(y)
-      ? (u) => { u.webhook = onWebhookFake(y) }
-      : (u) => { u.webhook = onWebhook(y) };
+module.exports.init = function (Y, Ref) {
+  Ref.$unit = isSleep(Y)
+      ? (u) => { u.webhook = onWebhookFake(Y) }
+      : (u) => { u.webhook = onWebhook(Y) };
 }
-module.exports.onFake = function (y, rd) {
-  rd.$onFake =
-        (u) => { u.webhook = onWebhookFake(y) };
+module.exports.onFake = function (Y, Ref) {
+  Ref.$onFake =
+        (u) => { u.webhook = onWebhookFake(Y) };
 }
 function build_super_comp (Y, S, T) {
   let CLIENT;
@@ -88,9 +88,7 @@ function init_super (Y, S, T) {
     return Y.run(()=> { return S.client() });
   };
   S.Ref.$unit = prepare_unit_comp(Y);
-  if (isSleep(Y)) {
-    S.Ref.$onFake = (u) => { u.webhook = onWebhookFake(Y) };
-  }
+  if (isSleep(Y)) S.onFake();
   S.init = false;
 }
 function prepare_unit_comp (Y) {
