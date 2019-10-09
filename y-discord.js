@@ -2,33 +2,15 @@
 //
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
-const ver = `y-discord.js v191008.01`;
+const ver = `y-discord.js v191009.01`;
 //
 const yko = require('yko');
 const Y = new yko ();
-const [,, ...ARGV] = process.argv;
 
 advance();
 
-let CallBack = () => {};
-if (ARGV.length > 0) {
-  Y.onFake();
-  switch (ARGV.shift()) {
-    case 'evM':
-      CallBack = x => { x.$evMessage(ARGV.join(' ')) };
-      break;
-    case 'evJoin':
-      CallBack = x => { x.$evJoinGuild() };
-      break;
-    case 'evExit':
-      CallBack = x => { x.$evExitGuild() };
-      break;
-    case 'cron':
-      CallBack = x => { x.$Cron(...ARGV) };
-      break;
-  }
-}
-Y.Discord.run().then(CallBack)
+Y.Discord.DebugCall().run()
+ .then(Y.Next)
  .catch(e => { Y.throw(ver, e) });
 
 function include () {

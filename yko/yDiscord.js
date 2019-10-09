@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'yDiscord.js';
-const ver = `yko/${my} v191008.01`;
+const ver = `yko/${my} v191009.01`;
 //
 const Discord = require('discord.js');
 const AdminRoleLevel = 1920000000;
@@ -11,11 +11,12 @@ const AdminRoleLevel = 1920000000;
 let STATE = 'Normal';
 //
 module.exports.Super = function (Y, Ref) {
-  const S = this;
-    S.ver = `${ver} :S`;
-	 S.conf = Y.conf.discord;
-     S.im = Y.im.discord;
-    S.Ref = Ref;
+     const S  = this;
+       S.ver  = `${ver} :S`;
+	    S.conf  = Y.conf.discord;
+        S.im  = Y.im.discord;
+       S.Ref  = Ref;
+  S.DebugCall = DebugCall(Y, S);
   build_super_comp(Y, S, Y.tool);
 }
 module.exports.Unit = function (Y, R, Ref) {
@@ -240,4 +241,28 @@ function onWebhookFake (y) {
 function connectMessage (Y, S) {
   Y.tr(`[[[ Connect ... Discord Client (${STATE}) ]]]`);
   Y.tr7('Token', S.im.token);
+}
+function DebugCall (Y, S) {
+  return () => {
+    const [,, ...ARGV] = process.argv;
+    if (ARGV.length < 1) return S;
+    Y.onFake();
+    switch (ARGV.shift()) {
+      case 'evM':
+        Y.Next = x => { x.$evMessage(ARGV.join(' ')) };
+        break;
+      case 'evJoin':
+        Y.Next = x => { x.$evJoinGuild() };
+        break;
+      case 'evExit':
+        Y.Next = x => { x.$evExitGuild() };
+        break;
+      case 'cron':
+        if (! ARGV[0])
+            Y.throw('YKO> Something is missing ...!?');
+        Y.Next = x => { x.$Cron(...ARGV) };
+        break;
+    }
+    return S;
+  };
 }

@@ -4,7 +4,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'CORE.js';
-const ver = `yko/${my} v191008.01`;
+const ver = `yko/${my} v191009.01`;
 //
 module.exports = function (ARGS) {
 	const Y = this;
@@ -80,6 +80,7 @@ module.exports = function (ARGS) {
     ENGINE();
     return func();
   };
+  Y.Next = () => {};
   Y.baseRD = (jsName) => {
     let [, key] = jsName.match(/^[a-z]+([A-Z].+)$/);
     return {
@@ -235,7 +236,7 @@ function Throw (Y) {
         } else { out += `\n${sen}\n${v}` }
       } else   { out += `\n${sen}\n${v}` }
     }
-    Y.tr(`throw:${out}${sen2}`);
+    Y.tr(`throw:${out}\n${sen2}`);
     Y.tr(point || "'Stack Trace' is empty.");
     throw true;
   };
