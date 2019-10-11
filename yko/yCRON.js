@@ -85,7 +85,7 @@ function init (Y, S, Ref) {
     if (! S.conf.interval)
         Y.throw(ver, "'interval' is not defined");
     if (ClearToken) clearInterval(ClearToken);
-    Y.tr(`[[[ Start CRON ]]]`);
+    Y.tr(`[Start] YKO CRON !!`);
     ClearToken = setInterval(JOB, S.conf.interval);
   });
 }

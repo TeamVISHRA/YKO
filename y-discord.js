@@ -1,10 +1,11 @@
+#!/usr/local/bin/node
 'use strict'; 
 //
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const ver = `y-discord.js v191009.01`;
 //
-const yko = require('yko');
+const yko = require('yko'); // require('./yko/CORE.js');
 const Y = new yko ();
 
 advance();
@@ -14,27 +15,30 @@ Y.Discord.DebugCall().run()
  .catch(e => { Y.throw(ver, e) });
 
 function include () {
-Y.init('yDiscord', 'yCRON'); // 'yTwitch', 'yHTTP', 
+Y.init('yDiscord', 'yTwitch', 'yCRON'); //  'yHTTP', 
 }
 function advance () {
 // ===== < Discord > =====
 Y.on('discord_message', (ydM, is) => {
-  let i; if (i = is.cmd) {
-    if ( i == 'dice' ) {
+  if (! is.cmd) return ydM.every();
+  switch (is.cmd) {
+    case 'dice':
       ydM.App('Dice').run(is.crum);
-    } else if ( i == 'sp'   ) {
+      break;
+    case 'sp':
       ydM.App('Splittime').run(is.crum);
-    } else if ( i == 'tool' ) {
+      break;
+    case 'tool':
       ydM.App('Tools').run(is.crum);
-    } else if ( i == 'unix' ) {
+      break;
+    case 'unix':
       ydM.App('Tools').run(`unix ${is.crum}`);
-    } else if ( i == 'to'   ) {
+      break;
+    case 'to':
       ydM.App('ToTwitch').run(is.crum);
-    } else {
+      break;
+    default:
       ydM.App('Help').run();
-    }
-  } else {
-    ydM.every();
   }
 });
 Y.on('discord_join_guild', ydG => { ydG.join() });
@@ -42,7 +46,6 @@ Y.on('discord_exit_guild', ydG => { ydG.exit() });
 
 // ===== < HTTP > =====
 Y.on('http_api_action', (request, responce) => {
-  
 });
 
 // ===== < CRON > =====
@@ -56,22 +59,25 @@ Y.on('cron_minute', (JOB, minute, Now) => {
 //    JOB('DiscordRSS');	// Main
   }
   if ((minute% 10) == 0) {
-    JOB('DiscordAskGuildRefresh');
+    JOB('DiscordAskRefresh');
     JOB('sysDBcleanCash');
   }
 });
 Y.on('cron_count', (JOB, count, Now) => {
   if ((count% 2) == 0) {
-    JOB('boxCleanCash');
-    JOB('brainCleanSleep');
 		JOB('DiscordRSS'); // DEBUG
   }
+  if ((count% 10) == 0) {
+    JOB('brainCleanSleep');
+    JOB('boxCleanCash');
+  }
 });
-Y.on('brain_command_alias', ()=> {
-  return [
-    ['[サさ][イい][コこ][ロろ]', 'dice'],
-    ['計測', 'sp'],
-  ];
-});
+
+// ===== < brain > =====
+Y.on('brain_command_alias', [
+  ['[サさ][イい][コこ][ロろ]', 'dice'],
+  ['計測', 'sp'],
+]);
+
 include();
 }

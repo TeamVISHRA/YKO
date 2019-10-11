@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ybCONTAINER.js';
-const ver = `yko/BOX/${my} v191008.01`;
+const ver = `yko/BOX/${my} v191011.01`;
 //
 module.exports = function (Y, P, DB) {
    const S = this;
@@ -36,7 +36,7 @@ module.exports = function (Y, P, DB) {
   };
   S.cleanCash = async () => {
     Y.tr4('cleanCash');
-    const Now = Y.tool.time_u();
+    const Now = T.unix();
     let result = await DB.deleteMany({
       type: { $eq: 'cash' },
       timeLimit: { $lt: Now }
@@ -119,7 +119,7 @@ function BOX (Y, S, Args, Db, T) {
     VALUE = {};
     BOX.timeModify = BOX.timeChange = () => {
       if (TMP.time) return TMP.time;
-      return (TMP.time = T.time_u());
+      return (TMP.time = T.unix());
     };
     BOX.aleady = () => { return false };
     BOX.isNew  = () => { return true  };
@@ -157,13 +157,13 @@ function BOX (Y, S, Args, Db, T) {
   BOX.clone  = BOX.export;
   BOX.ref = () => { return VALUE };
   //
-  const _life_ = (n) => {
+  const TTL = (n) => {
     let cf = S.conf.cash;
     n = Number(n);
-    if (! n) n = Number(cf.default_life);
-    if (n > cf.max_life) n = Number(cf.max_life);
-    if (n < cf.min_life) n = Number(cf.min_life);
-    return T.time_u_add(n);
+    if (! n) n = Number(cf.default_TTL);
+    if (n > cf.max_TTL) n = Number(cf.max_TTL);
+    if (n < cf.min_TTL) n = Number(cf.min_TTL);
+    return T.unix_add(n);
   };
   BOX.preper = async () => {
     Y.tr3('preper');
@@ -172,9 +172,9 @@ function BOX (Y, S, Args, Db, T) {
     let db = { value: VALUE };
     if (_ID) {
       Y.tr3('preper:update - target', _ID);
-      db.timeChange = T.time_u();
+      db.timeChange = T.unix();
       if (TYPE == 'cash') {
-        if (BOX.life) db.timeLimit = _life_(BOX.life);
+        if (BOX.TTL) db.timeLimit = TTL(BOX.TTL);
       } else {
         db.timeLimit = false;
       }
@@ -184,9 +184,9 @@ function BOX (Y, S, Args, Db, T) {
       if (! BOX.type
          || BOX.type == 'trash') Y.throw(ver, 'Illegal processing');
       [db.type, db.id, db.name] = [TYPE, ID, NAME];
-      db.timeModify = db.timeChange = T.time_u();
+      db.timeModify = db.timeChange = T.unix();
       if (TYPE == 'cash') {
-        db.timeLimit = BOX.life ? _life_(BOX.life): _life_(0);
+        db.timeLimit = BOX.TTL ? TTL(BOX.TTL): TTL(0);
       } else {
         db.timeLimit = false;
       }
@@ -248,7 +248,7 @@ function BOX (Y, S, Args, Db, T) {
       if (! UNIQUE)
           Y.throw(ver, 'Target data h does not exist.');
       let db = { type: 'trash',
-          ago: TYPE, value: VALUE, timeChange: T.time_u() };
+          ago: TYPE, value: VALUE, timeChange: T.unix() };
       // Equivalent to preper
       S.parent.regist(o => { return DB.updateOne(UNIQUE, db) });
       return BOX;

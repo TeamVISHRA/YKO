@@ -1,3 +1,4 @@
+'use strict'; 
 //
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //

@@ -7,6 +7,7 @@
     "test": "test"
   },
   "dependencies": {
+    "@line/bot-sdk": "^6.8.2",
     "cheerio": "^1.0.0-rc.3",
     "discord.js": "^11.5.1",
     "encoding-japanese": "^1.0.30",
@@ -37,7 +38,7 @@
     "BOT"
   ],
   "author": "MilkyVishra",
-  "license": "ISC",
+  "license": "GPLv3",
   "bugs": {
     "url": "https://github.com/MilkyVishra/YKO/issues"
   },

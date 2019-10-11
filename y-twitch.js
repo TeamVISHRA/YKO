@@ -1,24 +1,26 @@
+#!/usr/local/bin/node
+'use strict'; 
 //
-// y-twitch.js
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
-const ver = 'y-twitch.js v190930.01';
+const ver = `y-twitch.js v191010.01`;
 //
-const yko = require('./yko/CORE.js');
+const yko = require('yko'); // require('./yko/CORE.js');
 const Y = new yko ();
 
-// ===== < Twitch > =====
-Y.on('twitch_chat_message', (TC, is) => {
-	let i; if (i = is.cmd) {
+advance();
 
-	} else {
-		TC.every(is);
-	}
+Y.Twitch.DebugCall().run()
+ .then(Y.Next)
+ .catch(e => { Y.throw(ver, e) });
+
+function include () {
+Y.init('yTwitch', 'yDiscord');
+}
+function advance () {
+// ===== < Twitch > =====
+Y.on('twitch_chat_message', (yT, is) => {
+  if (! is.cmd) return yT.every();
 });
-// ===== < INIT > ========
-Y.init('yTwitch:init', 'yDiscord');
-// ===== < Debug > =======
-//Y.preparFake();
-// ===== < Execute > =====
-Y.Twitch.run()
-//.then(test=> { test.$evMessage('あいうえお') });
+include();
+}

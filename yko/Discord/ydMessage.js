@@ -1,8 +1,9 @@
+'use strict'; 
 //
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ydMessage.js';
-const ver = `yko/Discord/${my} v191008.01`;
+const ver = `yko/Discord/${my} v191010.01`;
 //
 module.exports = function (Y, P) {
    const U = this;
@@ -56,10 +57,12 @@ module.exports = function (Y, P) {
       type = TMP.channel_id = H.channel.id;
     }
     if (R.brain.isSleep(type, U.userID())) {
-      return R.brain.wokeup(W_CHECK, W_BOW)
-                   .Try(type, U.userID(), H.content);
+      R.brain.wokeup(W_CHECK, W_BOW)
+             .Try(type, U.userID(), H.content);
+    } else {
+      R.brain.isCall(H.content);
     }
-    return R.brain.isCall(H.content);
+    return U;
 	};
   U.type = () => { return H.channel.type };
   U.guildName = () => {
@@ -121,7 +124,7 @@ module.exports = function (Y, P) {
   };
   U.channelSend = (id, msg, a) => {
     let ch = U.channelGET(id)
-          || Y.throw(ver, 'Invalid channel ID');
+          || Y.throw(ver, 'YKO> Invalid channel ID');
     Y.tr3(`<channel>.Send: [${id}]`, msg);
     return SEND(m=> { return ch.send(m) }, msg, a);
   };
@@ -176,19 +179,24 @@ module.exports = function (Y, P) {
   if (Y.rack.has('Twitch')) {
     U.toTwitch = async (uname, msg, nocheck) => {
       if (U.isDM()) return false;
-      Y.tr3('toTwitch');
-      let c;
-      await R.sysDB()
-        .cash(['discord', 'guilds', U.guildID(), 'toTwitch'])
-        .then( db => { c = db.value });
-      Y.tr5('sysCash: ', c);
-      if (! c) return false;
+      const Key = `discord.guilds.${U.guildID()}.toTwitch`;
+      Y.tr3('toTwitch', Key);
+      let cf;
+      await R.sysDB().get(Key).then(x=> cf = x );
+      Y.tr5('sysCash: ', cf);
+      if (! cf) return false;
       Y.tr3('toTwitch', 'check');
-      if (! nocheck && U.channelID() != c.fromCH) return;
-      msg = T.byte2cut((msg || U.content()), 400, '...');
-      return R.Twitch.Chat().say(c.toCH, T.tmpl(c.message,
-        { name: (uname || U.nickname()), message: msg }) )
-        .then(o => { return [c.fromCH, c.toCH, msg] });
+      if (! nocheck && U.channelID() != cf.fromCH) {
+        Y.tr3('toTwitch', 'Cancel !!');
+        return;
+      }
+      const me = Y.im.twitch.chat.loginID;
+      msg = T.tmpl(cf.message, {
+        name: (uname || U.nickname()),
+        message: T.byte2cut((msg || U.content()), 400, '...')
+      });
+      return U.root.Twitch.say(cf.toCH, me, msg)
+              .then(x=> { return [cf.fromCH, cf.toCH] });
     };
   } else {
     U.toTwitch = () => {};

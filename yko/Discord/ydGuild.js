@@ -1,19 +1,19 @@
+'use strict'; 
 //
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ydGuild.js';
-const ver = `yko/Discord/${my} v191005.01`;
+const ver = `yko/Discord/${my} v191011.01`;
 //
-let S, Y, X, P, R, T, H;
 module.exports = function (Y, P) {
   const S = this;
     S.ver = ver;
   const R = S.root = P.root;
     S.Ref = P.Ref;
   const T = Y.tool;
-  //
-  S.start = (h) => {
-    H = h;
+  S.start = async (h) => {
+    const H = h;
+          S.handler = () => { return H };
           S.guildID = () => { return H.guild.id };
            S.userID = () => { return H.user.id };
         S.guildName = () => { return H.guild.name };
@@ -24,11 +24,11 @@ module.exports = function (Y, P) {
     return S;
   };
   S.join = async (Yo) => {
-    Y.tr3('join(GUILD)');
     const Gid = S.guildID();
-    const Keys= ['discord', 'guilds', Gid, 'join'];
+    const Key = `discord.guilds.${Gid}.join`;
+    Y.tr3('guild:join', Key);
     let cf;
-    await R.sysDB().cash(Keys).then(o=> { cf = o.value });
+    await R.sysDB().get(Key).then(x=> cf = x );
     if (cf) {
       Y.tr7('join(GUILD):sysDATA', cf);
       if (cf.msg1) S.DMsend
@@ -41,11 +41,11 @@ module.exports = function (Y, P) {
     return R.finish();
 	};
 	S.exit = async (Yo) => {
-    Y.tr3('exit(GUILD)');
     const Gid = S.guildID();
-    const Keys = ['discord', 'guilds', Gid, 'exit'];
+    const Key = `discord.guilds.${Gid}.exit`;
+    Y.tr3('guild:exit', Key);
     let cf;
-    await R.sysDB().cash(Keys).then(o=> { cf = o.value });
+    await R.sysDB().get(Key).then(x=> cf = x );
     if (cf) {
       Y.tr7('exit(GUILD):sysDATA', cf);
       if (cf.LogCH) {

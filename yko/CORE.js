@@ -4,7 +4,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'CORE.js';
-const ver = `yko/${my} v191009.01`;
+const ver = `yko/${my} v191011.01`;
 //
 module.exports = function (ARGS) {
 	const Y = this;
@@ -63,6 +63,8 @@ module.exports = function (ARGS) {
       $args: ARGS[low]
     });
   }
+  Gd.get('sysdata').CASH = Y.tool.c(null);
+  //
   Y.on = (key, func) => {
     if ( key.match(/^start$/i)
       || key.match(/^rollback$/i)
@@ -72,16 +74,12 @@ module.exports = function (ARGS) {
       Gd.get('ON')[key.toLowerCase()] = func;
     }
   };
-  Gd.get('sysdata').cash = {};
-  Y.runners = (key, func) => { Gd.get('RUNNERS')[key] = func };
   let ENGINE = () => { Y.tr('??? (?o?) hoe ...!?') };
-  Y.engine = (func) => { ENGINE = func };
-  Y.run = async (func) => {
-    ENGINE();
-    return func();
-  };
-  Y.Next = () => {};
-  Y.baseRD = (jsName) => {
+   Y.runners = (key, func) => { Gd.get('RUNNERS')[key] = func };
+    Y.engine = (func) => { ENGINE = func };
+       Y.run = async () => { return ENGINE() };
+      Y.Next = () => {};
+    Y.baseRD = (jsName) => {
     let [, key] = jsName.match(/^[a-z]+([A-Z].+)$/);
     return {
         $JS: require(`./${jsName}.js`),
@@ -137,8 +135,17 @@ module.exports = function (ARGS) {
         const Ref = Gd.get(key);
         if (Ref.$JS.onFake) Ref.$JS.onFake(Y, Ref);
   } } };
+  let oExec;
+  Y.oneExec = () =>
+    { return oExec || (oExec = new oExec(Y, T, Gd)) };
   Y.tr1(ver, '>>> Radey ...');
 };
+function oExec (Y, T, Gd) {
+  const O = this;
+  if (! Gd.has('oneTimeExec')) {}
+  // ........
+  // ........
+}
 function UNIT (myName, Y, Gd, T) {
   const R = this;
   R.ver = myName;

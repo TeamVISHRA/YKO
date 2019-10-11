@@ -2,7 +2,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ycDiscordRSSroom.js';
-const ver = `yko/CRON/${my} v190929.01`;
+const ver = `yko/CRON/${my} v191011.01`;
 //
 const FeedParser = require('feedparser');
 const request    = require('request');
@@ -24,8 +24,7 @@ module.exports = function (Y, R, P, args) {
   }
   S.run = async () => {
     let Discord;
-    await R.sysDB().noCash(['discord'])
-                   .then( db => { Discord = db.value });
+    await R.sysDB().get('discord').then(x=> Discord = x);
     Y.tr5('run - sysDB', Discord);
     for (let [id, G] of T.e(Discord.guilds)) {
       if (! G.CRON || ! DEBUG(id)) continue;
@@ -48,7 +47,7 @@ module.exports = function (Y, R, P, args) {
     Y.tr5('RSS:C = ', C);
     const T = Y.tool;
     let BOX;
-    await R.box.any('cron', C.dbKey).then( box => { BOX = box });
+    await R.box.any('cron', C.dbKey).then(x=> BOX = x );
     let historys = BOX.isNew() ? [] : BOX.get('historys');
     const rssGet = new Promise( rsv => {
       let [count, rssNow] = [0, []];

@@ -21,7 +21,7 @@ exports.twitch = {
   chat: {}
 };
 exports.sysdata = {
-  limit: 15, // minute
+  TTL: 20, // minute
   keys: {
     type: 'system',
     id:   '__YKO_SYSTEM__',
@@ -49,9 +49,9 @@ exports.box = {
   },
   container: {
     cash: {
-      default_life: 60,              // 分
-      min_life:      5,              // 分
-      max_life: (6* (30* (24* 60)))  // 分
+      default_TTL: 60,              // 分
+      min_TTL:      5,              // 分
+      max_TTL: (6* (30* (24* 60)))  // 分
     }
   },
   list: {

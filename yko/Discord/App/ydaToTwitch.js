@@ -10,7 +10,6 @@ module.exports = function (y, p, arg) {
   [Y, P] = [y, p];
   this.ver = ver;
 	const S = this;
-  const emoji = ':globe_with_meridians: ';
 	S.run = (crum) => {
     if (! crum) return;
     if (P.isDM()) return P.send('ＤＭからは送信できないよ。');
@@ -37,19 +36,20 @@ function help (crum) {
 	P.send({ embed: help }, 20);
 }
 function post (crum) {
-  const name = P.nickname();
-	P.toTwitch(name, crum, 1).then(c => {
-    const baseURL = Y.Twitch.conf.baseURL;
+   const name = P.nickname();
+  const emoji = ':globe_with_meridians: ';
+	P.toTwitch(name, crum, 1).then(res=> {
+    const baseURL = Y.conf.twitch.url.base;
   	P.delete();
-  	if (c) {
+  	if (res) {
     	P.reply({ embed: {
-        title: `${emoji}twitch#${c[1]} に投稿したよ。`,
-        url: baseURL + c[1]
+        title: `${emoji}twitch#${res[1]} に投稿したよ。`,
+        url: baseURL + res[1]
       } }, 10);
-    	P.channelSend(c[0], `**${name}**：` + c[2]);
+    	P.channelSend(res[0], `**${name}**： ${crum}`);
   	} else {
-    	P.reply('Twitch への送信失敗。`※原因）送信設定が無い`', 10 );
+    	P.reply('Twitch への送信失敗。', 10);
   	}
-    P.finish();
+    P.root.finish();
 	});
 }

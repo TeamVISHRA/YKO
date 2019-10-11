@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'BRAIN.js';
-const ver = `yko/${my} v191008.01`;
+const ver = `yko/${my} v191011.01`;
 //
 module.exports.init = function (Y, Ref) {
   init(Y, Ref, Y.tool);
@@ -27,8 +27,8 @@ function init (Y, Ref, T) {
   const cmdReg  = new RegExp(`^\\s*${PREFIX}(${cmdStyle})\\s*(.*)$`);
   const wokReg  = new RegExp(`^\\s*[お起]き[ろて]`);
   //
-  let As; if (As = Y.rack.get('ON').brain_command_alias) {
-    As = As();
+  let As;
+  if (As = Y.rack.get('ON').brain_command_alias) {
     for (let v of T.v(As)) {
       if (! v[0] || ! v[1])
           Y.then(`Check 'on.brain_command_alias'`);
@@ -110,45 +110,61 @@ function build_component (Y, S, Ref) {
   S.wokeup = (check, bow) => {
     return new WOKEUP (Y, S, Ref, check, bow, T);
   };
+  let ResultStock;
+  S.result = (v) => {
+    if (! v) return (ResultStock || { post: false });
+    return (ResultStock = v);
+  };
   const Reg = Ref.Reg;
-	S.isCall = (str) => {
+  S.isCall = (str) => {
     Y.tr1('isCall');
+    S.isCall_result = T.c(null);
     let cmd, crum;
-		str = T.canon(str);
-		if (str.match(/^[ワわ](?:[ッっ]*[はハ8８][ッっ]*)+$/))
-        	return { answer: 'わは' };
-		if (str.match(/^wa+ha+$/i))
-        	return { answer: 'アロハぁ' };
+    str = T.canon(str);
+    if (! str) return S.result({ answer: '・・・' }); 
+    if (str.match(/^[ワわ](?:[ッっ]*[はハ8８][ッっ]*)+$/))
+        return S.result({ answer: 'わは' });
+    if (str.match(/^wa+ha+$/i))
+        return S.result({ answer: 'アロハぁ' });
     if (str.match(Reg.callme)) {
       if (str = RegExp.$1) {
         Y.tr2('isCall: YKO call', str);
         if ([,cmd,crum] =
               Ref.ALIAS(str).match(Reg.callmeCommand)) {
           Y.tr2('isCall: cmd call', str[1]);
-          return {
-             cmd : T.A2a(cmd),
-            crum : (crum || ''),
-            call : true
-          };
-        } else { return { answer: 'もしかして呼んだ？' } }
-      } else { return { answer: '何か御用？' } }
+          return S.result({
+            post: true,
+             cmd: T.A2a(cmd),
+            crum: (crum || ''),
+            call: true
+          });
+        } else {
+          return S.result({ answer: 'もしかして呼んだ？' });
+        }
+      } else {
+        return S.result({ answer: '何か御用？' });
+      }
     }
     if (str = str.match(Reg.callCommand)) {
       Y.tr2('isCall: command call', str[1]);
-      return { cmd: T.A2a(str[1]), crum: (str[2] || '') };
+      return S.result({
+        post: true,
+         cmd: T.A2a(str[1]),
+        crum: (str[2] || '')
+      });
     }
-    return {};
-	};
+    return S.result({ post: true });
+  };
   S.buildK = (str) => {
     if (Ref.ANALYS) return Ref.ANALYS;
     const Builder = T.kuromoji().builder
       ({ dicPath: '../node_modules/kuromoji/dict/' });
     Ref.ANALYS = new Promise ( resolve => {
-		  Builder.build((err, parse) => {
-			  if (err) Y.throw(ver, err);
-			  return resolve (parse);
-		  });
-	  });
+      Builder.build((err, parse) => {
+        if (err) Y.throw(ver, err);
+        return resolve (parse);
+      });
+    });
     return Ref.ANALYS;
   };
   S.txt2token = async (txt) => {
@@ -169,12 +185,12 @@ function WOKEUP (Y, S, Ref, Check, Bow, T) {
     const SLEEP = T.clone(Ref.SLEEP);
     if (! k1) Y.throw(ver, "Unknown 'key 1'");
     if (! k2) Y.throw(ver, "Unknown 'key 2'");
-		str = T.canonical(str);
+    str = T.canonical(str);
     let debug = false;
     if (str.match(/^de?bu?g\s+(.+)/i)) {
       str = RegExp.$1;
       Y.tr1('wokeup:Try', 'is sleep (debug mode)');
-      if (! Y.debug()) return { sleep: true };
+      if (! Y.debug()) return S.result({ sleep: true });
     }
     if (str.match(yStyle1) && str.match(wokReg)) {
       Y.tr2('wokeup:Try', 'Trying');
@@ -203,7 +219,7 @@ function WOKEUP (Y, S, Ref, Check, Bow, T) {
     } else {
       Y.tr1('wokeup:Try', 'Not trying to wake');
     }
-    return { sleep: true };
+    return S.result({ sleep: true });
   };
   WO.greeting = () => {
     Y.tr1('wokeup:greeting');

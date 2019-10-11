@@ -3,89 +3,48 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'SYSDATA.js';
-const ver = `yko/${my} v191008.01`;
+const ver = `yko/${my} v191011.01`;
+//
+const DefaultTTL = 20; // minute.
 //
 module.exports.Unit = function (Y, R, Ref, KEYS) {
-  const S = this;
-  S.ver = ver;
-  S.root = R;
-  S.KEYS = KEYS;
-  S.conf = Y.conf.sysdata;
-  S.SYSKEY = KEYS
-      || S.conf.keys || Y.throw(ver, 'Unknown keys.');
-  S.TYPE  = S.SYSKEY.type || Y.throw(ver, 'Unknown type.');
-  S.LIMIT = S.SYSKEY.limit
-      || S.SYSKEY.life || S.conf.limit || 15; // minute
-  const T = Y.tool;
-  S.GC = Ref.CASH || (Ref.CASH = T.c(null));
-  S.noCash = async (ks) => {
-    Y.tr1('noCash');
-    let Db;
-    await R.box.any(S.TYPE, S.SYSKEY).then( H => {
-      Y.tr3('noCash:Y.box.any()', S.SYSKEY);
-      Db = H.isNew() ? {}: new noCash (Y, S, ks, H, T);
-    });
-    return Db;
+     const S = this;
+       S.ver = ver;
+      S.root = R;
+      S.conf = Y.conf.sysdata;
+      S.KEYS = KEYS
+            || S.conf.keys || Y.throw(ver, 'YKO> Unknown keys.');
+      S.TYPE = S.KEYS.type || Y.throw(ver, 'YKO> Unknown type.');
+       S.TTL = S.KEYS.TTL  || S.conf.TTL || DefaultTTL;
+    S.UNIQUE = [S.TYPE, S.KEYS.id, S.KEYS.name].join('\t');
+     S.reset = () => { return Ref.CASH[S.UNIQUE] = T.c(null) };
+     const T = Y.tool;
+  const CASH = Ref.CASH[S.UNIQUE] || S.reset();
+  let BOX;
+  S.box = async () => {
+    Y.tr3('box');
+    return BOX || (async () => {
+      await R.box.any(S.TYPE, S.KEYS).then(x=> BOX = x );
+      return BOX;
+    }) ();
   };
-  S.cash = async (keys) => {
-    Y.tr1('cash');
-    const e =
-      { keys: keys, key: ('CA:' + keys.join('@')) };
-    return S.GC[e.key] || (async () => {
-      await R.box.any(S.TYPE, S.SYSKEY).then( H => {
-        Y.tr3('cash:Y.box.any()', S.SYSKEY);
-        e.limit = T.unix_add(S.LIMIT, 'm');
-        e.Db = H.isNew() ? { $Limit: e.limit }
-                         : new cash (Y, S, e, H, T);
-        S.GC[e.key] = T.clone(e.Db);
-      });
-      return S.GC[e.key];
-    })();
+  S.get = async (key) => {
+    Y.tr3('get', key);
+    return CASH[key] ? CASH[key].value: (async () => {
+      await S.box().then();
+      CASH[key]= {
+          key: key,
+        limit: T.unix_add(S.TTL, 'm'),
+        value: T.quest(BOX.ref(), key.split('.'))
+      };
+      return CASH[key].value;
+    }) ();
   };
-  S.cleanCash = async () => {
-    Y.tr1('cleanCash');
-    const Now = T.unix();
-    for (let [k, v] of T.e(R))
-        { if (v.$Limit < Now) delete R[k] }
-    return true;
+  S.clean = async () => {
+    Y.tr3('clean');
+    const now = T.unix();
+    for (let [k, v] of T.e(CASH)) {
+      if (v.limit < now) delete CASH[k];
+    }
   };
-}
-function cash (Y, S, e, H, T) {
-  const CA = this,
-     VALUE = T.quest(H.ref(), e.keys),
-     CLEAR = () => { if (S.GC[e.key]) delete S.GC[e.key] };
-  if (VALUE) {
-     CA.$aleady = true;
-       CA.value = VALUE;
-      CA.$clear = () => { return CLEAR() };
-    CA.$handler = () => { return H };
-  }
-  CA.$Limit = e.limit;
-}
-function noCash (Y, S, KEYS, H, T) {
-  const CA = this,
-  VALUE = T.quest(H.ref(), KEYS);
-  if (VALUE) {
-    const UPDATE = () => {
-      H.update();
-      H.preper();
-    };
-    const REMOVE = () => {
-      if (! CA.$deleteOK())
-          Y.throw(ver, 'Data that cannot be deleted.');
-      let keys  = T.clone(KEYS);
-      let last  = keys.pop();
-      let child = T.quest(H.ref(), keys);
-      if (child && last in child) {
-        delete child[last];
-        UPDATE();
-      }
-    };
-      CA.$aleady = true;
-        CA.value = VALUE;
-      CA.$update = () => { return UPDATE() };
-      CA.$delete = () => { return REMOVE() };
-     CA.$handler = () => { return H };
-    CA.$deleteOK = () => { return VALUE.deleteOK };
-  }
 }
