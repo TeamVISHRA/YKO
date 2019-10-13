@@ -3,44 +3,40 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'yCRON.js';
-const ver = `yko/${my} v191009.01`;
+const ver = `yko/${my} v191013.01`;
 //
 module.exports.Super = function (Y, Ref) {
   Y.throw(`I will not be Super !!`);
 };
+module.exports.Unit = function (R, Ref) {
+  const U = R.unitKit('cron', this, 0, 0, Ref);
+  U.ver = `${ver} :U`;
+  U.Jobs = Worker(U);
+};
 module.exports.onFake = function (Y, Ref) {
-  const RUN = Y.rack.get('RUNNERS');
-  if (RUN.CRON) delete RUN.CRON;
+  onFake(Y);
 };
-module.exports.Unit = function (Y, R, Ref) {
-   const U = this;
-     U.ver = `${my} :U`;
-    U.conf = Y.conf.cron;
-      U.im = Y.im.cron;
-    U.root = R;
-     U.Ref = Ref;
-    U.Jobs = Worker(Y, U);
+module.exports.init = function (Y, Ref) {
+  const S = Y.superKit('cron', this, 0, 0, Ref);
+  S.ver = `${ver} :I`;
+  init(S);
 };
-function Worker (Y, U) {
-  let Wk;
-  return (name, ...a) => {
-    if (! Wk) {
-      const JS = require(`./CRON/ycJOBS.js`);
-      Wk = new JS.Worker (Y, U);
-    }
-    Wk[name](...a);
+module.exports.START = function (S) {
+  return (name, args) => {
+    let R;
+    S.start(`${name} (${ver})`).then( unitRoot => {
+      R = unitRoot;
+      R.CRON.Jobs(name, args);
+    }).catch ( e => {
+      let v;
+      if (R) { R.rollback(); v = R.ver }
+      S.throw((v || S.ver), e);
+    });
   };
 }
-module.exports.init = function (Y, Ref) {
-  const S = this;
-    S.ver = `${ver} :S`;
-   S.conf = Y.conf.cron;
-     S.im = Y.im.cron;
-  init(Y, S, Ref); 
-};
-function init (Y, S, Ref) {
-  if (Y.debug() && S.im.sleep) return;
-  const T = Y.tool;
+function init (S) {
+  if (S.debug() && S.im.sleep) return;
+  const T = S.tool;
   const CRON = {
     count: 0,
     M: { name: 'month',  value: T.time_form(0, 'M') },
@@ -48,12 +44,12 @@ function init (Y, S, Ref) {
     H: { name: 'hour',   value: T.time_form(0, 'H') },
     m: { name: 'minute', value: T.time_form(0, 'm') }
   };
-  const ON = Y.rack.get('ON');
+  const ON = S.rack.get('ON');
   for (let [k, v] of T.e(CRON)) {
     let key = 'cron_' + (typeof v == 'object' ? v.name : k);
     if (! ON[key]) ON[key] = () => {};
   }
-  const START = exports.START(Y, S);
+  const START = exports.START(S);
   const JOB = () => {
     const Now = {
       count: ++CRON.count,
@@ -68,37 +64,39 @@ function init (Y, S, Ref) {
           if (CRON[k].value != v) {
             ON['cron_' + CRON[k].name](START, v, Now);
             CRON[k].value = v;
-            Y.tr1(CRON[k].name, v);
+            S.tr5(CRON[k].name, v);
           }
         } else {
           ON['cron_' + k](START, v, Now);
-          Y.tr1(k, v);
+          S.tr5(k, v);
         }
       }
       if (Now.count >= S.conf.count.max) CRON.count = 0;
     } catch (err) {
-      Y.tr(ver, err);
+      S.tr(ver, err);
     };
   };
   let ClearToken;
-  Y.runners('CRON', ()=> {
+  S.runners('CRON', ()=> {
     if (! S.conf.interval)
-        Y.throw(ver, "'interval' is not defined");
+        S.throw(ver, "'interval' is not defined");
     if (ClearToken) clearInterval(ClearToken);
-    Y.tr(`[Start] YKO CRON !!`);
+    S.tr(`[Start] YKO CRON !!`);
     ClearToken = setInterval(JOB, S.conf.interval);
   });
 }
-module.exports.START = function (Y, S) {
-  return (name, args) => {
-    let R;
-    Y.start(ver).then( unitRoot => {
-      R = unitRoot;
-      R.CRON.Jobs(name, args);
-    }).catch ( e => {
-      let v;
-      if (R) { R.rollback(); v = R.ver }
-      Y.throw((v || S.ver), e);
-    });
+function Worker (U) {
+  let Wk;
+  return (name, ...a) => {
+    if (! Wk) {
+      const JS = require(`./CRON/ycJOBS.js`);
+      Wk = new JS.Unit (U);
+    }
+    Wk[name](...a);
   };
+}
+function onFake (Y) {
+  Y.tr3(`${my} >> onFake !!`);
+  const RUN = Y.rack.get('RUNNERS');
+  if (RUN.CRON) delete RUN.CRON;
 }

@@ -3,16 +3,15 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'BRAIN.js';
-const ver = `yko/${my} v191011.01`;
+const ver = `yko/${my} v191013.01`;
 //
 module.exports.init = function (Y, Ref) {
   init(Y, Ref, Y.tool);
 }
-module.exports.Unit = function (Y, R, Ref) {
-  const S = this;
-    S.ver = ver;
-   S.root = R;
-  build_component(Y, S, Ref);
+module.exports.Unit = function (R, Ref) {
+  const S = R.unitKit('brain', this, 0, 0, Ref);
+  S.ver = ver;
+  build_component(S);
 }
 function init (Y, Ref, T) {
   const PREFIX = Ref.prefix = Y.im.command_prefix;
@@ -54,17 +53,18 @@ function init (Y, Ref, T) {
   };
   return Ref;
 }
-function build_component (Y, S, Ref) {
-  const T = Y.tool;
+function build_component (S) {
+  const T = S.tool,
+      Ref = S.Ref;
   S.prefix = () => { return Ref.prefix };
   S.talk = (keys) => {
     if (! Ref.Talk) Ref.Talk = require('./BRAIN/ybTalk.js');
-    return Ref.Talk.build(X, Y, S, keys);
+    return Ref.Talk.build(S, keys);
   };
   const SLEEP = T.clone(Ref.SLEEP);
   S.sleep = () => { return SLEEP };
   S.setSleep = (k1, k2, a) => {
-    Y.tr1('setSleep');
+    S.tr1('setSleep');
     if (! k1) Y.throw(ver, "Unknown 'key 1'");
     if (a) {
       a = { check: () => {}, all: 0 };
@@ -78,7 +78,7 @@ function build_component (Y, S, Ref) {
       update = true;
     }
     if (a.check(S, k1)) {
-      Y.tr2('setSleep: &a.check()', 'Pass');
+      S.tr2('setSleep: &a.check()', 'Pass');
       SLEEP[k1] = Limit;
       if (a.all) SLEEP.__ALWAYS__ = Limit;
       update = true;
@@ -87,19 +87,19 @@ function build_component (Y, S, Ref) {
     return true;
   };
   S.isSleep = (k1, k2) => {
-    Y.tr1('isSleep');
+    S.tr1('isSleep');
     if (SLEEP[k1]) return true;
     if (SLEEP[`${k2}@${k1}`]) return true;
     if (SLEEP.__ALWAYS__) return true;
     return false;
   };
   S.cleanSleep = async () => {
-    Y.tr1('cleanSleep');
+    S.tr1('cleanSleep');
     let update;
     const Now = T.time_u();
-    for (let [k, v] of Y.tool.e(SLEEP)) {
+    for (let [k, v] of T.e(SLEEP)) {
       if (v < Now) {
-        Y.tr2('cleanSleep: hit', k);
+        S.tr2('cleanSleep: hit', k);
         delete SLEEP[k];
         update = true;
       }
@@ -108,7 +108,7 @@ function build_component (Y, S, Ref) {
     return true;
   };
   S.wokeup = (check, bow) => {
-    return new WOKEUP (Y, S, Ref, check, bow, T);
+    return new WOKEUP (S, check, bow);
   };
   let ResultStock;
   S.result = (v) => {
@@ -117,7 +117,7 @@ function build_component (Y, S, Ref) {
   };
   const Reg = Ref.Reg;
   S.isCall = (str) => {
-    Y.tr1('isCall');
+    S.tr1('isCall');
     S.isCall_result = T.c(null);
     let cmd, crum;
     str = T.canon(str);
@@ -128,10 +128,10 @@ function build_component (Y, S, Ref) {
         return S.result({ answer: 'アロハぁ' });
     if (str.match(Reg.callme)) {
       if (str = RegExp.$1) {
-        Y.tr2('isCall: YKO call', str);
+        S.tr2('isCall: YKO call', str);
         if ([,cmd,crum] =
               Ref.ALIAS(str).match(Reg.callmeCommand)) {
-          Y.tr2('isCall: cmd call', str[1]);
+          S.tr2('isCall: cmd call', str[1]);
           return S.result({
             post: true,
              cmd: T.A2a(cmd),
@@ -146,7 +146,7 @@ function build_component (Y, S, Ref) {
       }
     }
     if (str = str.match(Reg.callCommand)) {
-      Y.tr2('isCall: command call', str[1]);
+      S.tr2('isCall: command call', str[1]);
       return S.result({
         post: true,
          cmd: T.A2a(str[1]),
@@ -161,7 +161,7 @@ function build_component (Y, S, Ref) {
       ({ dicPath: '../node_modules/kuromoji/dict/' });
     Ref.ANALYS = new Promise ( resolve => {
       Builder.build((err, parse) => {
-        if (err) Y.throw(ver, err);
+        if (err) S.throw(ver, err);
         return resolve (parse);
       });
     });
@@ -174,55 +174,57 @@ function build_component (Y, S, Ref) {
     return token;
   }
 };
-function WOKEUP (Y, S, Ref, Check, Bow, T) {
-  Y.tr1('wokeup');
+function WOKEUP (S, Check, Bow) {
+  const T = S.tool,
+      Ref = S.Ref;
+  S.tr1('wokeup');
   const wokReg = Ref.Reg.callWakeup;
   const WO = this;
-  if (! Check) Y.throw(ver, 'Unknown function for checking.');
+  if (! Check) S.throw(ver, 'Unknown function for checking.');
   if (! Bow) Bow = () => { return WO.greeting() };
   WO.Try = (k1, k2, str) => {
-    Y.tr1('wokeup:Try');
+    S.tr1('wokeup:Try');
     const SLEEP = T.clone(Ref.SLEEP);
-    if (! k1) Y.throw(ver, "Unknown 'key 1'");
-    if (! k2) Y.throw(ver, "Unknown 'key 2'");
+    if (! k1) S.throw(ver, "Unknown 'key 1'");
+    if (! k2) S.throw(ver, "Unknown 'key 2'");
     str = T.canonical(str);
     let debug = false;
     if (str.match(/^de?bu?g\s+(.+)/i)) {
       str = RegExp.$1;
-      Y.tr1('wokeup:Try', 'is sleep (debug mode)');
-      if (! Y.debug()) return S.result({ sleep: true });
+      S.tr1('wokeup:Try', 'is sleep (debug mode)');
+      if (! S.debug()) return S.result({ sleep: true });
     }
     if (str.match(yStyle1) && str.match(wokReg)) {
-      Y.tr2('wokeup:Try', 'Trying');
+      S.tr2('wokeup:Try', 'Trying');
       let wakeup;
       if (SLEEP[`${k2}@${k1}`]) {
         delete SLEEP[`${k2}@${k1}`];
         wakeup = true;
-        Y.tr2('wokeup:Try - hit', `${k2}@${k1}`);
+        S.tr2('wokeup:Try - hit', `${k2}@${k1}`);
       }
       if (Check(WO, k1)) {
-        Y.tr2('wokeup:Try &Check', 'Pass');
+        S.tr2('wokeup:Try &Check', 'Pass');
         delete SLEEP[k1];
         if (SLEEP.__ALWAYS__ && str.match(/al+\s*$/i)) {
-          Y.tr2('wokeup:Try', 'Complete pleasure');
+          S.tr2('wokeup:Try', 'Complete pleasure');
           delete SLEEP.__ALWAYS__;
         }
         wakeup = true;
       }
       if (wakeup) {
-        Y.tr1('wokeup:Try', 'Awakened');
+        S.tr1('wokeup:Try', 'Awakened');
         Bow(WO);
         Ref.SLEEP = T.clone(SLEEP);
       } else {
-        Y.tr1('wokeup:Try', 'Couldn\'t wake up');
+        S.tr1('wokeup:Try', 'Couldn\'t wake up');
       }
     } else {
-      Y.tr1('wokeup:Try', 'Not trying to wake');
+      S.tr1('wokeup:Try', 'Not trying to wake');
     }
     return S.result({ sleep: true });
   };
   WO.greeting = () => {
-    Y.tr1('wokeup:greeting');
+    S.tr1('wokeup:greeting');
     return 'おはよう。!!';
   };
 }

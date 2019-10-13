@@ -56,7 +56,7 @@ Y.on('cron_day', (JOB, day, Now) => {
 });
 Y.on('cron_minute', (JOB, minute, Now) => {
   if ((minute% 3) == 0) {
-//    JOB('DiscordRSS');	// Main
+    JOB('DiscordRSS');	// Main
   }
   if ((minute% 10) == 0) {
     JOB('DiscordAskRefresh');
@@ -65,7 +65,7 @@ Y.on('cron_minute', (JOB, minute, Now) => {
 });
 Y.on('cron_count', (JOB, count, Now) => {
   if ((count% 2) == 0) {
-		JOB('DiscordRSS'); // DEBUG
+//		JOB('DiscordRSS'); // DEBUG
   }
   if ((count% 10) == 0) {
     JOB('brainCleanSleep');

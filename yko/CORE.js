@@ -4,13 +4,14 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'CORE.js';
-const ver = `yko/${my} v191011.01`;
+const ver = `yko/${my} v191013.01`;
 //
 module.exports = function (ARGS) {
 	const Y = this;
   if (! ARGS) ARGS = Object.create(null);
-	Y.ver  = ver;
-  Y.im   = require('../im/now.js');
+    Y.un = Y;
+	 Y.ver = ver;
+    Y.im = require('../im/now.js');
   Y.conf = require('../y-config.js');
   Y.exit = process.exit;
   if (Y.im.location == 'devel') {
@@ -128,38 +129,56 @@ module.exports = function (ARGS) {
     }).catch( e => { Y.throw(ver, e) } );
   };
   Y.onFake = () => {
+    Y.tr3('Y.onFake');
     for (let key of T.v(Gd.get('REQUIRES'))) {
       if (Y[key] && Y[key].onFake) {
         Y[key].onFake();
       } else {
         const Ref = Gd.get(key);
         if (Ref.$JS.onFake) Ref.$JS.onFake(Y, Ref);
-  } } };
-  let oExec;
-  Y.oneExec = () =>
-    { return oExec || (oExec = new oExec(Y, T, Gd)) };
+      }
+  } };
+  Y.superKit = (name, x, im, cf, Ref) => {
+    Y.tr6('Y.baseKit', name);
+    const X = Object.assign(x, Y);
+    if (name) {
+      X.im = im
+          ? (im[name] || im): (Y.im[name] || Y.im );
+      X.conf = cf
+          ? (cf[name] || cf): (Y.conf[name] || Y.conf); 
+    } else {
+      [X.im, X.conf] = [(im || Y.im), (cf || Y.conf)];
+    }
+    if (Ref) X.Ref = Ref;
+    for (let k of [MAIN.$name, 'run', 'init', 'onFake']) {
+      delete X[k];
+    }
+    return X;
+  };
   Y.tr1(ver, '>>> Radey ...');
 };
-function oExec (Y, T, Gd) {
-  const O = this;
-  if (! Gd.has('oneTimeExec')) {}
-  // ........
-  // ........
-}
 function UNIT (myName, Y, Gd, T) {
   const R = this;
-  R.ver = myName;
+  R.ver = `${my} (${myName})`;
+  [R.un, R.conf, R.im] = [Y, Y.conf, Y.im];
+  R.unitKit = (name, X, ...args) => {
+    Y.tr5('R.baseKit', name);
+        X.root = R;
+    X.rollback = R.rollback;
+      X.finish = R.finish;
+    return Y.superKit(name, X, ...args);
+  };
   R.tmp = { $START: 1 };
   for (let key of ['box', 'brain', 'web']) {
     const Ref  = Gd.get(key);
-    R[key] = new Ref.$JS.Unit (Y, R, Ref);
-  };
+    R[key] = new Ref.$JS.Unit (R, Ref);
+  }
   const SYSd = Gd.get('sysdata');
   R.sysDB = (keys) =>
-      { return new SYSd.$JS.Unit (Y, R, SYSd, keys) };
+      { return new SYSd.$JS.Unit (R, SYSd, keys) };
   for (let key of T.v(Gd.get('REQUIRES'))) {
     const Ref = Gd.get(key);
-    R[key] = new Ref.$JS.Unit (Y, R, Ref);
+    R[key] = new Ref.$JS.Unit (R, Ref);
   }
   R.rollback = () => {
     for (let F of T.v(Gd.get('ROLLBACK'))) { F(R) };

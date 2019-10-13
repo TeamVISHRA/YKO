@@ -3,11 +3,11 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ybTRASH.js';
-const ver = `yko/BOX/${my} v191008.01`;
+const ver = `yko/BOX/${my} v191013.01`;
 //
 const TYPE = 'trash';
 //
-module.exports = function (Y, P, DB) {
+module.exports.Unit = function (Y, P, DB) {
   this.ver = ver;
 	const S = this;
 	S.view = (a) => {

@@ -3,9 +3,10 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ydFAKE.js';
-const ver = `yko/Discord/${my} v191010.01`;
+const ver = `yko/Discord/${my} v191013.01`;
 //
-module.exports.call = function (Y, P, ARGV) {
+module.exports.call = function (P, ARGV) {
+  const Y = P.un;
   Y.onFake();
   switch (ARGV.shift()) {
     case 'evM':
@@ -26,9 +27,10 @@ module.exports.call = function (Y, P, ARGV) {
   return P;
 };
 let S, Y, P;
-module.exports.on = function (y, p) {
-  this.ver = ver;
-  [S, Y, P] = [this, y, p];
+module.exports.on = function (p) {
+  S = this;
+  S.ver = ver;
+  [P, Y] = [p, p.un];
       S.$guildID = P.im.devel.guild;
     S.$channelID = P.im.devel.channel;
        S.$userID = P.im.devel.userID;
@@ -37,7 +39,7 @@ module.exports.on = function (y, p) {
   baseHandler(S);
   const ON = {};
   S.on = (key, v) => {
-    Y.tr3('on', key);
+    Y.tr4('on', key);
     ON[key] = v;
   };
   S.login = (token) => {
@@ -48,14 +50,14 @@ module.exports.on = function (y, p) {
   };
   S.$ON = () => { return ON };
   const evMSG = (type, msg) => {
-    if (! ON.message) Y.throw('Unknown on.message');
+    if (! ON.message) Y.throw('YKO> Unknown on.message');
     return ON.message( MessageHandler(type, msg) );
   };
   S.$evMessage   = (msg) => { evMSG(false, msg) };
   S.$evMessageDM = (msg) => { evMSG('dm',  msg) };
   S.$evMessageBulk = (iv, ...o) => {
     Y.tr('$evMessageBulk');
-    if (! o || o.length < 1) Y.throw(ver, 'Unknown args');
+    if (! o || o.length < 1) Y.throw(ver, 'YKO> Unknown args');
     let [count, timer] = [0];
     const Bulk = () => {
       let [msg, type] = o.shift();
@@ -70,35 +72,36 @@ module.exports.on = function (y, p) {
   };
   S.$evJoinGuild = () => {
     if (! ON.guildMemberAdd)
-        Y.throw('Unknown on.guildMemberAdd');
+        Y.throw('YKO> Unknown on.guildMemberAdd');
     return ON.guildMemberAdd( GuildHandler() );
   };
   S.$evExitGuild = () => {
     if (! ON.guildMemberRemove)
-        Y.throw('Unknown on.guildMemberRemove');
+        Y.throw('YKO> Unknown on.guildMemberRemove');
     return ON.guildMemberRemove
                 ( nickname( GuildHandler() ) );
   };
   S.$Cron = (...name) => {
-    const CRON  = Y.rack.get('CRON').$JS;
-    const START = CRON.START(Y, S);
-    if (name == 'all' || name == '-a') {
-      const Ct = require('../CRON/ycJOBS.js');
-      for (let key in Ct.Collect()) { START(key) }
-    } else {
+    const JS = Y.rack.get('CRON').$JS;
+    const START = JS.START(Y);
+//    if (name == 'all' || name == '-a') {
+//      const Ct = require('../CRON/ycJOBS.js');
+//      for (let key in Ct.Collect())
+//        { START(key) }
+//    } else {
       START(...name);
-    }
+//    }
   };
 }
 function GuildHandler () {
-  Y.tr5('GuildHandler');
+  Y.tr6('GuildHandler');
   const H = baseHandler({});
   H.user  = user();
   H.guild = guild();
 	return H;
 }
 function MessageHandler (type, msg) {
-  Y.tr5('MessageHandler');
+  Y.tr6('MessageHandler');
   const H = baseHandler({});
   H.content = msg;
   H.delete  = () => { Y.tr('<message-delete>') };
@@ -114,7 +117,7 @@ function MessageHandler (type, msg) {
   return H;
 }
 function guild (H) {
-  Y.tr5('guild');
+  Y.tr6('guild');
 //Y.tr( H.channels.get() ); //.channels.get(S.$channelID) );
   return {
     id: S.$guildID,
@@ -134,12 +137,12 @@ function guild (H) {
   };
 }
 function nickname (H) {
-  Y.tr5('nickname');
+  Y.tr6('nickname');
   H.nickname = '<NickName-Fake>';
   return H;
 }
 function channel (channelID, channelName) {
-  Y.tr5('channel');
+  Y.tr6('channel');
   return {
       id: channelID,
     name: channelName,
@@ -147,7 +150,7 @@ function channel (channelID, channelName) {
   };
 };
 function user () {
-  Y.tr5('user');
+  Y.tr6('user');
   return {
     bot: false,
     id: S.$userID,
@@ -163,7 +166,7 @@ function guilds () {
   return new Map([[S.$guildID, guild()]]);
 }
 function channels () {
-  Y.tr5('channels');
+  Y.tr6('channels');
   return new Map([
     [  S.$channelID, channel(S.$channelID,   S.$channelName)],
     [S.$TieTwitchCH, channel(S.$TieTwitchCH, 'Twitch-Tieup')]
@@ -173,7 +176,7 @@ function users () {
   return new Map([[S.$userID, user()]]);
 }
 function baseHandler (H) {
-  Y.tr5('baseHandler');
+  Y.tr6('baseHandler');
      H.users = users();
     H.guilds = guilds();
   H.channels = channels();

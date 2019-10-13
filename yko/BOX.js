@@ -3,27 +3,26 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'BOX.js';
-const ver = `yko/${my} v191008.01`;
+const ver = `yko/${my} v191013.01`;
 //
 module.exports.init = function (Y, Ref) {
-  const S = this;
-  S.conf = Y.conf.box;
+  const S = Y.superKit('box', this, 0, 0, Ref);
+  S.ver = ver;
   if (! S.conf.db) Y.throw("'Y.conf.box.db' is undefined");
   const JS = require(`./BOX/yb${S.conf.db}.js`);
-  Ref.DBdriver = new JS (Y, S);
+  Ref.DBdriver = new JS.init (S);
 };
-module.exports.Unit = function (Y, R, Ref) {
-	const S = this;
+module.exports.Unit = function (R, Ref) {
+	const S = R.unitKit('box', this, 0, 0, Ref);
     S.ver = ver;
-   S.root = R;
-   S.conf = Y.conf.box;
   const DB = Ref.DBdriver;
+  S.DB = () => { return DB };
   const POOL = {};
   for (let k of ['CONTAINER', 'LIST', 'TRASH']) {
     S[k] = () => {
       return POOL[k] || (() => {
         let lib = require(`./BOX/yb${k}.js`);
-        return (POOL[k] = new lib (Y, S, DB));
+        return (POOL[k] = new lib.Unit (S));
       })();
     };
   }
@@ -32,57 +31,57 @@ module.exports.Unit = function (Y, R, Ref) {
 //    return S.LIST().build(a);
 //  };
   S.trash = (a) => {
-    Y.tr1('trash');
+    S.tr1('trash');
     return S.TRASH().view(a);
   };
   S.cash = (a) => {
-    Y.tr1('cash');
+    S.tr1('cash');
     a.type = 'cash'; return S.CONTAINER().view(a);
   };
   S.data = (a) => {
-    Y.tr1('data');
+    S.tr1('data');
     a.type = 'data'; return S.CONTAINER().view(a);
   };
   S.any = (t, a) => {
-    a.type = t; Y.tr1('any', a.type);
+    a.type = t; S.tr1('any', a.type);
     return S.CONTAINER().view(a);
   };
   S.list = (t, a) => {
-    a.type = t; Y.tr1('list', a.type);
+    a.type = t; S.tr1('list', a.type);
     return S.CONTAINER().list(a);
   };
   S.cleanCash = async () => {
-    Y.tr1('cleanCash');
+    S.tr1('cleanCash');
     return S.CONTAINER().cleanCash();
   };
   S.cleanTrash = async () => {
-    Y.tr1('cleanTrash');
+    S.tr1('cleanTrash');
     return S.TRASH().clean();
   }
   //
   let PREPERS = [];
   S.regist   = (f) => {
     PREPERS.push(f);
-    Y.tr3('regist (' + PREPERS.length + ')');
+    S.tr3('regist (' + PREPERS.length + ')');
   };
   S.begin = ()  => {
-    Y.tr2('begin');
+    S.tr2('begin');
     PREPERS = [];
   };
   S.rollback = () => {
-    Y.tr2('rollback');
+    S.tr2('rollback');
     PREPERS = [];
     S.close();
   };
   S.commit = async () => {
-    Y.tr2('commit');
+    S.tr2('commit');
     const len = PREPERS.length;
     if (len > 0) {
-      Y.tr2(`commit:exec (${len})`);
+      S.tr2(`commit:exec (${len})`);
       let count = 0;
       for (let f of PREPERS) {
         await f().then(o => {
-          if (o) Y.tr2(ver, o);
+          if (o) S.tr2(ver, o);
           if (++count >= PREPERS.length) return true;
         });
       }
@@ -90,7 +89,7 @@ module.exports.Unit = function (Y, R, Ref) {
     }
   };
   S.close = () => {
-    Y.tr2('close');
+    S.tr2('close');
     DB.close();
   };
 };

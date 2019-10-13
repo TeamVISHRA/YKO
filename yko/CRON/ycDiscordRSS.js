@@ -2,20 +2,20 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ycDiscordRSSroom.js';
-const ver = `yko/CRON/${my} v191011.01`;
+const ver = `yko/CRON/${my} v191013.01`;
 //
 const FeedParser = require('feedparser');
 const request    = require('request');
 //
-module.exports = function (Y, R, P, args) {
-  const S = this;
+module.exports.Unit = function (P) {
+  const S = P.root.unitKit('job_RSS', this, 0, P.conf);
     S.ver = ver;
-   S.conf = P.conf.job_RSS;
-  const T = Y.tool,
-     KEYS = Y.im.sysDataKey,
-      DBG = Y.im.discord.devel;
+  const T = S.tool,
+        R = S.root,
+     KEYS = S.un.im.sysDataKey,
+      DBG = S.un.im.discord.devel;
   let DEBUG, DBGCH;
-  if (Y.debug()) {
+  if (S.debug()) {
     DEBUG = (id) => { return id == DBG.guild ? true : false };
     DBGCH = () => { return DBG.channel };
   } else {
@@ -25,16 +25,16 @@ module.exports = function (Y, R, P, args) {
   S.run = async () => {
     let Discord;
     await R.sysDB().get('discord').then(x=> Discord = x);
-    Y.tr5('run - sysDB', Discord);
+    S.tr5('run - sysDB', Discord);
     for (let [id, G] of T.e(Discord.guilds)) {
       if (! G.CRON || ! DEBUG(id)) continue;
-      Y.tr3('run - guild id', id);
+      S.tr3('run - guild id', id);
       let C = G.CRON.RSSreader;
       if (! C || ! C.toCH
         || ! C.sites || C.sites.length < 1) continue;
-      Y.tr3('run:for - guild id', id);
-      Y.tr3('run:for - to channel', C.toCH);
-      Y.tr5('run:for - RSS sites', C.sites);
+      S.tr3('run:for - guild id', id);
+      S.tr3('run:for - to channel', C.toCH);
+      S.tr5('run:for - RSS sites', C.sites);
       C.id = id;
       C.dbKey = {
         id: R.Discord.buildDataID(id),
@@ -44,8 +44,7 @@ module.exports = function (Y, R, P, args) {
     }
   };
   S.RSS = async (C) => {
-    Y.tr5('RSS:C = ', C);
-    const T = Y.tool;
+    S.tr5('RSS:C = ', C);
     let BOX;
     await R.box.any('cron', C.dbKey).then(x=> BOX = x );
     let historys = BOX.isNew() ? [] : BOX.get('historys');
@@ -57,14 +56,14 @@ module.exports = function (Y, R, P, args) {
         let fp  = new FeedParser({});
         let no  = 0;
         req.on('error', function (err) {
-          Y.tr(err);
+          S.tr(err);
         });
         req.on('response', function (res) {
           let self = this;
           if (res.statusCode == 200) {
             self.pipe(fp);
           } else {
-            Y.tr('Responce Status: '
+            S.tr('Responce Status: '
               + (res.statusCode || 'No response'), rss.url );
           }
         });
@@ -74,7 +73,7 @@ module.exports = function (Y, R, P, args) {
               T.Zcut(i.title, S.conf.title.low);
             let edTitle =
               T.Zcut(i.title, S.conf.title.edit, '...');
-            Y.tr5('RSS - parse', edTitle);
+            S.tr5('RSS - parse', edTitle);
             rssNow.push({
               no: ++no,
               url: i.link,
@@ -111,8 +110,8 @@ module.exports = function (Y, R, P, args) {
       if (output) {
         BOX.set('historys',
               T.array2cut(historys, S.conf.history.size) );
-        Y.tr2('RSS:output - history size', historys.length);
-        Y.tr2('RSS:output - send ch', C.toCH);
+        S.tr2('RSS:output - history size', historys.length);
+        S.tr2('RSS:output - send ch', C.toCH);
         const SEND = (o) =>
         { R.Discord.Client().channel_send(DBGCH(C.toCH), o) };
         R.web.get(output.url).then( bd => {
@@ -145,7 +144,7 @@ module.exports = function (Y, R, P, args) {
           R.finish();
         });
       } else {
-        Y.tr2('_RSS_:output - (There are no new arrivals.)');
+        S.tr2('_RSS_:output - (There are no new arrivals.)');
         R.finish();
       }
     });

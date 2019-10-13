@@ -3,9 +3,9 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ybLIST.js';
-const ver = `yko/BOX/${my} v191005.01`;
+const ver = `yko/BOX/${my} v191013.01`;
 //
-module.exports = function (Y, P, DB) {
+module.exports.Unit = function (Y, P, DB) {
   this.ver = ver;
 	const S = this;
   S.DB = DB;
