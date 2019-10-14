@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ydFAKE.js';
-const ver = `yko/Discord/${my} v191013.01`;
+const ver = `yko/Discord/${my} v191014.01`;
 //
 module.exports.call = function (P, ARGV) {
   const Y = P.un;
@@ -20,7 +20,7 @@ module.exports.call = function (P, ARGV) {
       break;
     case 'cron':
       if (! ARGV[0])
-          Y.throw('YKO> Something is missing ...!?');
+        Y.throw('[Discord:F] Something is missing ...!?');
       Y.Next = x => { x.$Cron(...ARGV) };
       break;
   }
@@ -39,25 +39,26 @@ module.exports.on = function (p) {
   baseHandler(S);
   const ON = {};
   S.on = (key, v) => {
-    Y.tr4('on', key);
+    Y.tr4('[Discord:F] on', key);
     ON[key] = v;
   };
   S.login = (token) => {
     if (ON.ready) ON.ready(S);
   };
   S.delete = () => {
-    Y.tr('FAKE <message-delete>');
+    Y.tr('[Discord:F] <message-delete>');
   };
   S.$ON = () => { return ON };
   const evMSG = (type, msg) => {
-    if (! ON.message) Y.throw('YKO> Unknown on.message');
+    if (! ON.message) Y.throw('[Discord:F] Unknown on.message');
     return ON.message( MessageHandler(type, msg) );
   };
   S.$evMessage   = (msg) => { evMSG(false, msg) };
   S.$evMessageDM = (msg) => { evMSG('dm',  msg) };
   S.$evMessageBulk = (iv, ...o) => {
     Y.tr('$evMessageBulk');
-    if (! o || o.length < 1) Y.throw(ver, 'YKO> Unknown args');
+    if (! o || o.length < 1)
+        Y.throw(ver, '[Discord:F] Unknown args');
     let [count, timer] = [0];
     const Bulk = () => {
       let [msg, type] = o.shift();
@@ -68,16 +69,16 @@ module.exports.on = function (p) {
     };
     Bulk();
     if (o > 1) timer = setInterval(Bulk, (iv || 500));
-    Y.tr(`=====< $evMessageBulk complete >=====`);
+    Y.tr(`[Discord:F] =====< $evMessageBulk complete >=====`);
   };
   S.$evJoinGuild = () => {
     if (! ON.guildMemberAdd)
-        Y.throw('YKO> Unknown on.guildMemberAdd');
+        Y.throw('[Discord:F] Unknown on.guildMemberAdd');
     return ON.guildMemberAdd( GuildHandler() );
   };
   S.$evExitGuild = () => {
     if (! ON.guildMemberRemove)
-        Y.throw('YKO> Unknown on.guildMemberRemove');
+        Y.throw('[Discord:F] Unknown on.guildMemberRemove');
     return ON.guildMemberRemove
                 ( nickname( GuildHandler() ) );
   };
@@ -94,18 +95,18 @@ module.exports.on = function (p) {
   };
 }
 function GuildHandler () {
-  Y.tr6('GuildHandler');
+  Y.tr6('[Discord:F] GuildHandler');
   const H = baseHandler({});
   H.user  = user();
   H.guild = guild();
 	return H;
 }
 function MessageHandler (type, msg) {
-  Y.tr6('MessageHandler');
+  Y.tr6('[Discord:F] MessageHandler');
   const H = baseHandler({});
   H.content = msg;
-  H.delete  = () => { Y.tr('<message-delete>') };
-  H.reply   = (s) => { return send('[[ REPLY ]]', s) };
+  H.delete  = () => { Y.tr('[Discord:F] <message-delete>') };
+  H.reply   = (s) => { return send('<REPLY>', s) };
   H.guild   = guild(H);
   H.channel = channel(S.$channelID, S.$channelName);
   H.channel.type = type;
@@ -117,8 +118,7 @@ function MessageHandler (type, msg) {
   return H;
 }
 function guild (H) {
-  Y.tr6('guild');
-//Y.tr( H.channels.get() ); //.channels.get(S.$channelID) );
+  Y.tr6('[Discord:F] guild');
   return {
     id: S.$guildID,
     name:'<FAKE_GUILD>',
@@ -137,12 +137,12 @@ function guild (H) {
   };
 }
 function nickname (H) {
-  Y.tr6('nickname');
+  Y.tr6('[Discord:F] nickname');
   H.nickname = '<NickName-Fake>';
   return H;
 }
 function channel (channelID, channelName) {
-  Y.tr6('channel');
+  Y.tr6('[Discord:F] channel');
   return {
       id: channelID,
     name: channelName,
@@ -150,7 +150,7 @@ function channel (channelID, channelName) {
   };
 };
 function user () {
-  Y.tr6('user');
+  Y.tr6('[Discord:F] user');
   return {
     bot: false,
     id: S.$userID,
@@ -166,7 +166,7 @@ function guilds () {
   return new Map([[S.$guildID, guild()]]);
 }
 function channels () {
-  Y.tr6('channels');
+  Y.tr6('[Discord:F] channels');
   return new Map([
     [  S.$channelID, channel(S.$channelID,   S.$channelName)],
     [S.$TieTwitchCH, channel(S.$TieTwitchCH, 'Twitch-Tieup')]
@@ -176,23 +176,23 @@ function users () {
   return new Map([[S.$userID, user()]]);
 }
 function baseHandler (H) {
-  Y.tr6('baseHandler');
+  Y.tr6('[Discord:F] baseHandler');
      H.users = users();
     H.guilds = guilds();
   H.channels = channels();
   return H;
 }
 function Delete () {
-  return () => { Y.tr('FAKE <delete>', 'message-delete') };
+  return () => { Y.tr('[Discord:F] <delete>', 'message-delete') };
 }
 function Edit () {
-  return () => { Y.tr('FAKE <edit>', 'message-edit') };
+  return () => { Y.tr('[Discord:F] <edit>', 'message-edit') };
 }
 function result () {
   return { delete: Delete(), edit: Edit() };
 }
 function send (key, msg) {
-  Y.tr(key, '..... <<FAKE>>', msg);
+  Y.tr(key, '[Discord:F] send:', msg);
   return new Promise
       ( resolve => { return resolve(result()) });
 }

@@ -3,13 +3,13 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'BRAIN.js';
-const ver = `yko/${my} v191013.01`;
+const ver = `yko/${my} v191014.01`;
 //
 module.exports.init = function (Y, Ref) {
   init(Y, Ref, Y.tool);
 }
 module.exports.Unit = function (R, Ref) {
-  const S = R.unitKit('brain', this, 0, 0, Ref);
+  const S = R.unitKit('brain', this, R, Ref);
   S.ver = ver;
   build_component(S);
 }
@@ -30,7 +30,7 @@ function init (Y, Ref, T) {
   if (As = Y.rack.get('ON').brain_command_alias) {
     for (let v of T.v(As)) {
       if (! v[0] || ! v[1])
-          Y.then(`Check 'on.brain_command_alias'`);
+          Y.then(`[BRAIN] Check 'on.brain_command_alias'`);
       v[0] = new RegExp(`^\\s*${v[0]}\\s*(.*)`);
     }
     Ref.ALIAS = (str) => {
@@ -39,7 +39,7 @@ function init (Y, Ref, T) {
       return str;
     };
   } else {
-    Y.tr3('on.command_alias', 'empty');
+    Y.tr3('[BRAIN] on.command_alias', 'empty');
     Ref.ALIAS = { ALIAS: (str) => { return str } };
   }
   Ref.SLEEP  = Object.create(null);
@@ -64,7 +64,7 @@ function build_component (S) {
   const SLEEP = T.clone(Ref.SLEEP);
   S.sleep = () => { return SLEEP };
   S.setSleep = (k1, k2, a) => {
-    S.tr1('setSleep');
+    S.tr3('[BRAIN] setSleep');
     if (! k1) Y.throw(ver, "Unknown 'key 1'");
     if (a) {
       a = { check: () => {}, all: 0 };
@@ -78,7 +78,7 @@ function build_component (S) {
       update = true;
     }
     if (a.check(S, k1)) {
-      S.tr2('setSleep: &a.check()', 'Pass');
+      S.tr3('[BRAIN] setSleep: &a.check()', 'Pass');
       SLEEP[k1] = Limit;
       if (a.all) SLEEP.__ALWAYS__ = Limit;
       update = true;
@@ -87,19 +87,19 @@ function build_component (S) {
     return true;
   };
   S.isSleep = (k1, k2) => {
-    S.tr1('isSleep');
+    S.tr3('[BRAIN] isSleep');
     if (SLEEP[k1]) return true;
     if (SLEEP[`${k2}@${k1}`]) return true;
     if (SLEEP.__ALWAYS__) return true;
     return false;
   };
   S.cleanSleep = async () => {
-    S.tr1('cleanSleep');
+    S.tr3('[BRAIN] cleanSleep');
     let update;
     const Now = T.time_u();
     for (let [k, v] of T.e(SLEEP)) {
       if (v < Now) {
-        S.tr2('cleanSleep: hit', k);
+        S.tr3('[BRAIN] cleanSleep: hit', k);
         delete SLEEP[k];
         update = true;
       }
@@ -110,50 +110,45 @@ function build_component (S) {
   S.wokeup = (check, bow) => {
     return new WOKEUP (S, check, bow);
   };
-  let ResultStock;
-  S.result = (v) => {
-    if (! v) return (ResultStock || { post: false });
-    return (ResultStock = v);
-  };
   const Reg = Ref.Reg;
-  S.isCall = (str) => {
-    S.tr1('isCall');
+  S.isCall = (str, RES) => {
+    S.tr3('[BRAIN] isCall');
     S.isCall_result = T.c(null);
     let cmd, crum;
     str = T.canon(str);
-    if (! str) return S.result({ answer: '・・・' }); 
+    if (! str) return RES({ answer: '・・・' }); 
     if (str.match(/^[ワわ](?:[ッっ]*[はハ8８][ッっ]*)+$/))
-        return S.result({ answer: 'わは' });
+        return RES({ answer: 'わは' });
     if (str.match(/^wa+ha+$/i))
-        return S.result({ answer: 'アロハぁ' });
+        return RES({ answer: 'アロハぁ' });
     if (str.match(Reg.callme)) {
       if (str = RegExp.$1) {
-        S.tr2('isCall: YKO call', str);
+        S.tr4('[BRAIN] isCall: YKO call', str);
         if ([,cmd,crum] =
               Ref.ALIAS(str).match(Reg.callmeCommand)) {
-          S.tr2('isCall: cmd call', str[1]);
-          return S.result({
+          S.tr4('[BRAIN] isCall: cmd call', str[1]);
+          return RES({
             post: true,
              cmd: T.A2a(cmd),
             crum: (crum || ''),
             call: true
           });
         } else {
-          return S.result({ answer: 'もしかして呼んだ？' });
+          return RES({ answer: 'もしかして呼んだ？' });
         }
       } else {
-        return S.result({ answer: '何か御用？' });
+        return RES({ answer: '何か御用？' });
       }
     }
     if (str = str.match(Reg.callCommand)) {
-      S.tr2('isCall: command call', str[1]);
-      return S.result({
+      S.tr4('[BRAIN] isCall: command call', str[1]);
+      return RES({
         post: true,
          cmd: T.A2a(str[1]),
         crum: (str[2] || '')
       });
     }
-    return S.result({ post: true });
+    return RES({ post: true });
   };
   S.buildK = (str) => {
     if (Ref.ANALYS) return Ref.ANALYS;
@@ -174,57 +169,58 @@ function build_component (S) {
     return token;
   }
 };
-function WOKEUP (S, Check, Bow) {
+function WOKEUP (S, Check, Bow, RES) {
   const T = S.tool,
       Ref = S.Ref;
-  S.tr1('wokeup');
+  S.tr3('[BRAIN] wokeup');
   const wokReg = Ref.Reg.callWakeup;
   const WO = this;
-  if (! Check) S.throw(ver, 'Unknown function for checking.');
+  if (! Check) S.throw
+      (`[BRAIN] ${ver}`, 'Unknown function for checking.');
   if (! Bow) Bow = () => { return WO.greeting() };
   WO.Try = (k1, k2, str) => {
-    S.tr1('wokeup:Try');
+    S.tr3('[BRAIN] wokeup:Try');
     const SLEEP = T.clone(Ref.SLEEP);
-    if (! k1) S.throw(ver, "Unknown 'key 1'");
-    if (! k2) S.throw(ver, "Unknown 'key 2'");
+    if (! k1) S.throw("[BRAIN] Unknown 'key 1'");
+    if (! k2) S.throw("[BRAIN] Unknown 'key 2'");
     str = T.canonical(str);
     let debug = false;
     if (str.match(/^de?bu?g\s+(.+)/i)) {
       str = RegExp.$1;
-      S.tr1('wokeup:Try', 'is sleep (debug mode)');
-      if (! S.debug()) return S.result({ sleep: true });
+      S.tr3('[BRAIN] wokeup:Try', 'is sleep (debug mode)');
+      if (! S.debug()) return RES({ sleep: true });
     }
     if (str.match(yStyle1) && str.match(wokReg)) {
-      S.tr2('wokeup:Try', 'Trying');
+      S.tr4('[BRAIN] wokeup:Try', 'Trying');
       let wakeup;
       if (SLEEP[`${k2}@${k1}`]) {
         delete SLEEP[`${k2}@${k1}`];
         wakeup = true;
-        S.tr2('wokeup:Try - hit', `${k2}@${k1}`);
+        S.tr4('[BRAIN] wokeup:Try - hit', `${k2}@${k1}`);
       }
       if (Check(WO, k1)) {
-        S.tr2('wokeup:Try &Check', 'Pass');
+        S.tr4('[BRAIN] wokeup:Try &Check', 'Pass');
         delete SLEEP[k1];
         if (SLEEP.__ALWAYS__ && str.match(/al+\s*$/i)) {
-          S.tr2('wokeup:Try', 'Complete pleasure');
+          S.tr4('[BRAIN] wokeup:Try', 'Complete pleasure');
           delete SLEEP.__ALWAYS__;
         }
         wakeup = true;
       }
       if (wakeup) {
-        S.tr1('wokeup:Try', 'Awakened');
+        S.tr3('[BRAIN] wokeup:Try', 'Awakened');
         Bow(WO);
         Ref.SLEEP = T.clone(SLEEP);
       } else {
-        S.tr1('wokeup:Try', 'Couldn\'t wake up');
+        S.tr3('[BRAIN] wokeup:Try', 'Couldn\'t wake up');
       }
     } else {
-      S.tr1('wokeup:Try', 'Not trying to wake');
+      S.tr3('[BRAIN] wokeup:Try', 'Not trying to wake');
     }
-    return S.result({ sleep: true });
+    return RES({ sleep: true });
   };
   WO.greeting = () => {
-    S.tr1('wokeup:greeting');
+    S.tr3('[BRAIN] wokeup:greeting');
     return 'おはよう。!!';
   };
 }

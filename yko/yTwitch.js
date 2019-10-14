@@ -9,35 +9,35 @@ const ytFake = './Twitch/ytTmiFake.js';
 //
 let STATE = 'Normal';
 module.exports.Super = function (Y, Ref) {
-  const S = Y.superKit('twtich', this, 0, 0, Ref);
+  const S = Y.superKit('twtich', this, Y, Ref);
   S.ver = `${ver} :S`;
   S.DebugCall = DebugCall(S);
   build_super_comps(S);
 }
 module.exports.Unit = function (R, Ref) {
-  const U = R.unitKit('twtich', this, 0, 0, Ref);
+  const U = R.unitKit('twtich', this, R, Ref);
     U.ver = `${ver} :U`;
   U.super = R.un.Twitch;
   Ref.$unit   (U);
   Ref.$onFake (U);
 }
 module.exports.init = function (Y, Ref) {
-  const G = Y.superKit('twitch', this, 0, 0, Ref);
+  const G = Y.superKit('twitch', this, Y, Ref);
   G.ver = `${ver} :G`;
   build_guest_comps(G);
 }
 module.exports.onFake = function (Y, Ref) {
-  Y.tr4('yTwitch:onFake');
+  Y.tr4('[Twitch] exports.onFake');
   Ref.$onFake = U => { onFake(Y, Ref) };
 }
 function build_super_comps (S) {
-  S.tr4('build_super_comps');
+  S.tr4('[Twitch] build_super_comps');
   S.onFake = () => { onFake(S.un, S.Ref) };
   S.init = () => {
     const RUNS = () => {
       const RN = S.rack.get('RUNNERS');
       for (let [key, func] of S.tool.e(RN)) {
-        S.tr3(`'${key}' started running.`);
+        S.tr3(`[Twitch] '${key}' started running.`);
         func();
     } };
     const DISP = (ON, Func) =>
@@ -50,7 +50,6 @@ function build_super_comps (S) {
         S.tr('Warning', err);
         setTimeout(ENGINE, 10000);
       }
-      return S.client();
     };
     S.engine(ENGINE);
     S.run = S.un.run;
@@ -60,7 +59,7 @@ function build_super_comps (S) {
   };
 }
 function build_guest_comps (G) {
-  G.tr4('build_guest_comps');
+  G.tr4('[Twitch] build_guest_comps');
   const RUNS = () => {};
   const DISP = (ON, Func) => {
     build_guest_dispatch(G, ON, Func);
@@ -74,7 +73,7 @@ function build_guest_comps (G) {
   };
 }
 function build_base_comps (X, RUNS, DISP) {
-  X.tr4('build_base_comps');
+  X.tr4('[Twitch] build_base_comps');
   const c = X.im.chat;
   X.Ref.MSG_WRAP = X.debug()
       ? (msg) => { return `${msg} (Debug)` }
@@ -108,36 +107,36 @@ function build_base_comps (X, RUNS, DISP) {
     CLIENT.on('connected', (addr, port) => {
       RUNS();
       ON.twitch_chat_connected(addr, port);
-      X.tr(`[Connect] Twitch Chat:${addr}:${port} (${STATE})`);
+      X.tr(`[Twitch] Connected Chat:${addr}:${port} (${STATE})`);
     });
     let CM;
     if (CM = ON.twitch_chat_message)
           CLIENT.on('message', DISP(ON, CM));
     await CLIENT.connect();
-    X.tr3('Twitch login status', c.loginID, c.tagetChannels);
-    X.tr7('password: ' + c.oauthToken);
+    X.tr3('[Twitch] login status', c.loginID, c.tagetChannels);
+    X.tr7('[Twitch] login password: ' + c.oauthToken);
     return CLIENT;
   };
   X.disconnect = () => {
     if (! CLIENT) return;
     try { CLIENT.disconnect() }
-    catch (e) { X.tr('Warning (disconnect)', e) };
+    catch (e) { X.tr('[Twitch] Warning (disconnect)', e) };
     CLIENT = false;
-    X.tr3('disconnect');
+    X.tr3('[Twitch] disconnect');
   };
   X.client = async () => { return X.connect() };
   if (X.rack.has('Discord')) {
     X.Ref.toDiscord = async (U, ch, name, msg) => {
       const Key = `twitch.channels.${CH(X, ch)}.toDiscord`;
-      X.tr3('toDiscord', Key);
+      X.tr3('[Twitch] toDiscord', Key);
       let cf;
       await U.root.sysDB().get(Key).then(x=> cf = x );
       if (! cf || ! cf.webhook) {
-        U.tr4('toDiscord', 'Cancel( Unknown config )');
+        U.tr4('[Twitch] toDiscord', 'Cancel( Unknown config )');
         return;
       }
-      U.tr3('toDiscord:webhook');
-      U.tr7('config', cf);
+      U.tr3('[Twitch] toDiscord:webhook');
+      U.tr7('[Twitch] config', cf);
       const w = cf.webhook;
       U.root.Discord.webhook
             ([w.id, w.token], U.tool.tmpl(cf.message, {
@@ -150,21 +149,23 @@ function build_base_comps (X, RUNS, DISP) {
   }
   X.Ref.$onFake = U => {};
   if (isSleep(X.un)) {
-    X.tr4('onFake', true);
+    X.tr4('[Twitch] onFake');
     onFake(X.un, Ref);
   }
   return X;
 }
 function prepare_child_comps (Y, Ref) {
-  Y.tr4('prepare_child_comps');
+  Y.tr4('[Twitch] prepare_child_comps');
   return U => {
     U.App = (name) => {
       const JS = require(`./Twitch/yta${name}.js`);
       return new JS (Y, U, Ref);
     };
     let [TMP, H] = [[]];
+    const IS = (o) => { return (TMP.is = o) };
+    U.is = () => { return TMP.is };
     U.start = async (ch, context, msg) => {
-      U.tr4('start (:U)');
+      U.tr4('[Twitch] start (:U)');
       H = context;
       const Uname = H['display-name'] || H.username || 'N/A';
        U.handler = () => { return context };
@@ -173,24 +174,24 @@ function prepare_child_comps (Y, Ref) {
       U.dispName = () => { return Uname };
       U.username = () => { return H.username };
       const Key = `twitch.channels.${CH(U, ch)}.chat`;
-      U.tr4('start [check:ignore]');
+      U.tr4('[Twitch] check:ignore');
       let cf;
       await U.root.sysDB().get(Key)
              .then(x=> cf = x || { ignoreNames: [] });
-      U.tr4('<sysDB>...ignoreNames', cf.ignoreNames);
+      U.tr4('[Twitch] <sysDB>...ignoreNames', cf.ignoreNames);
       const target = H.username.toLowerCase();
       if (cf.ignoreNames.find(o=> o == target)) {
-        U.tr3('Message:ignore - hit', target);
+        U.tr3('[Twitch] Message:ignore - hit', target);
         return U;
       }
-      U.root.brain.isCall(msg);
+      U.root.brain.isCall(msg, IS);
       return U;
     };
     U.reply = async (msg) => {
       return H.say(Ref.MSG_WRAP(msg));
     };
     U.every = () => {
-      U.tr3('every');
+      U.tr3('[Twitch] every');
       U.toDiscord(U.channel(), U.dispName(), U.content());
       U.root.finish();
     };
@@ -200,11 +201,11 @@ function prepare_child_comps (Y, Ref) {
   };
 }
 function build_super_dispatch (S, ON, Func) {
-  S.tr4(`build_super_dispatch`);
+  S.tr4(`[Twitch] build_super_dispatch`);
   return (ch, h, msg, self) => {
     //	if (self) return; // bot call << This doesn't work
-    S.tr3(`[event status]`, ch, msg, self);
-    S.tr7('[context]', h);
+    S.tr3(`[Twitch] event status`, ch, msg, self);
+    S.tr7('[Twitch] context', h);
     let R;
     S.un.start(my).then( async r => {
       R = r;
@@ -228,7 +229,7 @@ function CH (X, ch) {
   return X.tool.A2a(ch.match(/^\#(.+)/) ? RegExp.$1 : ch);
 }
 function onFake (X, Ref) {
-  X.tr4('Twitch:onFake');
+  X.tr4('[Twitch] onFake');
   STATE = 'Fake';
   Ref.tmi = () => {
     const JS = require(ytFake);

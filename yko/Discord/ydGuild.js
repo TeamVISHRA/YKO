@@ -3,11 +3,11 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ydGuild.js';
-const ver = `yko/Discord/${my} v191013.01`;
+const ver = `yko/Discord/${my} v191014.01`;
 //
 module.exports.Unit = function (P) {
    const R = P.root;
-   const S = R.unitKit(my, this, P.im, P.conf);
+   const S = R.unitKit(my, this, P);
      S.ver = ver;
   S.parent = P;
    const T = S.tool;
@@ -26,16 +26,16 @@ module.exports.Unit = function (P) {
   S.join = async () => {
     const Gid = S.guildID();
     const Key = `discord.guilds.${Gid}.join`;
-    S.tr3('guild:join', Key);
+    S.tr3('[Discord:G] join', Key);
     let cf;
     await R.sysDB().get(Key).then(x=> cf = x );
     if (cf) {
-      S.tr7('join(GUILD):sysDATA', cf);
+      S.tr7('[Discord:G] join:sysDB', cf);
       if (cf.msg1) S.DMsend
         (S.userID(), T.tmpl(cf.msg1, { name: S.guildName() }));
       if (cf.msg2) S.systemCH_send(Gid, cf.msg2, 300);
       if (cf.LogCH) {
-        S.tr3('join(GUILD): Log channel', cf.LogCH);
+        S.tr3('[Discord:G] join: Log channel', cf.LogCH);
         S.channel_send(cf.LogCH, EMBED(S, cf.color));
     } }
     return R.finish();
@@ -43,13 +43,13 @@ module.exports.Unit = function (P) {
 	S.exit = async (Yo) => {
     const Gid = S.guildID();
     const Key = `discord.guilds.${Gid}.exit`;
-    S.tr3('guild:exit', Key);
+    S.tr3('[Discord:G] exit', Key);
     let cf;
     await R.sysDB().get(Key).then(x=> cf = x );
     if (cf) {
-      S.tr7('exit(GUILD):sysDATA', cf);
+      S.tr7('[Discord:G] exit:sysDB', cf);
       if (cf.LogCH) {
-        S.tr3('exit(GUILD): Log channel', cf.LogCH);
+        S.tr3('[Discord:G] exit: Log channel', cf.LogCH);
         S.channel_send(cf.LogCH, EMBED(S, cf.color));
     } }
 //    P.MemberDB().view(Gid, S.userID())

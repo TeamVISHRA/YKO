@@ -4,13 +4,13 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'CORE.js';
-const ver = `yko/${my} v191013.01`;
+const ver = `yko/${my} v191014.01`;
 //
 module.exports = function (ARGS) {
 	const Y = this;
   if (! ARGS) ARGS = Object.create(null);
-    Y.un = Y;
 	 Y.ver = ver;
+    Y.un = Y;
     Y.im = require('../im/now.js');
   Y.conf = require('../y-config.js');
   Y.exit = process.exit;
@@ -45,7 +45,7 @@ module.exports = function (ARGS) {
   for (let i of [1,2,3,4,5,6,7]) {
     Y[`tr${i}`] = (Lv != 0 && i <= Lv) ? Y.tr : () => {};
   }
-  Y.tr1('YKO - debug_level', Lv);
+  Y.tr1('[CORE] debug_level', Lv);
   const Tool = require('./TOOL.js');
   const T = Y.tool = new Tool (Y);
   const Gd = Y.rack = new Map([
@@ -115,21 +115,24 @@ module.exports = function (ARGS) {
       const Ref = Gd.get(j);
       Ref.$JS.init(Y, Ref);
     }
-    Y.tr1(`${MAIN.$name} - Complete initialization.`);
+    Y.tr3(`[CORE] ${MAIN.$name} - Complete initialization.`);
     Y.init = false;
   };
   let Call = 0;
+  const Super = MAIN
+      ? (X) => { X.super = Y[MAIN.$name]; return X }
+      : (X) => { return X };
   Y.start = (nm) => {
     return new Promise ( resolve => {
       if (! nm) Y.throw(ver, `Unknown label.`);
       if (++Call > 10000) Call = 1;
       const myName = `${nm} [UNIT:${Call}]`;
-      Y.tr3(`>> ${myName} - START !!`);
-      return resolve( new UNIT (myName, Y, Gd, T) );
+      Y.tr3(`[CORE] >> ${myName} - START !!`);
+      return resolve( new UNIT (myName, Y, Gd, Super) );
     }).catch( e => { Y.throw(ver, e) } );
   };
   Y.onFake = () => {
-    Y.tr3('Y.onFake');
+    Y.tr3('[CORE] Y.onFake');
     for (let key of T.v(Gd.get('REQUIRES'))) {
       if (Y[key] && Y[key].onFake) {
         Y[key].onFake();
@@ -138,39 +141,37 @@ module.exports = function (ARGS) {
         if (Ref.$JS.onFake) Ref.$JS.onFake(Y, Ref);
       }
   } };
-  Y.superKit = (name, x, im, cf, Ref) => {
-    Y.tr6('Y.baseKit', name);
+  Y.superKit = (name, x, P, Ref) => {
+    Y.tr6('[CORE] Y.superKit', name);
     const X = Object.assign(x, Y);
-    if (name) {
-      X.im = im
-          ? (im[name] || im): (Y.im[name] || Y.im );
-      X.conf = cf
-          ? (cf[name] || cf): (Y.conf[name] || Y.conf); 
-    } else {
-      [X.im, X.conf] = [(im || Y.im), (cf || Y.conf)];
+    X.par = P;
+    if (P) {
+      if (P.im && P.im[name]) X.im = P.im[name];
+      if (P.conf && P.conf[name]) X.conf = P.conf[name];
     }
     if (Ref) X.Ref = Ref;
-    for (let k of [MAIN.$name, 'run', 'init', 'onFake']) {
-      delete X[k];
-    }
+    for (let k of [MAIN.$name, 'run', 'init', 'onFake'])
+    { delete X[k] }
     return X;
   };
-  Y.tr1(ver, '>>> Radey ...');
+  Y.tr1(`[CORE] ${ver}`, '>>> Radey ...');
 };
-function UNIT (myName, Y, Gd, T) {
-  const R = this;
-  R.ver = `${my} (${myName})`;
+function UNIT (myName, Y, Gd, Super) {
+  const R = this, T = Y.tool;
+  R.ver = `${myName} (${my})`;
   [R.un, R.conf, R.im] = [Y, Y.conf, Y.im];
-  R.unitKit = (name, X, ...args) => {
-    Y.tr5('R.baseKit', name);
+  R.unitKit = (name, X, P, Ref) => {
+    Y.tr5('[UNIT] unitKit', name);
+    Y.superKit(name, X, P, Ref);
         X.root = R;
     X.rollback = R.rollback;
       X.finish = R.finish;
-    return Y.superKit(name, X, ...args);
+    if (P.super) X.super;
+    return Super(X);
   };
   R.tmp = { $START: 1 };
   for (let key of ['box', 'brain', 'web']) {
-    const Ref  = Gd.get(key);
+    const Ref = Gd.get(key);
     R[key] = new Ref.$JS.Unit (R, Ref);
   }
   const SYSd = Gd.get('sysdata');
@@ -184,21 +185,20 @@ function UNIT (myName, Y, Gd, T) {
     for (let F of T.v(Gd.get('ROLLBACK'))) { F(R) };
     R.box.rollback();
     R.tmp = T.c(null);
-    Y.tr3(`>> ${myName} - ROLLBACK !!`);
+    Y.tr3(`[UNIT] >> ${myName} - ROLLBACK !!`);
   };
   R.finish = () => {
     if (! R.tmp.$START) {
-      Y.tr3(`Warning: `
+      Y.tr3(`[UNIT] Warning: `
       + `FINISH didn't exec ...(${R.ver})\n${sen}`);
       return false;
     }
     for (let F of T.v(Gd.get('FINISH'))) { F(R) };
     R.box.commit();
     R.tmp = T.c(null);
-    Y.tr3(`>> ${myName} - FINISH !!`);
+    Y.tr3(`[UNIT] >> ${myName} - FINISH !!`);
   };
   for (let F of T.v(Gd.get('START'))) { F(R) };
-  return R;
 }
 function Logger (c) {
   return {

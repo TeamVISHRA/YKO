@@ -3,21 +3,24 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'yCRON.js';
-const ver = `yko/${my} v191013.01`;
+const ver = `yko/${my} v191014.01`;
+//
+const defaultInterval = 3000;
 //
 module.exports.Super = function (Y, Ref) {
   Y.throw(`I will not be Super !!`);
 };
 module.exports.Unit = function (R, Ref) {
-  const U = R.unitKit('cron', this, 0, 0, Ref);
+  const U = R.unitKit('cron', this, R, Ref);
   U.ver = `${ver} :U`;
   U.Jobs = Worker(U);
 };
 module.exports.onFake = function (Y, Ref) {
+  Y.tr3(`[CRON] exports.onFake`);
   onFake(Y);
 };
 module.exports.init = function (Y, Ref) {
-  const S = Y.superKit('cron', this, 0, 0, Ref);
+  const S = Y.superKit('cron', this, Y, Ref);
   S.ver = `${ver} :I`;
   init(S);
 };
@@ -64,25 +67,24 @@ function init (S) {
           if (CRON[k].value != v) {
             ON['cron_' + CRON[k].name](START, v, Now);
             CRON[k].value = v;
-            S.tr5(CRON[k].name, v);
+            S.tr5(`[CRON] ${CRON[k].name}`, v);
           }
         } else {
           ON['cron_' + k](START, v, Now);
-          S.tr5(k, v);
+          S.tr5(`[CRON] ${k}`, v);
         }
       }
       if (Now.count >= S.conf.count.max) CRON.count = 0;
     } catch (err) {
-      S.tr(ver, err);
+      S.tr(`[CRON] Warning`, err);
     };
   };
   let ClearToken;
   S.runners('CRON', ()=> {
-    if (! S.conf.interval)
-        S.throw(ver, "'interval' is not defined");
+    const Iv = S.conf.interval || defaultInterval;
     if (ClearToken) clearInterval(ClearToken);
-    S.tr(`[Start] YKO CRON !!`);
-    ClearToken = setInterval(JOB, S.conf.interval);
+    S.tr(`[CRON] started !! interval:${Iv}`);
+    ClearToken = setInterval(JOB, Iv);
   });
 }
 function Worker (U) {
@@ -96,7 +98,6 @@ function Worker (U) {
   };
 }
 function onFake (Y) {
-  Y.tr3(`${my} >> onFake !!`);
   const RUN = Y.rack.get('RUNNERS');
   if (RUN.CRON) delete RUN.CRON;
 }

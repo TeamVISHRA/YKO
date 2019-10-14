@@ -5,11 +5,11 @@
 const my  = 'ydaTools.js';
 const ver = `${my} v191008.01`;
 //
-module.exports = function (Y, P) {
+module.exports.Unit = function (P) {
   this.ver = ver;
 	const S = this,
         R = P.root,
-       PF = X.brain.prefix();
+       PF = P.root.brain.prefix();
 	S.run = () => {
 	  P.delete();
 	  P.send({ embed: {

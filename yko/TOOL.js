@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'TOOL.js';
-const ver = `yko/${my} v191008.01`;
+const ver = `yko/${my} v191014.01`;
 //
 const MOMENT = require('moment'),
    TM_FORMAT = '/DD HH:mm:ss';
@@ -224,7 +224,7 @@ function FSwriteJson (path, json, cr, err) {
 function FSunlink (path) {
   let status;
   try { fs().unlinkSync(path); status = true }
-  catch (err) { status = false, Y.tr2('FSunlink', err) }
+  catch (err) { status = false, Y.tr2('[TOOL] FSunlink', err) }
   return status;
 }
 function txt2json (txt) {
@@ -244,7 +244,7 @@ function reset (o) {
   for(var key in o){ delete o[key] }
 }
 function quest (v, keys) {
-  Y.tr3('quest', keys);
+  Y.tr3('[TOOL] quest', keys);
   for (let k of keys) {
 //		if (! k in v) return undefined;
     if (v[k] === undefined) return undefined;
@@ -305,7 +305,7 @@ function Try (Fmain, Ferr) {
   try {
     return Fmain();
   } catch (error) {
-    return Ferr ? Ferr(error) : Y.tr(ver, error);
+    return Ferr ? Ferr(error) : Y.tr('[TOOL]', error);
   }
 }
 function sleep (n) {

@@ -3,17 +3,21 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ydMessage.js';
-const ver = `yko/Discord/${my} v191013.01`;
+const ver = `yko/Discord/${my} v191014.01`;
 //
 module.exports.Unit = function (P) {
    const R = P.root;
-   const U = R.unitKit(my, this, P.im, P.conf);
+   const U = R.unitKit(my, this, P);
      U.ver = ver;
-  U.parent = P;
    const T = U.tool;
+  U.unitKit = (nm, X, ...arg) => {
+    R.unitKit(nm, X, ...arg);
+    X.dir = P;
+    return X;
+  };
   U.App = (name, args) => {
     const JS = require(`./App/yda${name}.js`);
-    return new JS (U, args);
+    return new JS.Unit (U, args);
   };
   let [TMP, H] = [{}];
   const MSG_WARP = U.debug() ? (msg) => {
@@ -37,33 +41,35 @@ module.exports.Unit = function (P) {
     return false;
   };
   const W_BOW = (wo) => { U.send('おはよう！！', 20) };
+  const IS = (o) => { return (TMP.is = o) };
+  U.is = (o) => { return TMP.is };
   U.start = (handler) => {
     [H, TMP] = [handler, {}];
     let type;
     if (U.type() == 'dm') {
-     U.isDM       = () => { return true };
+            U.isDM = () => { return true };
       TMP.guild_id = TMP.channel_id = '';
-      TMP.user_id  = H.user.id;
-     U.guildID =U.channelID = () => { return '' };
-     U.userID = () => { return TMP.user_id };
-      Y.tr3('<Meaage>.channel.type:' + (type = 'DM'));
+       TMP.user_id = H.user.id;
+         U.guildID = U.channelID = () => { return '' };
+          U.userID = () => { return TMP.user_id };
+      Y.tr3('[Discord:ydM] <M>.channel.type:' + (type = 'DM'));
     } else {
-     U.isDM       = () => { return false };
+            U.isDM = () => { return false };
       TMP.guild_id = H.guild.id;
-      TMP.user_id  = H.author.id;
-      U.guildID    = () => { return TMP.guild_id };
-      U.channelID  = () => { return TMP.channel_id };
-      U.userID     = () => { return TMP.user_id };
+       TMP.user_id = H.author.id;
+         U.guildID = () => { return TMP.guild_id };
+       U.channelID = () => { return TMP.channel_id };
+          U.userID = () => { return TMP.user_id };
       type = TMP.channel_id = H.channel.id;
     }
     if (R.brain.isSleep(type, U.userID())) {
-      R.brain.wokeup(W_CHECK, W_BOW)
+      R.brain.wokeup(W_CHECK, W_BOW, IS)
              .Try(type, U.userID(), H.content);
     } else {
-      R.brain.isCall(H.content);
+      R.brain.isCall(H.content, IS);
     }
     return U;
-	};
+  };
   U.type = () => { return H.channel.type };
   U.guildName = () => {
     return U.isDM() ? '(N/A)': H.guild.name;
@@ -88,7 +94,7 @@ module.exports.Unit = function (P) {
   };
   U.discriminator = () => {
     return U.isDM() ? H.user.discriminator
-                  : H.author.discriminator;
+                    : H.author.discriminator;
   };
   U.avatarURL = () => {
     return U.isDM() ? H.user.avatarURL : H.author.avatarURL;
@@ -101,41 +107,41 @@ module.exports.Unit = function (P) {
     return `${name}#${disc}`;
   };
   U.channelGET = (id) => {
-    U.tr3('channelGET', id);
+    U.tr3('[Discord:ydM] channelGET', id);
     return H.guild.channels.get(id);
   };
   U.userGET = (id) => {
-    U.tr3('userGET', id);
+    U.tr3('[Discord:ydM] userGET', id);
     return H.users.get(id);
   };
   U.setDMnotice = (n) => {
-    U.tr3('setDMnotice');
+    U.tr3('[Discord:ydM] setDMnotice');
     if (! n && n != 0) return TMP.setDMnotice;
     TMP.setDMnotice = n == 1 ? 'ＤＭを送ったよ!!': n;
     return TMP.setDMnotice;
   };
   U.DMsend = (msg, a) => {
     if (! U.isDM() && U.setDMnotice()) {
-      U.tr3('DMsend (notice):' + TMP.setDMnotice);
+      U.tr3('[Discord:ydM] DMsend (notice):' + TMP.setDMnotice);
       U.reply(TMP.setDMnotice, a);
     }
-    U.tr3(`<Message>.author.send:`, msg);
+    U.tr3(`[Discord:ydM] <M>.author.send:`, msg);
     return H.author.send( MSG_WARP(msg) );
   };
   U.channelSend = (id, msg, a) => {
     let ch = U.channelGET(id)
           || U.throw(ver, 'YKO> Invalid channel ID');
-    U.tr3(`<channel>.Send: [${id}]`, msg);
+    U.tr3(`[Discord:ydM] <Ch>.Send: [${id}]`, msg);
     return SEND(m=> { return ch.send(m) }, msg, a);
   };
   U.send = (msg, a) => {
     if (U.isDM()) return U.DMsend(msg, a);
-    U.tr3(`<Message>.channel.send:`, msg);
+    U.tr3(`[Discord:ydM] <M>.channel.send:`, msg);
     return SEND(m=> { return H.channel.send(m) }, msg, a);
   };
   U.reply = (msg, a) => {
     if (U.isDM()) return U.DMsend(msg, a);
-    U.tr3(`<Message>.reply: ${msg}`);
+    U.tr3(`[Discord:ydM] <M>.reply: ${msg}`);
     return SEND(m=> { return H.reply(m) }, msg, a);
   };
   let SEND = (func, msg, a) => {
@@ -147,7 +153,7 @@ module.exports.Unit = function (P) {
     const id = U.devel_channelID();
     SEND = (func, msg, a) => {
       ch = U.channelGET(id);
-      U.tr3('Debug Channel: ' + id);
+      U.tr3('[Discord:ydM] Debug Channel: ' + id);
       return DBGsend(m=> { return ch.send(m) }, msg, a);
     };
   }
@@ -156,17 +162,17 @@ module.exports.Unit = function (P) {
   U.delete  = () => { H.delete() };
   // === test ==========================================
   U.reAction = (react) => {
-    U.tr1('reAction');
+    U.tr1('[Discord:ydM] reAction');
     return H.react(react);
   };
   U.findGuildMember = (id) => {
     if (U.isDM()) return false;
-    U.tr2('<Message>.guild.members.find', id);
+    U.tr2('[Discord:ydM] <M>.guild.members.find', id);
     return (H.guild.members.find('name', id) || false);
   };
   U.findGuildRole = (name) => {
     if (U.isDM()) return false;
-    U.tr2('<Message>.guild.roles.find', name);
+    U.tr2('[Discord:ydM] <M>.guild.roles.find', name);
     return (H.guild.roles.find('name', name) || false);
   };
   // === test ==========================================
@@ -180,14 +186,14 @@ module.exports.Unit = function (P) {
     U.toTwitch = async (uname, msg, nocheck) => {
       if (U.isDM()) return false;
       const Key = `discord.guilds.${U.guildID()}.toTwitch`;
-      U.tr3('toTwitch', Key);
+      U.tr3('[Discord:ydM] toTwitch', Key);
       let cf;
       await R.sysDB().get(Key).then(x=> cf = x );
-      U.tr5('sysCash: ', cf);
+      U.tr5('[Discord:ydM] sysDB: ', cf);
       if (! cf) return false;
-      U.tr3('toTwitch', 'check');
+      U.tr3('[Discord:ydM] toTwitch', 'check');
       if (! nocheck && U.channelID() != cf.fromCH) {
-        U.tr3('toTwitch', 'Cancel !!');
+        U.tr3('[Discord:ydM] toTwitch', 'Cancel !!');
         return;
       }
 //      const me = U.un.im.twitch.chat.loginID;
@@ -202,7 +208,7 @@ module.exports.Unit = function (P) {
     U.toTwitch = () => {};
   }
   U.every = () => {
-    U.tr3('every');
+    U.tr3('[Discord:ydM] every');
     U.toTwitch(U.nickname(), U.content());
     U.finish();
   };

@@ -3,38 +3,37 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ybCONTAINER.js';
-const ver = `yko/BOX/${my} v191013.01`;
+const ver = `yko/BOX/${my} v191014.01`;
 //
 module.exports.Unit = function (P) {
-   const S = P.root.unitKit('container', this, P.im, P.conf);
+   const S = P.root.unitKit('container', this, P);
      S.ver = ver;
-  S.parent = P;
   const DB = S.DB = P.DB();
-	 const T = S.tool;
-	S.view = (a) => {
-    S.tr4('view');
-    if (! a.type) S.throw('type unknown.');
-    if (! a.id)   S.throw('id unknown.');
-    if (! a.name) S.throw('name unknown.');
-    if (a.type == 'trash'
-		 || a.type == 'list') S.throw(ver, 'Illegal call');
-  	return new Promise ( rsv => {
-    	return DB.findOne
-      	({ type: a.type, id: a.id, name: a.name })
-      	.then( db => { rsv( new BOX(S, a, db)) });
+   const T = S.tool;
+  S.view = (a) => {
+    S.tr4('[BOX:C] view');
+    if (! a.type) S.throw('[BOX:C] type unknown.');
+    if (! a.id)   S.throw('[BOX:C] id unknown.');
+    if (! a.name) S.throw('[BOX:C] name unknown.');
+    if (a.type == 'trash' || a.type == 'list')
+                  S.throw(`[BOX:C] ${ver}`, 'Illegal call');
+    return new Promise ( rsv => {
+      return DB.findOne
+        ({ type: a.type, id: a.id, name: a.name })
+          .then( db => { rsv( new BOX(S, a, db)) });
     });
-	};
+  };
   S.list = (args) => {
-    S.tr4('list');
-    if (! args.type) S.throw('type unknown.');
-    if (! args.id)   S.throw('id unknown.');
-  	return new Promise ( rsv => {
-    	return DB.findMeny({ type: args.type, id: args.id })
-      .then( list => { rsv( new LIST(S, args, list)) });
+    S.tr4('[BOX:C] list');
+    if (! args.type) S.throw('[BOX:C] type unknown.');
+    if (! args.id)   S.throw('[BOX:C] id unknown.');
+    return new Promise ( rsv => {
+      return DB.findMeny({ type: args.type, id: args.id })
+        .then( list => { rsv( new LIST(S, args, list)) });
     });
   };
   S.cleanCash = async () => {
-    S.tr4('cleanCash');
+    S.tr4('[BOX:C] cleanCash');
     const Now = T.unix();
     let result = await DB.deleteMany({
       type: { $eq: 'cash' },
@@ -133,7 +132,7 @@ function BOX (S, Args, Db) {
   let UPDATE = false;
   BOX.update = (n) => { return (UPDATE = true) };
   BOX.isUpdate = () => { return UPDATE ? true : false };
-	//
+  //
   BOX.has = (key) => {
     return (key in VALUE);
   };
@@ -167,24 +166,24 @@ function BOX (S, Args, Db) {
     return T.unix_add(n);
   };
   BOX.preper = async () => {
-    S.tr3('preper');
+    S.tr3('[BOX:C] preper');
     if (! UPDATE) return BOX;
-    S.tr4('preper', 'update true');
+    S.tr4('[BOX:C] preper', 'update true');
     let db = { value: VALUE };
     if (_ID) {
-      S.tr3('preper:update - target', _ID);
+      S.tr3('[BOX:C] preper:update - target', _ID);
       db.timeChange = T.unix();
       if (TYPE == 'cash') {
         if (BOX.TTL) db.timeLimit = TTL(BOX.TTL);
       } else {
         db.timeLimit = false;
       }
-      S.tr5('preper', db);
-      S.parent.regist
+      S.tr5('[BOX:C] preper', db);
+      S.par.regist
          (o => { return S.DB.updateOne(UNIQUE, db) });
     } else {
       if (! BOX.type || BOX.type == 'trash')
-                     S.throw(ver, 'Illegal processing');
+          S.throw(`[BOX:C] ${ver}`, 'Illegal processing');
       [db.type, db.id, db.name] = [TYPE, ID, NAME];
       db.timeModify = db.timeChange = T.unix();
       if (TYPE == 'cash') {
@@ -192,16 +191,16 @@ function BOX (S, Args, Db) {
       } else {
         db.timeLimit = false;
       }
-      S.tr3('preper:insert');
-      S.tr7('preper', db);
-      S.parent.regist(o => { return S.DB.insertOne(db) });
+      S.tr3('[BOX:C] preper:insert');
+      S.tr7('[BOX:C] preper', db);
+      S.par.regist(o => { return S.DB.insertOne(db) });
     }
     UPDATE = false;
     return BOX;
   };
   BOX.commit = async () => {
 //    BOX.preper();
-    await S.parent.commit().then(o=> { BOX.close() });
+    await S.par.commit().then(o=> { BOX.close() });
     return true;
   };
   BOX.close = () => { BOX = false };
@@ -246,15 +245,14 @@ function BOX (S, Args, Db) {
       }) ();
     };
     BOX.remove = async () => {
-      S.tr3('remove');
+      S.tr3('[BOX:C] remove');
       if (! UNIQUE)
-          S.throw(ver, 'Target data h does not exist.');
+      S.throw(`[BOX:C] ${ver}`, 'Target data h does not exist.');
       let db = { type: 'trash',
           ago: TYPE, value: VALUE, timeChange: T.unix() };
       // Equivalent to preper
-      S.parent.regist(o => { return DB.updateOne(UNIQUE, db) });
+      S.par.regist(o => { return DB.updateOne(UNIQUE, db) });
       return BOX;
-//      return await P.commit();
     };
   }
 }

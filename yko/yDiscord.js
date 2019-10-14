@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'yDiscord.js';
-const ver = `yko/${my} v191013.01`;
+const ver = `yko/${my} v191014.01`;
 //
 const Discord = require('discord.js');
 const ydFake  = './Discord/ydFAKE.js';
@@ -11,39 +11,39 @@ const AdminRoleLevel = 1920000000;
 //  w
 let STATE = 'Normal';
 module.exports.Super = function (Y, Ref) {
-  const S = Y.superKit('discord', this, 0, 0, Ref);
+  const S = Y.superKit('discord', this, Y, Ref);
   S.ver = `${ver} :S`;
   S.DebugCall = DebugCall(S);
   build_super_comp(S, Y.tool);
 }
 module.exports.Unit = function (R, Ref) {
-  const U = R.unitKit('discord', this, 0, 0, Ref);
+  const U = R.unitKit('discord', this, R, Ref);
   U.ver = `${ver} :U`;
-  U.super = R.un.Discord;
+//  U.super = R.un.Discord;
   Ref.$unit   (U);
   Ref.$onFake (U);
 }
 module.exports.init = function (Y, Ref) {
-  Y.tr4('yDiscord:init');
+  Y.tr4('[Discord] init');
   Ref.$unit = isSleep(Y)
       ? (u) => { u.webhook = onWebhookFake(Y) }
       : (u) => { u.webhook = onWebhook(Y) };
   Ref.$onFake = () => {};
 }
 module.exports.onFake = function (Y, Ref) {
-  Y.tr4('yDiscord:onFake');
+  Y.tr4('[Discord] exports.onFake');
   Ref.$onFake =
         (u) => { u.webhook = onWebhookFake(Y) };
 }
 function build_super_comp (S) {
   const T = S.tool;
-  S.tr4('build_super_comps');
+  S.tr4('[Discord] build_super_comps');
   let CLIENT;
   S.client = () =>
     { return CLIENT || (CLIENT = new Discord.Client()) };
   S.ask = new askGuild(S, T);
   S.onFake = () => {
-    S.tr3('onFake');
+    S.tr3('[Discord] onFake');
     const Fake = require(ydFake);
     S.client = () =>
          { return CLIENT || (CLIENT = new Fake.on (S)) };
@@ -53,7 +53,7 @@ function build_super_comp (S) {
   S.init = () => { init_super(S, T) };
 }
 function init_super (S, T) {
-  S.tr4('init_super');
+  S.tr4('[Discord] init_super');
   const ON = S.rack.get('ON'),
    RUNNERS = S.rack.get('RUNNERS');
   const ENGINE = () => {
@@ -62,7 +62,7 @@ function init_super (S, T) {
       BOT.on('ready', x => {
         S.ask.refresh();
         for (let [key, func] of T.e(RUNNERS)) {
-          S.tr3(`'${key}' started running.`);
+          S.tr3(`[Discord] '${key}' started running.`);
           func();
         }
         connectMessage(S);
@@ -79,7 +79,7 @@ function init_super (S, T) {
       if (ON.discord_error)	BOT.on('error', ON.discord_error);
       BOT.login(S.im.token);
     } catch (err) {
-      S.tr('---< Warning >------------------------------');
+      S.tr('[Discord] Warning -------------------');
       S.tr(S.ver, err);
       setTimeout(ENGINE, 10000);
     }
@@ -92,9 +92,9 @@ function init_super (S, T) {
   S.init = false;
 }
 function prepare_unit_comp (S) {
-  S.tr4('prepare_unit_comp');
+  S.tr4('[Discord] prepare_unit_comp');
   return (U) => {
-    S.tr3('build_unit_comp');
+    S.tr5('[Discord] build_unit_comp');
     let COMPS = S.tool.c(null);
     for (let k of
     ['ydClient','ydMessage','ydGuild','ydMemberDB']) {
@@ -118,10 +118,10 @@ function prepare_unit_comp (S) {
   };
 }
 function baseMessage (S, T, ON) {
-  S.tr4('baseMessage');
+  S.tr4('[Discord] baseMessage');
   const botAction = ON.discord_bot_action || (() => {});
   return H => {
-    S.tr7('Message handler:');
+    S.tr7('[Discord] Message handler:');
     S.tr7(H);
     if (H.author.bot) return botAction(S, H);
     let R;
@@ -129,7 +129,7 @@ function baseMessage (S, T, ON) {
       R = unitRoot;
       return R.Discord.Message().start(H);
     }).then( ydM => {
-      const is = R.brain.result();
+      const is = ydM.is();
       if (is.sleep) return R.finish();
       if (is.answer) {
         ydM.send(is.answer);
@@ -146,9 +146,9 @@ function baseMessage (S, T, ON) {
 	};
 }
 function baseGuild (S, T, func) {
-  S.tr4('baseGuild');
+  S.tr4('[Discord] baseGuild');
   return H => {
-    S.tr7('Guild handler:');
+    S.tr7('[Discord] Guild handler:');
     S.tr7(H);
     let R;
     S.un.start(my).then( unitRoot => {
@@ -168,7 +168,7 @@ function send2callback (U, a) {
   if (typeof a == 'function') return a;
   return H => {
     let remove = () => {
-      U.tr3('callback (send)');
+      U.tr3('[Discord] callback (send)');
       H.delete();
     };
     setTimeout(remove, (Number(a) * 1000));
@@ -179,11 +179,11 @@ function askGuild (S, T) {
   let GUILDS;
   //
   DB.get = (GuildID) => {
-    S.tr1('ask:get');
+    S.tr1('[Discord] ask:get');
     return (GUILDS && GUILDS[GuildID]) ? GUILDS[GuildID]: false; 
   };
   DB.list = () => {
-    S.tr1('askGuild:list');
+    S.tr1('[Discord] askGuild:list');
     return GUILDS ? T.k(GUILDS): [];
   };
   DB.cash = () => {
@@ -205,13 +205,13 @@ function askGuild (S, T) {
     return gm.EXPERTS;
   };
   DB.refresh = async () => {
-    S.tr1('ask:refresh');
+    S.tr1('[Discord] ask:refresh');
     let Devel = S.im.devel.guild || '';
-    S.tr2('ask:refresh - devel ch', Devel);
+    S.tr2('[Discord] ask:refresh - devel ch', Devel);
     let Guilds = {};
     await S.client().guilds.forEach( async g => {
       let GD = Guilds[g.id] = T.c(null);
-      S.tr3('ask:refresh - guid id', g.id);
+      S.tr3('[Discord] ask:refresh - guid id', g.id);
       S.tr5(GD);
       for (let k of ['id', 'name', 'iconURL', 'ownerID',
         'memberCount', 'systemChannelID', 'joinedTimestamp']) {
@@ -223,7 +223,7 @@ function askGuild (S, T) {
       await g.roles.forEach(ro => {
         const nm = ro.name;
         if (ro.permissions > AdminRoleLevel) {
-          S.un.tr4('askGuild:refresh - role', nm);
+          S.tr4('[Discord] ask:refresh - role', nm);
           GD.EXPERTS[ro.id] = { id: ro.id, name: nm,
             permissions: ro.permissions, color: ro.color };
         }
@@ -232,7 +232,7 @@ function askGuild (S, T) {
           || nm.match(/^game[\_\-\=\:](.+)$/i)
         ) {
           let alias = T.a2A(RegExp.$1);
-          S.tr4('ask:refresh - game', alias);
+          S.tr4('[Discord] ask:refresh - game', alias);
           GD.GAMES[ro.id] =
             { id: ro.id, name: nm, alias: alias };
         }
@@ -259,12 +259,12 @@ function onWebhook () {
 }
 function onWebhookFake (Y) {
   return async (token, str) => {
-    return Y.tr('webhook', token, str);
+    return Y.tr('[Discord] webhook', token, str);
   };
 }
 function connectMessage (S) {
-  S.un.tr(`[Connect] Discord Client (${STATE})`);
-  S.un.tr7('Token', S.im.token);
+  S.un.tr(`[Discord] Client Connected !! (${STATE})`);
+  S.un.tr7('[Discord] Token', S.im.token);
 }
 function DebugCall (S) {
   return () => {
