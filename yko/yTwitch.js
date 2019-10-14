@@ -53,7 +53,7 @@ function build_super_comps (S) {
     };
     S.engine(ENGINE);
     S.run = S.un.run;
-    S.Ref.$unit = prepare_child_comps(S.un, Ref);
+    S.Ref.$unit = prepare_child_comps(S.un, S.Ref);
     S.Ref.$onFake = () => {};
     S.init = false;
   };
@@ -74,7 +74,7 @@ function build_guest_comps (G) {
 }
 function build_base_comps (X, RUNS, DISP) {
   X.tr4('[Twitch] build_base_comps');
-  const c = X.im.chat;
+  const c = X.un.im.twitch.chat;
   X.Ref.MSG_WRAP = X.debug()
       ? (msg) => { return `${msg} (Debug)` }
       : (msg) => { return msg };
@@ -161,7 +161,7 @@ function prepare_child_comps (Y, Ref) {
       const JS = require(`./Twitch/yta${name}.js`);
       return new JS (Y, U, Ref);
     };
-    let [TMP, H] = [[]];
+    let [TMP, H] = [Y.tool.c(null)];
     const IS = (o) => { return (TMP.is = o) };
     U.is = () => { return TMP.is };
     U.start = async (ch, context, msg) => {
@@ -207,18 +207,20 @@ function build_super_dispatch (S, ON, Func) {
     S.tr3(`[Twitch] event status`, ch, msg, self);
     S.tr7('[Twitch] context', h);
     let R;
-    S.un.start(my).then( async r => {
-      R = r;
+    S.un.start(my).then( unitRoot => {
+      R = unitRoot;
       return R.Twitch.start(ch, h, msg);
-    }).then( U => {
-      const is = R.brain.result();
+    }).then( ytM => {
+      const is = ytM.is();
       if (is.answer) {
-        U.reply(Uname, U.Ref.MSG_WRAP(is.answer));
-        U.toDiscord(ch, Uname, U.Ref.MSG_WRAP(is.answer));
+        ytM.reply
+          (ytM.dispname, ytM.Ref.MSG_WRAP(is.answer));
+        ytM.toDiscord
+          (ch, ytM.dispname, ytM.Ref.MSG_WRAP(is.answer));
         return R.finsh();
       }
       if (! is.post) return R.finish();
-      return Func(U, is);
+      return Func(ytM, is);
     }).catch(e=> {
       if (R) R.rollback();
       S.throw(ver, e);

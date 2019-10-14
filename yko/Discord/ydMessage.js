@@ -42,9 +42,9 @@ module.exports.Unit = function (P) {
   };
   const W_BOW = (wo) => { U.send('おはよう！！', 20) };
   const IS = (o) => { return (TMP.is = o) };
-  U.is = (o) => { return TMP.is };
+  U.is = () => { return TMP.is };
   U.start = (handler) => {
-    [H, TMP] = [handler, {}];
+    [H, TMP] = [handler, U.tool.c(null)];
     let type;
     if (U.type() == 'dm') {
             U.isDM = () => { return true };
