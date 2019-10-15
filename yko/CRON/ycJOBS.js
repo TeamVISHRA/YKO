@@ -3,14 +3,12 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ycJOBS.js';
-const ver = `yko/${my} v191013.01`;
+const ver = `yko/${my} v191014.01`;
 //
-module.exports.Unit = function (P) {
-  const S = P.root.unitKit(my, this, P.im, P.conf);
-    S.ver = ver;
-  const List = exports.Collect(S);
-  for (let [key, func] of S.tool.e(List)) { S[key] = func }
-};
+//module.exports.Unit = function (P) {/
+//  const List = exports.Collect(P);
+//  for (let [key, func] of P.tool.e(List)) { S[key] = func }
+//};
 module.exports.Collect = function (P) {
   const R = P.root;
   return {

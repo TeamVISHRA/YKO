@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'yTwitch.js';
-const ver = `yko/${my} v191010.01`;
+const ver = `yko/${my} v191015.01`;
 //
 const ytFake = './Twitch/ytTmiFake.js';
 //
@@ -50,6 +50,7 @@ function build_super_comps (S) {
         S.tr('Warning', err);
         setTimeout(ENGINE, 10000);
       }
+      return S.client();
     };
     S.engine(ENGINE);
     S.run = S.un.run;
@@ -75,6 +76,7 @@ function build_guest_comps (G) {
 function build_base_comps (X, RUNS, DISP) {
   X.tr4('[Twitch] build_base_comps');
   const c = X.un.im.twitch.chat;
+  X.loginID = () => { return c.loginID };
   X.Ref.MSG_WRAP = X.debug()
       ? (msg) => { return `${msg} (Debug)` }
       : (msg) => { return msg };
@@ -141,7 +143,7 @@ function build_base_comps (X, RUNS, DISP) {
       U.root.Discord.webhook
             ([w.id, w.token], U.tool.tmpl(cf.message, {
           name: (name || '(N/A)'),
-       message: (msg  || '...<None>')
+       message: X.Ref.MSG_WRAP(msg  || '...<None>')
       }));
     };
   } else {
@@ -157,9 +159,15 @@ function build_base_comps (X, RUNS, DISP) {
 function prepare_child_comps (Y, Ref) {
   Y.tr4('[Twitch] prepare_child_comps');
   return U => {
+    const S = U.super;
     U.App = (name) => {
-      const JS = require(`./Twitch/yta${name}.js`);
-      return new JS (Y, U, Ref);
+      const JS = require(`./Twitch/App/yta${name}.js`);
+      return new JS.Unit (U, Ref);
+    };
+    U.unitKit = (name, X, ...args) => {
+      U.root.unitKit(name, X, ...args);
+      X.loginID = S.loginID;
+      return X;
     };
     let [TMP, H] = [Y.tool.c(null)];
     const IS = (o) => { return (TMP.is = o) };
@@ -182,13 +190,14 @@ function prepare_child_comps (Y, Ref) {
       const target = H.username.toLowerCase();
       if (cf.ignoreNames.find(o=> o == target)) {
         U.tr3('[Twitch] Message:ignore - hit', target);
+        IS({ ignore: true });
         return U;
       }
       U.root.brain.isCall(msg, IS);
       return U;
     };
     U.reply = async (msg) => {
-      return H.say(Ref.MSG_WRAP(msg));
+      return S.say(U.channel(), msg);
     };
     U.every = () => {
       U.tr3('[Twitch] every');
@@ -197,27 +206,26 @@ function prepare_child_comps (Y, Ref) {
     };
     U.toDiscord =
         (...args) => { return Ref.toDiscord(U, ...args) };
-    U.say = U.super.say;
+    U.say = S.say;
   };
 }
 function build_super_dispatch (S, ON, Func) {
   S.tr4(`[Twitch] build_super_dispatch`);
   return (ch, h, msg, self) => {
-    //	if (self) return; // bot call << This doesn't work
+    if (self) return;
     S.tr3(`[Twitch] event status`, ch, msg, self);
     S.tr7('[Twitch] context', h);
     let R;
-    S.un.start(my).then( unitRoot => {
+    S.start(my).then( unitRoot => {
       R = unitRoot;
       return R.Twitch.start(ch, h, msg);
     }).then( ytM => {
       const is = ytM.is();
+      if (is.ignore) return R.finish();
       if (is.answer) {
-        ytM.reply
-          (ytM.dispname, ytM.Ref.MSG_WRAP(is.answer));
-        ytM.toDiscord
-          (ch, ytM.dispname, ytM.Ref.MSG_WRAP(is.answer));
-        return R.finsh();
+        ytM.reply(is.answer);
+        ytM.toDiscord(ch, S.loginID(), is.answer);
+        return R.finish();
       }
       if (! is.post) return R.finish();
       return Func(ytM, is);

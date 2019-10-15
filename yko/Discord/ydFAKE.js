@@ -3,10 +3,11 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ydFAKE.js';
-const ver = `yko/Discord/${my} v191014.01`;
+const ver = `yko/Discord/${my} v191015.01`;
 //
 module.exports.call = function (P, ARGV) {
   const Y = P.un;
+  Y.tr3('[Discord:F] Debug:call', ARGV);
   Y.onFake();
   switch (ARGV.shift()) {
     case 'evM':

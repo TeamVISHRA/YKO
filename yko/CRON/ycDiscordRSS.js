@@ -2,17 +2,16 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ycDiscordRSSroom.js';
-const ver = `yko/CRON/${my} v191013.01`;
+const ver = `yko/CRON/${my} v191015.01`;
 //
 const FeedParser = require('feedparser');
 const request    = require('request');
 //
 module.exports.Unit = function (P) {
-  const S = P.root.unitKit('job_RSS', this, 0, P.conf);
+  const S = P.root.unitKit('job_RSS', this, P);
     S.ver = ver;
   const T = S.tool,
         R = S.root,
-     KEYS = S.un.im.sysDataKey,
       DBG = S.un.im.discord.devel;
   let DEBUG, DBGCH;
   if (S.debug()) {
@@ -140,7 +139,7 @@ module.exports.Unit = function (P) {
             }
             SEND({ embed: embed });
           }
-          BOX.preper();
+          BOX.prepar();
           R.finish();
         });
       } else {

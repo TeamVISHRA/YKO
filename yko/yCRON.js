@@ -15,14 +15,14 @@ module.exports.Unit = function (R, Ref) {
   U.ver = `${ver} :U`;
   U.Jobs = Worker(U);
 };
-module.exports.onFake = function (Y, Ref) {
-  Y.tr3(`[CRON] exports.onFake`);
-  onFake(Y);
-};
 module.exports.init = function (Y, Ref) {
   const S = Y.superKit('cron', this, Y, Ref);
   S.ver = `${ver} :I`;
   init(S);
+};
+module.exports.onFake = function (Y, Ref) {
+  Y.tr3(`[CRON] exports.onFake`);
+  onFake(Y);
 };
 module.exports.START = function (S) {
   return (name, args) => {
@@ -92,7 +92,7 @@ function Worker (U) {
   return (name, ...a) => {
     if (! Wk) {
       const JS = require(`./CRON/ycJOBS.js`);
-      Wk = new JS.Unit (U);
+      Wk = JS.Collect (U);
     }
     Wk[name](...a);
   };

@@ -3,7 +3,7 @@
 //
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
-const ver = `y-discord.js v191009.01`;
+const ver = `y-discord.js v191015.01`;
 //
 const yko = require('yko'); // require('./yko/CORE.js');
 const Y = new yko ();
@@ -11,8 +11,7 @@ const Y = new yko ();
 advance();
 
 Y.Discord.DebugCall().run()
- .then(Y.Next)
- .catch(e => { Y.throw(ver, e) });
+  .then(Y.Next).catch(e => { Y.throw(e) });
 
 function include () {
 Y.init('yDiscord', 'yTwitch', 'yCRON'); //  'yHTTP', 
@@ -39,6 +38,7 @@ Y.on('discord_message', (ydM, is) => {
       break;
     default:
       ydM.App('Help').run();
+      break;
   }
 });
 Y.on('discord_join_guild', ydG => { ydG.join() });

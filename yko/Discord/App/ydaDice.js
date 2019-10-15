@@ -129,7 +129,7 @@ function reset_run (S, key) {
           (P.reply(`履歴は既に無いみたいよ💢\n\`${ver}\``, 5));
     }
     BOX.set('history', []);
-    BOX.preper();
+    BOX.prepar();
     resolve(P.reply('さいころの履歴を消去したよ。', 10));
   })
   .then(x=> { S.finish() });
@@ -144,6 +144,6 @@ function dice (S, BOX, n) {
   const max = C.history;
   if (history.length > max) history.splice(max, history.length);
   BOX.set('history', history);
-  BOX.preper();
+  BOX.prepar();
   return { args: n, dice: result };
 }

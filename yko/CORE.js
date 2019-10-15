@@ -4,7 +4,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'CORE.js';
-const ver = `yko/${my} v191014.01`;
+const ver = `yko/${my} v191015.01`;
 //
 module.exports = function (ARGS) {
 	const Y = this;
@@ -39,12 +39,9 @@ module.exports = function (ARGS) {
     Y.log = log4js.getLogger('debug');
     Y.c = (s) => { Y.log.trace(s) };
   }
-  Y.tr = Trace(Y);
-  Y.throw = Throw(Y);
-  const Lv = Y.im.debug_level || 0;
-  for (let i of [1,2,3,4,5,6,7]) {
-    Y[`tr${i}`] = (Lv != 0 && i <= Lv) ? Y.tr : () => {};
-  }
+      Y.tr = Trace(Y);
+   Y.throw = Throw(Y);
+  const Lv = initDebugLv(Y);
   Y.tr1('[CORE] debug_level', Lv);
   const Tool = require('./TOOL.js');
   const T = Y.tool = new Tool (Y);
@@ -80,7 +77,7 @@ module.exports = function (ARGS) {
     Y.engine = (func) => { ENGINE = func };
        Y.run = async () => { return ENGINE() };
       Y.Next = () => {};
-    Y.baseRD = (jsName) => {
+  Y.baseRD = (jsName) => {
     let [, key] = jsName.match(/^[a-z]+([A-Z].+)$/);
     return {
         $JS: require(`./${jsName}.js`),
@@ -90,7 +87,7 @@ module.exports = function (ARGS) {
     $onFake: () => {}
     };
   };
-  let MAIN;
+  let MAIN, Super;
   Y.init = (...setup) => {
     const REQ = Gd.get('REQUIRES');
     const Regist = (name) => {
@@ -100,8 +97,16 @@ module.exports = function (ARGS) {
       REQ.push(result.$name);
       return result;
     };
-    MAIN = Regist(setup.shift());
-    Y[MAIN.$name] = new MAIN.$JS.Super (Y, MAIN);
+    let Add = '';
+    if (MAIN = setup.shift()) {
+      MAIN = Regist(MAIN);
+      Y[MAIN.$name] = new MAIN.$JS.Super (Y, MAIN);
+      Super = (X) => { X.super = Y[MAIN.$name]; return X }
+      Add = ` ${MAIN.$name} -`;
+      Unn.push(MAIN.$name);
+    } else {
+      Super = (X) => { return X };
+    }
     for (let name of setup) { Regist(name) }
     for (let key of T.v(REQ).reverse()) {
       if (Y[key]) {
@@ -115,13 +120,11 @@ module.exports = function (ARGS) {
       const Ref = Gd.get(j);
       Ref.$JS.init(Y, Ref);
     }
-    Y.tr3(`[CORE] ${MAIN.$name} - Complete initialization.`);
+    Y.tr3(`[CORE]${Add} Complete initialization.`);
     Y.init = false;
+    return Y;
   };
   let Call = 0;
-  const Super = MAIN
-      ? (X) => { X.super = Y[MAIN.$name]; return X }
-      : (X) => { return X };
   Y.start = (nm) => {
     return new Promise ( resolve => {
       if (! nm) Y.throw(ver, `Unknown label.`);
@@ -141,17 +144,17 @@ module.exports = function (ARGS) {
         if (Ref.$JS.onFake) Ref.$JS.onFake(Y, Ref);
       }
   } };
+  const Unn = ['run', 'init', 'onFake'];
   Y.superKit = (name, x, P, Ref) => {
     Y.tr6('[CORE] Y.superKit', name);
     const X = Object.assign(x, Y);
     X.par = P;
     if (P) {
-      if (P.im && P.im[name]) X.im = P.im[name];
-      if (P.conf && P.conf[name]) X.conf = P.conf[name];
+      if (P.im)   X.im   = P.im[name]   || P.im;
+      if (P.conf) X.conf = P.conf[name] || P.conf;
     }
     if (Ref) X.Ref = Ref;
-    for (let k of [MAIN.$name, 'run', 'init', 'onFake'])
-    { delete X[k] }
+    for (let k of Unn) { delete X[k] }
     return X;
   };
   Y.tr1(`[CORE] ${ver}`, '>>> Radey ...');
@@ -166,7 +169,6 @@ function UNIT (myName, Y, Gd, Super) {
         X.root = R;
     X.rollback = R.rollback;
       X.finish = R.finish;
-    if (P.super) X.super;
     return Super(X);
   };
   R.tmp = { $START: 1 };
@@ -205,6 +207,14 @@ function Logger (c) {
     level: () => { c('Tried to set the level.') },
     trace: c, debug: c, info: c, warn: c, error: c,	fatal: c
   };
+}
+function initDebugLv (Y) {
+   const Lv = Y.im.debug_level;
+  const Ass = Lv
+    ? (i) => { return i <= Lv ? Y.tr: () => {} }
+    : (i) => { return () => {} };
+  [...Array(7)].map((_, i) => { ++i; Y[`tr${i}`] = Ass(i) });
+  return Lv;
 }
 const sen  = '-----------------------------------';
 const sen2 = '==================================='; 

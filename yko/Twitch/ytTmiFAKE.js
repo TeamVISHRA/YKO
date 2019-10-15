@@ -3,9 +3,10 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ytTmiFAKE.js';
-const ver = `yko/Twitch/${my} v191014.01`;
+const ver = `yko/Twitch/${my} v191015.01`;
 //
-module.exports.call = function (Y, P, ARGV) {
+module.exports.call = function (P, ARGV) {
+  const Y = P.un;
   Y.tr3('[Twitch:F] Debug:call', ARGV);
   Y.onFake();
   switch (ARGV.shift()) {
@@ -22,7 +23,7 @@ module.exports.on = function (Y) {
   this.ver = ver;
 	const S = this;
   S.say = async (...args) => {
-    return Y.tr('[Twitch:F] say', args);
+    return Y.tr('[Twitch:F] say', ...args);
   };
   const ON = {};
   S.on = (key, func) => {

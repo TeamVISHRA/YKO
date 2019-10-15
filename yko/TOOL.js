@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'TOOL.js';
-const ver = `yko/${my} v191014.01`;
+const ver = `yko/${my} v191015.01`;
 //
 const MOMENT = require('moment'),
    TM_FORMAT = '/DD HH:mm:ss';
@@ -90,7 +90,7 @@ function util ()
 function digest (str) {
   let result;
   return Try([() => {
-    var hash = crypto().createHash('sha256')
+    let hash = crypto().createHash('sha256')
     hash.update(str, 'utf8');
     result = hash.digest('base64');
   }]) ? result : false;
@@ -241,7 +241,7 @@ function clone (o) {
   return Object.assign(Object.create(null), o);;
 }
 function reset (o) {
-  for(var key in o){ delete o[key] }
+  for(let key in o){ delete o[key] }
 }
 function quest (v, keys) {
   Y.tr3('[TOOL] quest', keys);
@@ -253,9 +253,9 @@ function quest (v, keys) {
   return v;
 }
 function shuffle (a) {
-  for (var i = a.length - 1; i > 0; i--) {
-    var r = Math.floor(Math.random() * (i + 1));
-    var tmp = a[i];
+  for (let i = a.length - 1; i > 0; i--) {
+    let r = Math.floor(Math.random() * (i + 1));
+    let tmp = a[i];
     a[i] = a[r];
     a[r] = tmp;
   }

@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ybCONTAINER.js';
-const ver = `yko/BOX/${my} v191014.01`;
+const ver = `yko/BOX/${my} v191015.01`;
 //
 module.exports.Unit = function (P) {
    const S = P.root.unitKit('container', this, P);
@@ -130,7 +130,7 @@ function BOX (S, Args, Db) {
   BOX.id   = () => { return ID   };
   BOX.name = () => { return NAME };
   let UPDATE = false;
-  BOX.update = (n) => { return (UPDATE = true) };
+  BOX.update = (n) => { UPDATE = true; return BOX };
   BOX.isUpdate = () => { return UPDATE ? true : false };
   //
   BOX.has = (key) => {
@@ -142,7 +142,7 @@ function BOX (S, Args, Db) {
   };
   BOX.set = (key, value) => {
     BOX.update();
-    return VALUE[key] = value;
+    return (VALUE[key] = value);
   };
   BOX.keys = () => {
     return T.k(VALUE);
@@ -163,9 +163,9 @@ function BOX (S, Args, Db) {
     if (! n) n = Number(cf.default_TTL);
     if (n > cf.max_TTL) n = Number(cf.max_TTL);
     if (n < cf.min_TTL) n = Number(cf.min_TTL);
-    return T.unix_add(n);
+    return T.unix_add(n, 'm');  // minute
   };
-  BOX.preper = async () => {
+  BOX.prepar = async () => {
     S.tr3('[BOX:C] preper');
     if (! UPDATE) return BOX;
     S.tr4('[BOX:C] preper', 'update true');
