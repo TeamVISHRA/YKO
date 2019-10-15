@@ -2,7 +2,7 @@
 exports.log4js = {
   appenders: { debug: {
     type: 'file',
-    filename: './YKO.log',
+    filename: './log/YKO.log',
     pattern: 'YYYYMMDD'
   } },
   categories: { default: {

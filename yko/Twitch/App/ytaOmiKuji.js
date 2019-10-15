@@ -63,11 +63,10 @@ function run_omikuji (crum) {
     if (Lott.length < 1) Lott = initDB(BOX);
      const Kuji = Lott.shift();
     const Lsize = BOX.get('LottSize');
-    BOX.update();
-    BOX.prepar();
+    BOX.update().prepar();
     const msg = `${dName}さん > `
       + `「${Kuji.name}」でたよ... (${Kuji.num}/${Lsize})`;
-    S.par.reply(msg);
+    P.reply(msg);
     P.toDiscord(CH, S.loginID(), msg);
   });
 }

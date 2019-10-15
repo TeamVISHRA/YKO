@@ -267,10 +267,12 @@ function Throw (Y) {
     for (let v of mor) {
       if (typeof v === 'object') {
         const tmp = Y.tool.inspect(v);
-        if (tmp.match(/^[^\:]*Error[^\:]*\:.+\s+at\s+/g)) {
-          out += `\n${sen}\n` + TRACE(tmp, 1);
-        } else { out += `\n${sen}\n${v}` }
-      } else   { out += `\n${sen}\n${v}` }
+        if (tmp.match(/^([^\n]+)/))
+             { out += `\n${sen}\n${RegExp.$1}` }
+        if (tmp.match(/^[^\:]*Error[^\:]*\:.+\s+at\s+/g))
+             { out += `\n` + TRACE(tmp, 1) }
+        else { out += `\n${v}` }
+      } else { out += `\n${sen}\n${v}` }
     }
     Y.tr(`throw:${out}\n${sen2}`);
     Y.tr(point || "'Stack Trace' is empty.");
