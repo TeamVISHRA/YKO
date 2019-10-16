@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'yDiscord.js';
-const ver = `yko/${my} v191014.01`;
+const ver = `yko/${my} v191016`;
 //
 const Discord = require('discord.js');
 const ydFake  = './Discord/ydFAKE.js';
@@ -54,14 +54,13 @@ function build_super_comp (S) {
 }
 function init_super (S, T) {
   S.tr4('[Discord] init_super');
-  const ON = S.rack.get('ON'),
-   RUNNERS = S.rack.get('RUNNERS');
+  const ON = S.rack.get('ON');
   const ENGINE = () => {
     try {
       const BOT = S.client();
       BOT.on('ready', x => {
         S.ask.refresh();
-        for (let [key, func] of T.e(RUNNERS)) {
+        for (let [key, func] of T.e(S.runners())) {
           S.tr3(`[Discord] '${key}' started running.`);
           func();
         }
@@ -75,8 +74,8 @@ function init_super (S, T) {
       if (func = ON.discord_exit_guild)
         BOT.on('guildMemberRemove', baseGuild(S, T, func));
       if (ON.discord_warn)  BOT.on('warn',  ON.discord_warn);
-      if (ON.discord_debug)	BOT.on('debug', ON.discord_debug);
-      if (ON.discord_error)	BOT.on('error', ON.discord_error);
+      if (ON.discord_debug) BOT.on('debug', ON.discord_debug);
+      if (ON.discord_error) BOT.on('error', ON.discord_error);
       BOT.login(S.im.token);
     } catch (err) {
       S.tr('[Discord] Warning -------------------');

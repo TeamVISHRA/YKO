@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'yCRON.js';
-const ver = `yko/${my} v191014.01`;
+const ver = `yko/${my} v191016`;
 //
 const defaultInterval = 3000;
 //
@@ -80,10 +80,10 @@ function init (S) {
     };
   };
   let ClearToken;
-  S.runners('CRON', ()=> {
+  S.on('runners', 'CRON', ()=> {
     const Iv = S.conf.interval || defaultInterval;
     if (ClearToken) clearInterval(ClearToken);
-    S.tr(`[CRON] started !! interval:${Iv}`);
+    S.tr(`[CRON] Started !! interval:${Iv}`);
     ClearToken = setInterval(JOB, Iv);
   });
 }
@@ -98,6 +98,6 @@ function Worker (U) {
   };
 }
 function onFake (Y) {
-  const RUN = Y.rack.get('RUNNERS');
+  const RUN = Y.runners();
   if (RUN.CRON) delete RUN.CRON;
 }

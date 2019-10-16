@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'BRAIN.js';
-const ver = `yko/${my} v191014.01`;
+const ver = `yko/${my} v191016`;
 //
 module.exports.init = function (Y, Ref) {
   init(Y, Ref, Y.tool);
@@ -16,16 +16,15 @@ module.exports.Unit = function (R, Ref) {
 function init (Y, Ref, T) {
   const PREFIX = Ref.prefix = Y.im.command_prefix;
   //
-  const yName1 = '(?:[YyＹｙ]|[ワわ][イい])';
-  const yName2 = '(?:[KkＫｋ][OoＯｏ]|[コこ子])';
-  const yName3 = '(?:[Bbぼボ][Ooっッ][Ttとト])?';
-  const cmdStyle = '[A-Za-z0-9]+';
+  const yName1 = '(?:[YyＹｙ]|[ワわ][イい])',
+        yName2 = '(?:[KkＫｋ][OoＯｏ]|[コこ子])',
+        yName3 = '(?:[Bbぼボ][Ooっッ][Ttとト])?',
+      cmdStyle = '[A-Za-z0-9]+';
   //
-  const callReg = new RegExp(`^${yName1}${yName2}${yName3}\\s*(.*)$`);
-  const yclReg  = new RegExp(`^\\s*(${cmdStyle})\\s*(.*)$`);
-  const cmdReg  = new RegExp(`^\\s*${PREFIX}(${cmdStyle})\\s*(.*)$`);
-  const wokReg  = new RegExp(`^\\s*[お起]き[ろて]`);
-  //
+  const yclReg = new RegExp(`^\\s*(${cmdStyle})\\s*(.*)$`),
+       callReg = new RegExp(`^${yName1}${yName2}${yName3}\\s*(.*)$`),
+        cmdReg = new RegExp(`^\\s*${PREFIX}(${cmdStyle})\\s*(.*)$`),
+        wokReg = new RegExp(`^\\s*[お起]き[ろて]`);
   let As;
   if (As = Y.rack.get('ON').brain_command_alias) {
     for (let v of T.v(As)) {
@@ -40,22 +39,22 @@ function init (Y, Ref, T) {
     };
   } else {
     Y.tr3('[BRAIN] on.command_alias', 'empty');
-    Ref.ALIAS = { ALIAS: (str) => { return str } };
+    Ref.ALIAS = (str) => { return str };
   }
   Ref.SLEEP  = Object.create(null);
   Ref.Reg = {
-    myNames       : [yName1, yName2, yName3],
-    command       : cmdStyle,
-    callme        : callReg,
-    callmeCommand : yclReg,
-    callCommand   : cmdReg,
-    callWakeup    : wokReg
+        myNames: [yName1, yName2, yName3],
+        command: cmdStyle,
+         callme: callReg,
+  callmeCommand: yclReg,
+    callCommand: cmdReg,
+     callWakeup: wokReg
   };
   return Ref;
 }
 function build_component (S) {
-  const T = S.tool,
-      Ref = S.Ref;
+   const T = S.tool,
+       Ref = S.Ref;
   S.prefix = () => { return Ref.prefix };
   S.talk = (keys) => {
     if (! Ref.Talk) Ref.Talk = require('./BRAIN/ybTalk.js');
@@ -133,12 +132,8 @@ function build_component (S) {
             crum: (crum || ''),
             call: true
           });
-        } else {
-          return RES({ answer: 'もしかして呼んだ？' });
-        }
-      } else {
-        return RES({ answer: '何か御用？' });
-      }
+        } else { return RES({ answer: 'もしかして呼んだ？' }) }
+      } else { return RES({ answer: '何か御用？' }) }
     }
     if (str = str.match(Reg.callCommand)) {
       S.tr4('[BRAIN] isCall: command call', str[1]);

@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'yTwitch.js';
-const ver = `yko/${my} v191015.01`;
+const ver = `yko/${my} v191016`;
 //
 const ytFake = './Twitch/ytTmiFake.js';
 //
@@ -35,8 +35,7 @@ function build_super_comps (S) {
   S.onFake = () => { onFake(S.un, S.Ref) };
   S.init = () => {
     const RUNS = () => {
-      const RN = S.rack.get('RUNNERS');
-      for (let [key, func] of S.tool.e(RN)) {
+      for (let [key, func] of S.tool.e(S.runners())) {
         S.tr3(`[Twitch] '${key}' started running.`);
         func();
     } };
@@ -66,7 +65,7 @@ function build_guest_comps (G) {
     build_guest_dispatch(G, ON, Func);
   };
   build_base_comps(G, RUNS, DISP);
-  G.runners('twtich', G.connect);
+  G.on('runners', 'twtich', G.connect);
   G.Ref.$unit = U => {
     U.say = G.say;
     U.toDiscord = (...args) =>

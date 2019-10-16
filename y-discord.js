@@ -14,7 +14,7 @@ Y.Discord.DebugCall().run()
   .then(Y.Next).catch(e => { Y.throw(e) });
 
 function include () {
-Y.init('yDiscord', 'yTwitch', 'yCRON'); //  'yHTTP', 
+Y.init('yDiscord yTwitch yHTTP yCRON'); 
 }
 function advance () {
 // ===== < Discord > =====
@@ -45,7 +45,8 @@ Y.on('discord_join_guild', ydG => { ydG.join() });
 Y.on('discord_exit_guild', ydG => { ydG.exit() });
 
 // ===== < HTTP > =====
-Y.on('http_api_action', (request, responce) => {
+Y.on('http_api_action', http => {
+  http.hello();
 });
 
 // ===== < CRON > =====

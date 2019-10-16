@@ -4,7 +4,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'CORE.js';
-const ver = `yko/${my} v191015.01`;
+const ver = `yko/${my} v191016`;
 //
 module.exports = function (ARGS) {
 	const Y = this;
@@ -63,17 +63,20 @@ module.exports = function (ARGS) {
   }
   Gd.get('sysdata').CASH = Y.tool.c(null);
   //
-  Y.on = (key, func) => {
+  Y.on = (key, ...arg) => {
     if ( key.match(/^start$/i)
       || key.match(/^rollback$/i)
       || key.match(/^finish$/i)) {
-      Gd.get(key.toUpperCase()).push(func);
+      Gd.get(key.toUpperCase()).push(arg[0]);
+    } else if ( key.match(/^cash$/i)
+             || key.match(/^runners$/i)) {
+      Gd.get(key.toUpperCase())[arg[0]] = arg[1];
     } else {
-      Gd.get('ON')[key.toLowerCase()] = func;
+      Gd.get('ON')[key.toLowerCase()] = arg[0];
     }
   };
   let ENGINE = () => { Y.tr('??? (?o?) hoe ...!?') };
-   Y.runners = (key, func) => { Gd.get('RUNNERS')[key] = func };
+   Y.runners = () => { return Gd.get('RUNNERS') };
     Y.engine = (func) => { ENGINE = func };
        Y.run = async () => { return ENGINE() };
       Y.Next = () => {};
@@ -89,6 +92,9 @@ module.exports = function (ARGS) {
   };
   let MAIN, Super;
   Y.init = (...setup) => {
+    if (setup[0] && setup[0].match(/\S+\s+\S+/)) {
+      setup = setup[0].split(/\s+/);
+    }
     const REQ = Gd.get('REQUIRES');
     const Regist = (name) => {
       let result = Y.baseRD(name);
@@ -104,6 +110,7 @@ module.exports = function (ARGS) {
       Super = (X) => { X.super = Y[MAIN.$name]; return X }
       Add = ` ${MAIN.$name} -`;
       Unn.push(MAIN.$name);
+      Gd.set('MAIN', MAIN);
     } else {
       Super = (X) => { return X };
     }
@@ -188,6 +195,7 @@ function UNIT (myName, Y, Gd, Super) {
     R.box.rollback();
     R.tmp = T.c(null);
     Y.tr3(`[UNIT] >> ${myName} - ROLLBACK !!`);
+    return R;
   };
   R.finish = () => {
     if (! R.tmp.$START) {
@@ -199,6 +207,7 @@ function UNIT (myName, Y, Gd, Super) {
     R.box.commit();
     R.tmp = T.c(null);
     Y.tr3(`[UNIT] >> ${myName} - FINISH !!`);
+    return R;
   };
   for (let F of T.v(Gd.get('START'))) { F(R) };
 }
@@ -267,10 +276,10 @@ function Throw (Y) {
     for (let v of mor) {
       if (typeof v === 'object') {
         const tmp = Y.tool.inspect(v);
-        if (tmp.match(/^([^\n]+)/))
-             { out += `\n${sen}\n${RegExp.$1}` }
         if (tmp.match(/^[^\:]*Error[^\:]*\:.+\s+at\s+/g))
-             { out += `\n` + TRACE(tmp, 1) }
+             { out += `\n${sen}\n` + TRACE(tmp, 1) }
+        else if (tmp.match(/^([^\n]+)/))
+             { out += `\n${sen}\n${RegExp.$1}` }
         else { out += `\n${v}` }
       } else { out += `\n${sen}\n${v}` }
     }
