@@ -46,7 +46,24 @@ Y.on('discord_exit_guild', ydG => { ydG.exit() });
 
 // ===== < HTTP > =====
 Y.on('http_api_action', http => {
-  http.hello();
+  const u = http.reqURL();
+Y.tr(u);
+  if (u.match(/^\/(?:index\.[^\.]+)?$/i)) {
+    http.responceHello();
+  } else if (u.match(/^\/webhook\/?(.+)$/i)) {
+    let p = RegExp.$1;
+    let x, id, token;
+    if ([x,id,token] = p.match(/(\d+)\/([!-~]+)/)) {
+      const Discord = http.root.Discord;
+      http.parseBODY().then( body => {
+        Discord.webhook([id, token], (body || '...(N/A)'));
+        http.json = { result: 'Accepted.' };
+        http.send();
+      }).catch(e=> { Y.tr(e);
+        http.responceBatRequest();
+      });
+    } else { http.responceNotFound() }
+  }   else { http.responceNotFound() }
 });
 
 // ===== < CRON > =====

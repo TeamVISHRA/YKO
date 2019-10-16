@@ -66,67 +66,86 @@ function build_unit_comp (U) {
     const JS = require(`./API/yha${name}.js`);
     return new JS.Unit (U);
   };
-     U.reqURL = () => { return req.url };
-  U.reqMethod = () => { return req.method };
      U.status = () => { return res.statusCode };
-   U.setError = () => { res.statusCode = 500 }; // Internal Err.
-  U.setReject = () => { res.statusCode = 400 }; // Bat Request.
-  U.setUnAuth = () => { res.statusCode = 403 }; // Forbidden.
- U.setUnknown = () => { res.statusCode = 404 }; // Not Found.
-  let Header;
-  U.setHeader = (code, head) => {
-    if (code) {
-      res.statusCode = code;
-    } else if (! res.statusCode) {
-      res.statusCode = 200; // OK
-    }
-    res.setHeader('Content-Type', (Header = head || Content));
+  U.reqMethod = () => { return req.method };
+  U.reqURL = () => {
+    const Url = req.url || '';
+    return Url.replace(/\/index\.[^\/\.]+/i, '/');
   };
   U.send = async (code, head) => {
-    if (code || ! Header) U.setHeader(code, head);
+    if (code) { res.statusCode = code }
+    else if (! res.statusCode) { res.statusCode = 200 }
+    res.setHeader('Content-Type', (head || Content));
     res.end( U.tool.json2txt(U.json) );
+    U.tr3(`[HTTP] ${res.statusCode} - ${req.url} (${req.method})`);
     U.root.finish();
     U.send = false;
   };
+  const OverFlow = (body) => {
+    if (body.length < DataMax) return false;
+    U.root.rollback();
+    U.responceBatRequest();
+    return true;
+  };
   U.parseBODY = () => {
-    
+    return new Promise ((resolve, reject) => {
+      let body = '';
+      req.on('data', chunk => {
+        body += chunk;
+        if (OverFlow(body)) return reject();
+      }).on('end', () => {
+        return resolve( U.BODY = body );
+      });
+    });
   };
   U.parseGET = () => {
-    U.GET = URL.parse(req.url, true).query || U.tool.c(null);
-    U.parseGET = false;
+    return new Promise (resolve => {
+      U.GET = URL.parse(req.url, true).query
+          || U.tool.c(null);
+      return resolve( U.GET );
+    });
   };
   U.parsePOST = () => {
-    if (req.method === 'POST') {
+    return new Promise ((resolve, reject) => {
       let body = '';
-      req.on('readable', chunk => {
-        body += req.read();
-        if (body.length > DataMax) {
-          body = '';
-          U.root.rollback();
-          U.json = {
-            statusCode: 400,
-         statusMessage: 'Bat Request.'
-          };
-          U.send(U.json.statusCode);
-          return (U.parsePOST = false);
-        }
-      });
-      U.POST = QUERY.parse(body);
-    } else {
-      U.POST = U.tool.c(null);
-    }
-    return (() => {
-      U.parsePOST = false;
-      return true;
-    }) ();
+      if (req.method === 'POST') {
+        req.on('readable', chunk => {
+          body += req.read();
+          if (OverFlow(body)) return reject();
+        }).on('end', () => {
+          return resolve( U.POST = QUERY.parse(body) );
+        });
+      } else {
+        return resolve( U.POST = U.tool.c(null) );
+      }
+    });
   };
-  U.hello = () => {
-    U.json = {
-      statusCode: 200,
-    statusMessge: 'OK',
+  const JsonBase = (code, msg) => {
+    return {
+      statusCode: code,
+    statusMessge: msg,
      ContentType: Content,
-            body: 'Hello !!'
     };
+  };
+  U.responceError = () => {
+    U.json = JsonBase(500, 'Internal Server Error.');
+    U.send(U.json.statusCode);
+  };
+  U.responceBatRequest = () => {
+    U.json = JsonBase(400, 'Bat Request.');
+    U.send(U.json.statusCode);
+  };
+  U.responceForbidden = () => {
+    U.json = JsonBase(403, 'Forbidden.');
+    U.send(U.json.statusCode);
+  };
+  U.responceNotFound = () => {
+    U.json = JsonBase(404, 'Not Found.');
+    U.send(U.json.statusCode);
+  };
+  U.responceHello = () => {
+    U.json = JsonBase(200, 'OK');
+    U.json.body = 'Hello !!';
     U.send();
   };
 }
