@@ -2,7 +2,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'WEB.js';
-const ver = `yko/${my} v191014.01`;
+const ver = `yko/${my} v191017.01`;
 //
 const metaReg = new RegExp(/<meta\s+[^>\n]+charset=([^\"\']+)/im);
 //
@@ -46,7 +46,7 @@ module.exports.Unit = function (R, Ref) {
 					return resolve(Result);
 				});
 			}).on('error', err => {
-				S.tr('getContent:error', err);
+				S.tr('getContent:error', url, err);
 				return reject({ invalid:1, res:err, html:'' });
 			});
 		});

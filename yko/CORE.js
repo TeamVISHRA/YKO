@@ -4,7 +4,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'CORE.js';
-const ver = `yko/${my} v191016`;
+const ver = `yko/${my} v191017`;
 //
 module.exports = function (ARGS) {
 	const Y = this;
@@ -176,6 +176,7 @@ function UNIT (myName, Y, Gd, Super) {
         X.root = R;
     X.rollback = R.rollback;
       X.finish = R.finish;
+    X.finished = R.finished;
     return Super(X);
   };
   R.tmp = { $START: 1 };
@@ -196,6 +197,9 @@ function UNIT (myName, Y, Gd, Super) {
     R.tmp = T.c(null);
     Y.tr3(`[UNIT] >> ${myName} - ROLLBACK !!`);
     return R;
+  };
+  R.finished = () => {
+    return R.tmp.$START ? false : true; 
   };
   R.finish = () => {
     if (! R.tmp.$START) {

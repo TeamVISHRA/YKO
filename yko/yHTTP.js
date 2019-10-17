@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'yHTTP.js';
-const ver = `yko/${my} v191016`;
+const ver = `yko/${my} v191017`;
 //
  const Enc = 'utf8',
  RestartIv =  15000,
@@ -62,8 +62,8 @@ function build_unit_comp (U) {
         U.json = U.tool.c(null);
     return U;
   };
-  U.api = (name) => {
-    const JS = require(`./API/yha${name}.js`);
+  U.Api = (name) => {
+    const JS = require(`./HTTP/yhAPI_${name}.js`);
     return new JS.Unit (U);
   };
      U.status = () => { return res.statusCode };
@@ -77,9 +77,8 @@ function build_unit_comp (U) {
     else if (! res.statusCode) { res.statusCode = 200 }
     res.setHeader('Content-Type', (head || Content));
     res.end( U.tool.json2txt(U.json) );
-    U.tr3(`[HTTP] ${res.statusCode} - ${req.url} (${req.method})`);
     U.root.finish();
-    U.send = false;
+    U.tr3(`[HTTP] ${res.statusCode} - ${req.url} (${req.method})`);
   };
   const OverFlow = (body) => {
     if (body.length < DataMax) return false;
@@ -122,9 +121,9 @@ function build_unit_comp (U) {
   };
   const JsonBase = (code, msg) => {
     return {
-      statusCode: code,
-    statusMessge: msg,
-     ContentType: Content,
+       statusCode: code,
+    statusMessage: msg,
+      ContentType: Content,
     };
   };
   U.responceError = () => {
@@ -142,6 +141,13 @@ function build_unit_comp (U) {
   U.responceNotFound = () => {
     U.json = JsonBase(404, 'Not Found.');
     U.send(U.json.statusCode);
+  };
+  U.responceSuccess = () => {
+    U.json = JsonBase(200, 'OK');
+      U.json.result = 'Success';
+     U.json.success = true;
+    U.json.accepted = true;
+    U.send();
   };
   U.responceHello = () => {
     U.json = JsonBase(200, 'OK');
