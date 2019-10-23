@@ -1,7 +1,7 @@
 //
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
-//  Updated on 2019/10/23.
+exports.ver = 'y-config.js v191023';
 //
 exports.location = 'devel';
 exports.debug_level = 4;
@@ -65,9 +65,9 @@ exports.box = {
     },
    cash: {
      $name: 'CASH',
-      TTL: 60, // minute.
-  min_TTL:  5, // minute.
-  max_TTL: (6* (30* (24* 60)))  // minute.
+      TTL: 60, // 分
+  min_TTL:  5, // 分
+  max_TTL: (6* (30* (24* 60)))  // 分
     },
  member: {
      $name: 'Member'
@@ -78,66 +78,66 @@ general: {
   }
 };
 exports.sysdata = {
-     TTL: 20, // minute.
+     TTL: 20, // minute
 identKey: 'system-config'
 };
 exports.discord = {
-   sleep: 1,
-      id: `< The bot own ID. >`,
+   sleep: 0,
+      id: '< The bot own ID. >',
 username: '< Bot name. >',
    token: '< Token to connect. >',
    devel: {
-      guild: '< Guild ID used for development. >',
-    channel: '< Channel ID used for development. >',
-     userID: '< User ID used for development. >',
+      guild: '( Guild ID used for development. )',
+    channel: '( Channel ID used for development. )',
+     userID: '( User ID used for development. )',
     webhook: {
-    id: `< First half of webhook URL separated by '/'  >`,
- token: `< Second half of webhook URL separated by '/'  >`
+    id: '( First half of webhook URL separated by '/'  )',
+ token: '( Second half of webhook URL separated by '/'  )' 
     }
-	},
-  toLine: {
-    '< From any token. >': '< To Line ID. >'
-  }
+	}
 };
 exports.twitch = {
-   sleep: 1,
-clientID: '< Client ID. >',
-secretID: '< Client Secret. >',
-    chat: {
-      loginID: '< Chat login ID. >',
-tagetChannels: [`< Connected channel. >`], // '#' Omit
-   oauthToken: '< https://twitchapps.com/tmi/ >'
+   sleep: 0,
+clientID: '( Client ID. )',
+secretID: '( Client Secret. )',
+   devel: {
+    chatChannel: '( Developer channel. )'
   },
    color: 0x7506394,
      url: {  base: 'https://www.twitch.tv/' },
-     api: { users: 'https://api.twitch.tv/helix/users' }
+     api: { users: 'https://api.twitch.tv/helix/users' },
+    chat: {
+       loginID: '( Chat login ID. )',
+    oauthToken: '( https://twitchapps.com/tmi/ )',
+channel_prefix: '#'
+  }
 };
+exports.twitch.chat.tagetChannels = ['( Connected channel. )'];
+//
 exports.line = {
-  CHtoken: '< Channel Token. >',
- CHsecret: '< Channel Secret. >'
-};
-exports.google = {
+  CHtoken: '( Channel Token. )',
+ CHsecret: '( Channel Secret. )',
+    devel: {
+      userID: '( UserID of bot assigned by Line. )'
+  }
 };
 exports.http = {
   sleep: 0,
   port: 8000,
   HTDOC: {
-    WH: {
-      '< Opportune string. >': { name: 'LINE' } // 8-10 digits are safe
+    WH: { // 8-10 digits are safe
+      '( Opportune string. )': { name: 'LINE' }
     },
     API: {
     }
   }
 };
 exports.cron = {
-   sleep: 1,
+   sleep: 0,
 interval: 3000,
    count: { max: 1000000 },
  job_RSS: {
       title: { low: 24, edit: 42 },
     history: { size: 5000 }
   }
-};
-exports.help = {
-  url: 'https://drive.google.com/uc?id=1N3VfjMqmg7ax3wWTUCbfTab4r4pzKBaU'
 };
