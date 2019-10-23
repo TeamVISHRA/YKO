@@ -99,7 +99,7 @@ toDiscord: {
 function dbLine () {
   return {
 toDiscord: {
-'C4296df248465af41c2b991db5bf16116': {
+  '( Group ID or user ID ...etc )': {
       webhook: `%WK(${GuildID}.teamVishra)`
       }
     }
