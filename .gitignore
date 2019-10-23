@@ -2,6 +2,7 @@ test/
 node_modules/
 build/
 yko-old/
+*config-secret.js
 now.js
 index.js
 package-lock.json
