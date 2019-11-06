@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'yDiscord.js';
-const ver = `yko/${my} v191105`;
+const ver = `yko/${my} v191107`;
 //
 const Discord = require('discord.js');
 const ydFake  = './Discord/ydFAKE.js';
@@ -72,9 +72,14 @@ function init_super (S, T) {
         S.ask.refresh(Bot);
         for (let [key, func] of T.e(S.runners())) {
           S.tr3(`[Discord] '${key}' started running.`);
-          func()
-          .then(x=> S.tr3(`[Discord:ready...] run:`, key))
-          .catch(e=> S.throw(`[Discord:ready]`, e));
+          const result = func();
+          if (result && T.isHashArray(result) && result.then) {
+            result
+            .then(x=> S.tr3(`[Discord] run (async):`, key))
+            .catch(e=> S.throw(`[Discord:ready]`, e));
+          } else {
+            S.tr3(`[Discord] run:`, key);
+          }
         }
         connectMessage(S);
         return resolve(CLIENT = Bot);

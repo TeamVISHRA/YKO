@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ybMongo.js';
-const ver = `yko/BOX/${my} v191023`;
+const ver = `yko/BOX/${my} v191107`;
 //
 const Mongo = require('mongodb').MongoClient;
 //
@@ -64,7 +64,7 @@ function Collection (S, name, cn) {
       if (Bind) return resolve(Bind);
       await S.connect()
           .then(db=> Bind = db.collection(cn.name));
-      C.tr(`[Mongo:Collection] Binding with '${cn.name}'`);
+      C.tr4(`[Mongo:Collection] Binding with '${cn.name}'`);
       return resolve(Bind);
     });
   };

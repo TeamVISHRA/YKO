@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const  my = 'ybBaseSchema.js';
-const ver = `yko/${my} v191101`;
+const ver = `yko/${my} v191107`;
 //
 const T = new (require('../TOOL.js'));
 //
@@ -172,7 +172,7 @@ module.exports.init = function (S) {
     S.UNIQUE = T.c(null);
     const tmpKeys = T.isArray(Keys)
                   ? Keys: T.canon(Keys).split('.');
-    S.tr(`[${S.ver}] keyCheck:`, tmpKeys, Len);  
+    S.tr3(`[${S.ver}] keyCheck:`, tmpKeys, Len);  
     if (tmpKeys.length != Len)
       S.throw(`[${S.ver}] Number of keys does not match.`,
               `${tmpKeys.length} != ${Len}`);
@@ -215,7 +215,6 @@ module.exports.component = function (B, S) {
     const Vs = S.$VALIDS[key] || [];
     for (let v of Vs) {
       let res = v(value);
-S.tr(key, value);
       if (res.err) { S.throw
         (`[${B.ver}] ValidError: ${res.err} in '${key}'.`);
       } else if (res.conv) {
