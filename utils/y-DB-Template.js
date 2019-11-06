@@ -1,7 +1,7 @@
 //
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
-//  Updated on 2019-10-23
+//  Updated on 2019-10-24
 //
 
 let C, GuildID, TwitchCH, LineID;
@@ -19,14 +19,14 @@ module.exports.templates = function (c) {
 }
 function dbDiscord () {
   //
-  const joinMsg1 = `まず「#<chAgree>」に目を通して下さいね。`;
+  const joinCHmsg = `まず「#<chAgree>」に目を通して下さいね。`;
   //
-  const joinMsg2 = `.
+  const joinDMmsg = `.
 <gdName> へようこそ!!
 
 わたしは、👆でお仕事をしてるボットです。
 
-まず「#<chAgree>」に目を通してから、「#<chWelcom>」に自己紹介を投稿して下さいネ!!
+まず「#<chAgree>」に目を通してから「#<chWelcom>」に自己紹介の投稿をお願いします。
 
 **👀管理者が確認すると所定の権限が割り当てられます。**
 
@@ -39,10 +39,15 @@ function dbDiscord () {
 `;
   //
   return {
+    channels: {
+      devel: '( [ID] Channel used for development. )',
+      agree: '( [ID] Channel where you can view the agreement. )',
+      guest: '( [ID] Channels available to guests. )'
+    },
     join: { // join the guild.
       color: 0x2d4fe4,
-       msg1: joinMsg1,
-       msg2: joinMsg2,
+      chMsg: joinCHmsg,
+      dmMsg: joinDMmsg,
       LogCH: '610174166712451092' // Logging channel ID.
   },
     exit: { // Exit the guild.
@@ -56,7 +61,7 @@ toTwitch: {
   },
 toLine: {
    tokens: {
-      '( From discord channel ID. )': '( To Line group ID. )'
+      '( [ID] From discord channel. )': '( [ID] To Line group. )'
     }
   },
     CRON: {
@@ -91,7 +96,7 @@ function dbTwitch () {
  ignoreNames: [C.twitch.chat.loginID.toLowerCase()]
     },
 toDiscord: {
-    webhook: `%WK(${GuildID}.twitchLive)`,
+    webhook: `%Discord:WH(${GuildID}.twitchLive)`,
     message: '>**<name>**：<message> -Twitch'
     }
   };
@@ -100,7 +105,7 @@ function dbLine () {
   return {
 toDiscord: {
   '( Group ID or user ID ...etc )': {
-      webhook: `%WK(${GuildID}.teamVishra)`
+      webhook: `%Discord:WH(${GuildID}.teamVishra)`
       }
     }
   };

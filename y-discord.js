@@ -3,9 +3,9 @@
 //
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
-const ver = `y-discord.js v191017`;
+const ver = `y-discord.js v191024`;
 //
-const yko = require('yko'); // require('./yko/CORE.js');
+const yko = require('./yko/CORE.js');
 const Y = new yko ();
 
 advance();
@@ -14,7 +14,7 @@ Y.Discord.DebugCall().run()
   .then(Y.Next).catch(e => { Y.throw(e) });
 
 function include () {
-Y.init('yDiscord yTwitch yHTTP yCRON'); 
+Y.init('yDiscord yTwitch yCRON');  //  yLINE yHTTP
 }
 function advance () {
 // ===== < Discord > =====
@@ -33,6 +33,9 @@ Y.on('discord_message', (ydM, is) => {
     case 'unix':
       ydM.App('Tools').run(`unix ${is.crum}`);
       break;
+    case 'utc':
+      ydM.App('Tools').run(`utc ${is.crum}`);
+      break;
     case 'to':
       ydM.App('ToTwitch').run(is.crum);
       break;
@@ -45,18 +48,8 @@ Y.on('discord_join_guild', ydG => { ydG.join() });
 Y.on('discord_exit_guild', ydG => { ydG.exit() });
 
 // ===== < HTTP > =====
-Y.on('http_api_action', Ht => {
-  const url = Ht.reqURL();
-  if (url == '/') {
-    Ht.responceHello();
-  } else if (url.match(/^\/webhook\//i)) {
-    Ht.Api('WebHook').run(url).then( rs => {
-      Ht.root.Discord.webhook(rs.code, rs.body);
-      Ht.responceSuccess();
-    });
-  } else {
-    Ht.responceNotFound();
-  }
+Y.on('http_responce', async (yH, url) => {
+  return yH.responceNotFound;
 });
 
 // ===== < CRON > =====

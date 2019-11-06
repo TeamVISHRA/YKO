@@ -1,11 +1,15 @@
 //
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
-exports.ver = 'y-config.js v191023';
+exports.ver = 'y-config.js v191102';
 //
 exports.location = 'devel';
 exports.debug_level = 4;
 //
+exports.brain = {
+  cmd_prefix: ':',
+  talk: { DataKeys: { type: 'YKO_TALK' } }
+};
 exports.log4js = {
   appenders: { debug: {
      type: 'file',
@@ -17,9 +21,13 @@ exports.log4js = {
         level: 'all'
   } }
 };
-exports.brain = {
-cmd_prefix: ':',
-      talk: { DataKeys: { type: 'YKO_TALK' } }
+exports.inspect = {
+         depth: 1,
+//        colors: true,
+//    showHidden: true,
+//     showProxy: true,
+// maxArayLength: 10,
+//   breakLength: 120,
 };
 exports.box = {
   db: 'Mongo',
@@ -37,20 +45,51 @@ exports.box = {
     },
      line: {
        name: 'LineUsers',
-     schema: 'member'
+     schema: 'member',
+       conf: {
+      columns: [
+        ['userID',  null, ['isKey']], // or groupID.
+        ['groupID', null, ['isKey']],
+        ['type',    null, ['isString']],
+        ['age',     null, ['isStringEasy']],
+        ['zone',    null, ['isStringEasy']],
+        ['countPost',  0, ['isNumber']],
+        ['tmLastPost', 'utc()', ['isUTC']]
+        ]
+      }
     },
   discord: {
        name: 'DiscordMembers',
      schema: 'member',
        conf: {
-      columns: ['games', 'roles', 'in', 'age', 'tZone']
+      columns: [
+        ['guildID', null, ['isKey']],
+        ['userID',  null, ['isKey']],
+        ['games',     [], ['isArray']],
+        ['roles',     [], ['isArray']],
+        ['inVia',   null, ['isStringEasy']],
+        ['age',     null, ['isStringEasy']],
+        ['zone',    null, ['isStringEasy']],
+        ['countPost',  0, ['isNumber']],
+        ['tmLastPost', 'utc()', ['isUTC']],
+        ['point',      0, ['isNumber']],
+        ['rank',       0, ['isNumber']]
+        ]
       }
     },
    twitch: {
        name: 'TwitchListeners',
      schema: 'member',
        conf: {
-      columns: ['countPost']
+      columns: [
+        ['userID',  null, ['isKey']],
+        ['channel', null, ['isKey']],
+        ['games',     [], ['isArray']],
+        ['countPost',  0, ['isNumber']],
+        ['tmLastPost', 'utc()', ['isUTC']],
+        ['point',      0, ['isNumber']],
+        ['rank',       0, ['isNumber']]
+        ]
       }
     },
       log: {
@@ -81,6 +120,9 @@ exports.sysdata = {
      TTL: 20, // minute
 identKey: 'system-config'
 };
+exports.web = {
+  cashTTL: 10   // minute.
+};
 exports.discord = {
    sleep: 0,
       id: '< The bot own ID. >',
@@ -109,6 +151,7 @@ secretID: '( Client Secret. )',
     chat: {
        loginID: '( Chat login ID. )',
     oauthToken: '( https://twitchapps.com/tmi/ )',
+ loginChannels: ['( Twitch CH [1] )', '( Twitch CH [2] )', '...'],
 channel_prefix: '#'
   }
 };

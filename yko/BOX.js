@@ -3,95 +3,75 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'BOX.js';
-const ver = `yko/${my} v191014.01`;
+const ver = `yko/${my} v191022`;
 //
 module.exports.init = function (Y, Ref) {
   const S = Y.superKit('box', this, Y, Ref);
   S.ver = ver;
-  if (! S.conf.db) Y.throw("[BOX] 'Y.conf.box.db' is undefined");
+  if (! S.conf.db)
+        Y.throw("[BOX] 'Y.conf.box.db' is undefined");
   const JS = require(`./BOX/yb${S.conf.db}.js`);
   Ref.DBdriver = new JS.init (S);
 };
 module.exports.Unit = function (R, Ref) {
-	const S = R.unitKit('box', this, R, Ref);
-    S.ver = ver;
-  const DB = Ref.DBdriver;
-  S.DB = () => { return DB };
-  const POOL = {};
-  for (let k of ['CONTAINER', 'LIST', 'TRASH']) {
-    S[k] = () => {
-      return POOL[k] || (() => {
-        let lib = require(`./BOX/yb${k}.js`);
-        return (POOL[k] = new lib.Unit (S));
-      })();
-    };
+	const U = R.unitKit('box', this, R, Ref);
+    U.ver = ver;
+  const DB = Ref.DBdriver
+        || U.throw(`[BOX] 'DBdriver' setup was not done.`);
+  U.DB = () => { return DB };
+  U.direct = () => { return DB.connect() };
+  const Bowl = new Map([]);
+  U.begin = ()  => {
+    U.tr3('[BOX] << begin >>');
+    Bowl.set('PREPARS', []);
+  };
+  U.rollback = () => {
+    U.tr3('[BOX] << rollback >>');
+    Bowl.set('PREPARS', []);
+    U.disconnect();
+  };
+  U.regist = (F) => {
+    Bowl.get('PREPARS').push(F);
+    return U;
+  };
+  U.commit = async () => {
+    U.tr3('[BOX] << commit >>');
+    const PREPARS = Bowl.get('PREPARS');
+    const Len = PREPARS.length;
+    if (Len > 0) {
+      U.tr3(`[BOX] commit:exec (${Len})`);
+      let count = 0;
+      for (let f of PREPARS) {
+        await f().then(o => {
+          if (o) U.tr3(`[BOX] ${ver}`, o);
+          if (++count >= Len) return true;
+        }).catch(e=> U.throw(`[BOX] commit - Error`, e));
+      }
+      Bowl.set('PREPARS', []);
+    }
+    return U;
+  };
+  U.disconnect = () => {
+    U.tr3('[BOX] disconnect');
+    DB.disconnect();
+  };
+  const Shema = U.conf.schema;
+  for (let [key, v] of U.tool.e(DB.collections())) {
+    U[key] = (...arg) => {
+      const Cls = DB.collection(key);
+      const conf = v.conf
+                ? { ...Shema[v.schema], ...v.conf }
+                : Shema[v.schema];
+      const j = require(`./BOX/yb${conf.$name}.js`);
+      return new j.Unit(U, Cls, conf, ...arg);
+    }
   }
-//  S.list = (a) => {
-//    Y.tr1('list');
-//    return S.LIST().build(a);
-//  };
-  S.trash = (a) => {
-    S.tr3('[BOX] trash');
-    return S.TRASH().view(a);
-  };
-  S.cash = (a) => {
-    S.tr3('[BOX] cash');
-    a.type = 'cash'; return S.CONTAINER().view(a);
-  };
-  S.data = (a) => {
-    S.tr3('[BOX] data');
-    a.type = 'data'; return S.CONTAINER().view(a);
-  };
-  S.any = (t, a) => {
-    a.type = t;
-    S.tr3('[BOX] any', a.type);
-    return S.CONTAINER().view(a);
-  };
-  S.list = (t, a) => {
-    a.type = t;
-    S.tr3('[BOX] list', a.type);
-    return S.CONTAINER().list(a);
-  };
-  S.cleanCash = async () => {
-    S.tr3('[BOX] cleanCash');
+  U.cleanCash = async () => {
+    U.tr3('[BOX] cleanCash');
     return S.CONTAINER().cleanCash();
   };
-  S.cleanTrash = async () => {
-    S.tr3('[BOX] cleanTrash');
+  U.cleanTrash = async () => {
+    U.tr3('[BOX] cleanTrash');
     return S.TRASH().clean();
   }
-  //
-  let PREPERS = [];
-  S.regist   = (f) => {
-    PREPERS.push(f);
-    S.tr3('[BOX] regist (' + PREPERS.length + ')');
-  };
-  S.begin = ()  => {
-    S.tr3('[BOX] begin');
-    PREPERS = [];
-  };
-  S.rollback = () => {
-    S.tr3('[BOX] rollback');
-    PREPERS = [];
-    S.close();
-  };
-  S.commit = async () => {
-    S.tr3('[BOX] commit');
-    const len = PREPERS.length;
-    if (len > 0) {
-      S.tr3(`[BOX] commit:exec (${len})`);
-      let count = 0;
-      for (let f of PREPERS) {
-        await f().then(o => {
-          if (o) S.tr3(`[BOX] ${ver}`, o);
-          if (++count >= PREPERS.length) return true;
-        });
-      }
-      return (PREPERS = []);
-    }
-  };
-  S.close = () => {
-    S.tr3('[BOX] close');
-    DB.close();
-  };
 };

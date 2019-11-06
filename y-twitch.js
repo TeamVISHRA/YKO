@@ -3,18 +3,18 @@
 //
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
-const ver = `y-twitch.js v191015.01`;
+const ver = `y-twitch.js v191028`;
 //
-const yko = require('yko'); // require('./yko/CORE.js');
+const yko = require('./yko/CORE.js');
 const Y = new yko ();
 
 advance();
 
 Y.Twitch.DebugCall().run()
-  .then(Y.Next).catch(e => { Y.throw(e) });
+  .then(Y.Next).catch(e => Y.throw(e) );
 
 function include () {
-Y.init('yTwitch', 'yDiscord');
+Y.init('yTwitch yDiscord');
 }
 function advance () {
 // ===== < Twitch > =====
