@@ -3,14 +3,15 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'yHTTP.js';
-const ver = `yko/${my} v191017`;
+const ver = `yko/${my} v191102`;
 //
- const Enc = 'utf8',
- RestartIv =  15000,
-ListenPort =   8000,
- SocketTTL =   4000,
-   DataMax = (3* 1024* 1024),
-   Content = `application/json; charset=utf-8`,
+  const Enc = 'utf8',
+  RestartIv =  15000,
+ ListenPort =   8000,
+  SocketTTL =   4000,
+    DataMax = (3* 1024* 1024),
+ContentJSON = `application/json; charset=utf-8`,
+ContentTYPE = `text/html; charset=utf-8`,
    URL = require('url'),
   HTTP = require('http'),
  QUERY = require('querystring');
@@ -30,7 +31,7 @@ module.exports.init = function (Y, Ref) {
     S.ver = `${ver} :I`;
   build_init_comp(S);
 };
-module.exports.onFake = function (Y, Ref) {
+module.exports.initFake = function (Y, Ref) {
 };
 function build_super_comp (S) {
   S.init = () => {
@@ -50,16 +51,17 @@ function build_super_comp (S) {
       }
     };
     S.engine(ENGINE);
-    S.on('rollback', S.close);
+//    S.on('rollback', S.close);
     S.init = false;
   };
 }
 function build_unit_comp (U) {
+  const T = U.tool;
   let req, res;
   U.start = (q, s) => {
     U.request  = req = q;
     U.responce = res = s;
-        U.json = U.tool.c(null);
+//        U.json = U.tool.c(null);
     return U;
   };
   U.Api = (name) => {
@@ -68,96 +70,121 @@ function build_unit_comp (U) {
   };
      U.status = () => { return res.statusCode };
   U.reqMethod = () => { return req.method };
+  let ReqURL;
   U.reqURL = () => {
-    const Url = req.url || '';
-    return Url.replace(/\/index\.[^\/\.]+/i, '/');
+    return ReqURL || (() => {
+      
+      ReqURL = (req.url || '')
+             .replace(/\/index\.[^\/\.]+/i, '/');
+      U.tr3(`[HTTP] reqURL`, ReqURL);
+      if (ReqURL == '/') { U.responceHello(); ReqURL = null }
+      return ReqURL;
+    }) ();
   };
-  U.send = async (code, head) => {
+  let ContentTYPE;
+  U.contentType = (str) => {
+    return str ? (ContentTYPE = str): str;
+  };
+  U.send = async (code, head, json) => {
+    if (U.root.finished()) {
+      U.tr3(`[HTTP] send`, 'Recursive call !!');
+      return true;
+    }
+    U.tr3(`[HTTP] send`);
     if (code) { res.statusCode = code }
     else if (! res.statusCode) { res.statusCode = 200 }
-    res.setHeader('Content-Type', (head || Content));
-    res.end( U.tool.json2txt(U.json) );
-    U.root.finish();
-    U.tr3(`[HTTP] ${res.statusCode} - ${req.url} (${req.method})`);
+    res.setHeader
+         ('Content-Type', (head || ContentTYPE || ContentJSON));
+    res.end( T.json2txt(json || U.json) );
+    U.tr3
+(`[HTTP] responce status:${res.statusCode}`, req.url, req.method);
   };
-  const OverFlow = (body) => {
-    if (body.length < DataMax) return false;
-    U.root.rollback();
+  let GET;
+  U.parseGET = () => {
+    U.tr3('[HTTP] GET');
+    return GET || (GET = new Promise (resolve => {
+      const get = URL.parse(req.url, true).query || T.c(null);
+      return resolve(get);
+    }));
+  };
+  let POST;
+  U.parsePOST = () => {
+    U.tr3('[HTTP] parsePOST');
+    return U.getDATA().then( db => {
+      return db.data ? QUERY.parse(db.data): false;
+    }).catch(e=> U.throw(e));
+  };
+  let BODY;
+  U.parseBODY = () => {
+    U.tr3('[HTTP] parseBODY');
+    return U.getDATA()
+      .then( db => { return db }).catch(e=> U.throw(e));
+  };
+  let DATA;
+  const OverFlow = (s) => {
+    if (s.data.length < DataMax) return false;
+    U.tr3('[HTTP] Warning: !!! DATA OverFlow !!!');
+    s.data = null;
     U.responceBatRequest();
     return true;
   };
-  U.parseBODY = () => {
-    return new Promise ((resolve, reject) => {
-      let body = '';
+  U.getDATA = () => {
+    U.tr3('[HTTP] getDATA');
+    return DATA || (DATA = new Promise ((resolve, reject) => {
+      const s = { data: '' };
       req.on('data', chunk => {
-        body += chunk;
-        if (OverFlow(body)) return reject();
+        s.data += chunk;
+        if (OverFlow(s)) return reject('OverFlow');
       }).on('end', () => {
-        return resolve( U.BODY = body );
+        U.tr4(`[HTTP] getDATA: end`, s.data);
+        return resolve(s);
       });
-    });
-  };
-  U.parseGET = () => {
-    return new Promise (resolve => {
-      U.GET = URL.parse(req.url, true).query
-          || U.tool.c(null);
-      return resolve( U.GET );
-    });
-  };
-  U.parsePOST = () => {
-    return new Promise ((resolve, reject) => {
-      let body = '';
-      if (req.method === 'POST') {
-        req.on('readable', chunk => {
-          body += req.read();
-          if (OverFlow(body)) return reject();
-        }).on('end', () => {
-          return resolve( U.POST = QUERY.parse(body) );
-        });
-      } else {
-        return resolve( U.POST = U.tool.c(null) );
-      }
-    });
+    }));
   };
   const JsonBase = (code, msg) => {
     return {
-       statusCode: code,
-    statusMessage: msg,
-      ContentType: Content,
+      statusCode: code,
+   statusMessage: msg,
+     ContentType: ContentJSON,
     };
   };
   U.responceError = () => {
     U.json = JsonBase(500, 'Internal Server Error.');
     U.send(U.json.statusCode);
+    U.root.rollback();
   };
   U.responceBatRequest = () => {
     U.json = JsonBase(400, 'Bat Request.');
     U.send(U.json.statusCode);
+    U.root.rollback();
   };
   U.responceForbidden = () => {
     U.json = JsonBase(403, 'Forbidden.');
     U.send(U.json.statusCode);
+    U.root.rollback();
   };
   U.responceNotFound = () => {
     U.json = JsonBase(404, 'Not Found.');
     U.send(U.json.statusCode);
+    U.root.rollback();
   };
   U.responceSuccess = () => {
     U.json = JsonBase(200, 'OK');
-      U.json.result = 'Success';
-     U.json.success = true;
-    U.json.accepted = true;
+    U.json.result  = 'Success';
+    U.json.Success = true;
     U.send();
+    U.root.finish();
   };
   U.responceHello = () => {
     U.json = JsonBase(200, 'OK');
     U.json.body = 'Hello !!';
     U.send();
+    U.root.rollback();
   };
 }
 function build_init_comp (S) {
   build_base_comp(S, () => {});
-  S.on('rollback', S.close);
+//  S.on('rollback', S.close);
 	S.on('runners', 'HTTP', S.server);
 }
 function build_base_comp (X, RUNS) {
@@ -165,13 +192,13 @@ function build_base_comp (X, RUNS) {
       Socks = new Map([]),
        Port = (X.conf.port      || ListenPort),
     SockTTL = (X.conf.socketTTL || SocketTTL );
-  if (! ON.http_api_action)
-  X.throw(`[HTTP] Please setup 'http_api_action')"`);
+  const Action = ON.http_responce
+              || (async () => { return false });
   let SRV, count = 0;
   X.server = () => {
     if (SRV) return SRV;
     SRV = HTTP.createServer();
-    SRV.on('request', build_api(X, ON.http_api_action));
+    SRV.on('request', build_api(X, ON, Action));
     SRV.on('connection', socket => {
       const Id = ++count;
       Socks.set(Id, socket);
@@ -201,20 +228,45 @@ function build_base_comp (X, RUNS) {
     X.tr(`[HTTP] << CLOSE >>`);
   };
 }
-function build_api (X, Func) {
+function build_api (X, ON, Action) {
   return (req, res) => {
     let R;
     X.start(my).then(unitRoot=> {
       R = unitRoot;
       req.setEncoding(Enc);
-      Func( R.HTTP.start(req, res) );
+      res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+         const U = R.HTTP.start(req, res);
+      const Docs = U.conf.HTDOC;
+      const Url = U.reqURL();
+      if (! Url) return false;
+      if (Url.match(/^\/(WH|API)\/([^\/]+)\/([^\/]+)/)) {
+        let [type, id, token, x] =
+            [RegExp.$1, RegExp.$2, RegExp.$3];
+        if (x = Docs[type]) {
+          if (x = x[id]) {
+            return R[x.name][type](U, token).then(x => {
+              return x.success
+                ? U.responceSuccess()
+                : U.responceForbidden();
+            }). catch(e=> {
+              U.responceError();
+              U.throw(`[HTTP] ${U.ver}`, e);
+            });
+          }
+        }
+      }
+      Action(U, Url).then(x=> {
+        if (! R.finished()) U.responceNotFound();
+      });
     }).catch(err => {
-      res.statusCode = 500;
-      res.end(X.tool.json2txt({
+      if (R && ! R.finished()) {
+        R.rollback();
+        res.statusCode = 500;
+        res.end(X.tool.json2txt({
            statusCode: 500,
         statusMessage: 'Internal Server Error'
-      }));
-      if (R) R.rollback();
+        }));
+      }
       X.throw(ver, err);
     });
   };

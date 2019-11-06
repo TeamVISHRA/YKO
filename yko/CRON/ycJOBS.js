@@ -3,34 +3,33 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ycJOBS.js';
-const ver = `yko/${my} v191014.01`;
+const ver = `yko/${my} v191024`;
 //
-//module.exports.Unit = function (P) {/
-//  const List = exports.Collect(P);
-//  for (let [key, func] of P.tool.e(List)) { S[key] = func }
-//};
-module.exports.Collect = function (P) {
+module.exports.Collect = P => {
   const R = P.root;
-  return {
+  const JOBS = {
     DiscordAskRefresh: () => {
       R.Discord.ask.refresh().then(x=> { R.finish() });
     },
-    sysDBcleanCash: () => {
-      R.sysDB().clean().then(x=> { R.finish() });
+    cleanProcCash: () => {
+      R.procCash().clean().then(x=> { R.finish() });
     },
     boxCleanCash: () => {
-      R.box.cleanCash().then(x=> { R.finish() });
-    },
-    boxCleanTrash: () => {
-      R.box.cleanTrash().then(x=> { R.finish() });
+      R.box.cash().clean().then(x=> { R.finish() });
     },
     brainCleanSleep: () => {
       R.brain.cleanSleep().then(x=> { R.finish() });
     },
-    DiscordRSS: (a) => {
+    boxCleanTrash: () => {
+      const JS = require('../BOX/ybTRASH.js');
+      const ybTRASH = new JS.Unit (P);
+      ybTRASH.clean().then(x=> { R.finish() });
+    },
+    DiscordRSS: () => {
       const JS = require('./ycDiscordRSS.js');
       const ydRSS = new JS.Unit (P);
       ydRSS.run();
     }
   }
+  return JOBS;
 }

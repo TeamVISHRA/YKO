@@ -3,25 +3,24 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ydFAKE.js';
-const ver = `yko/Discord/${my} v191015.01`;
+const ver = `yko/Discord/${my} v191103`;
 //
-module.exports.call = function (P, ARGV) {
+module.exports.call = function (P) {
   const Y = P.un;
+  const ARGV = Y.ARGV.get();
   Y.tr3('[Discord:F] Debug:call', ARGV);
   Y.onFake();
   switch (ARGV.shift()) {
-    case 'evM':
+    case '-m':
       Y.Next = x => { x.$evMessage(ARGV.join(' ')) };
       break;
-    case 'evJoin':
+    case '-join':
       Y.Next = x => { x.$evJoinGuild() };
       break;
-    case 'evExit':
+    case '-exit':
       Y.Next = x => { x.$evExitGuild() };
       break;
-    case 'cron':
-      if (! ARGV[0])
-        Y.throw('[Discord:F] Something is missing ...!?');
+    case '-cron':
       Y.Next = x => { x.$Cron(...ARGV) };
       break;
   }
@@ -32,11 +31,21 @@ module.exports.on = function (p) {
   S = this;
   S.ver = ver;
   [P, Y] = [p, p.un];
-      S.$guildID = P.im.devel.guild;
-    S.$channelID = P.im.devel.channel;
-       S.$userID = P.im.devel.userID;
+      S.$guildID = P.conf.devel.guild
+          || P.throw(`[Fake] Unknown '<devel>.guild'.`);
+    S.$channelID = P.conf.devel.channel
+          || P.throw(`[Fake] Unknown '<devel>.channel'.`);
+       S.$userID = P.conf.devel.userID
+          || P.throw(`[Fake] Unknown '<devel>.userID'.`);
   S.$channelName = 'FAKE-CHANNEL';
   S.$TieTwitchCH = '579199949233717268';
+  P.tr(`[Fake] Setting:`,
+      `guildID: ${S.$guildID}`,
+    `channelID: ${S.$channelID}`,
+       `userID: ${S.$userID}`,
+  `channelName: ${S.$channelName}`,
+  `TieTwitchCH: ${S.$TieTwitchCH}`
+  );
   baseHandler(S);
   const ON = {};
   S.on = (key, v) => {
@@ -52,7 +61,7 @@ module.exports.on = function (p) {
   S.$ON = () => { return ON };
   const evMSG = (type, msg) => {
     if (! ON.message) Y.throw('[Discord:F] Unknown on.message');
-    return ON.message( MessageHandler(type, msg) );
+    ON.message( MessageHandler(type, msg) );
   };
   S.$evMessage   = (msg) => { evMSG(false, msg) };
   S.$evMessageDM = (msg) => { evMSG('dm',  msg) };
@@ -83,16 +92,13 @@ module.exports.on = function (p) {
     return ON.guildMemberRemove
                 ( nickname( GuildHandler() ) );
   };
-  S.$Cron = (...name) => {
+  S.$Cron = async (...name) => {
     const JS = Y.rack.get('CRON').$JS;
     const START = JS.START(Y);
-//    if (name == 'all' || name == '-a') {
-//      const Ct = require('../CRON/ycJOBS.js');
-//      for (let key in Ct.Collect())
-//        { START(key) }
-//    } else {
-      START(...name);
-//    }
+    if (name[0]) return START(...name);
+    const Jobs = (require('../CRON/ycJOBS.js')).Collect(S);
+    for (let key in Jobs) { START(key) }
+    return S;
   };
 }
 function GuildHandler () {

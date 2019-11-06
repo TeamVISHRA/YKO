@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'BRAIN.js';
-const ver = `yko/${my} v191016`;
+const ver = `yko/${my} v191024`;
 //
 module.exports.init = function (Y, Ref) {
   init(Y, Ref, Y.tool);
@@ -14,7 +14,7 @@ module.exports.Unit = function (R, Ref) {
   build_component(S);
 }
 function init (Y, Ref, T) {
-  const PREFIX = Ref.prefix = Y.im.command_prefix;
+  const PREFIX = Ref.prefix = Y.conf.brain.cmd_prefix;
   //
   const yName1 = '(?:[YyＹｙ]|[ワわ][イい])',
         yName2 = '(?:[KkＫｋ][OoＯｏ]|[コこ子])',
@@ -29,7 +29,7 @@ function init (Y, Ref, T) {
   if (As = Y.rack.get('ON').brain_command_alias) {
     for (let v of T.v(As)) {
       if (! v[0] || ! v[1])
-          Y.then(`[BRAIN] Check 'on.brain_command_alias'`);
+          Y.throw(`[BRAIN] Check 'on.brain_command_alias'`);
       v[0] = new RegExp(`^\\s*${v[0]}\\s*(.*)`);
     }
     Ref.ALIAS = (str) => {
@@ -71,7 +71,7 @@ function build_component (S) {
       a.check = () => {};
     }
     let update;
-    const Limit = T.time_u_add((a.limit || (24* 60)), 'm');
+    const Limit = T.unix_add((a.limit || (24* 60)), 'm');
     if (k2) {
       SLEEP[`${k2}@${k1}`] = Limit;
       update = true;
@@ -95,7 +95,7 @@ function build_component (S) {
   S.cleanSleep = async () => {
     S.tr3('[BRAIN] cleanSleep');
     let update;
-    const Now = T.time_u();
+    const Now = T.unix();
     for (let [k, v] of T.e(SLEEP)) {
       if (v < Now) {
         S.tr3('[BRAIN] cleanSleep: hit', k);
@@ -116,9 +116,9 @@ function build_component (S) {
     let cmd, crum;
     str = T.canon(str);
     if (! str) return RES({ answer: '・・・' }); 
-    if (str.match(/^[ワわ](?:[ッっ]*[はハ8８][ッっ]*)+$/))
+    if (/^[ワわ](?:[ッっ]*[はハ8８][ッっ]*)+$/.test(str))
         return RES({ answer: 'わは' });
-    if (str.match(/^wa+ha+$/i))
+    if (/^wa+ha+$/i.test(str))
         return RES({ answer: 'アロハぁ' });
     if (str.match(Reg.callme)) {
       if (str = RegExp.$1) {

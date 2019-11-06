@@ -3,21 +3,17 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ydMessage.js';
-const ver = `yko/Discord/${my} v191014.01`;
+const ver = `yko/Discord/${my} v191105`;
 //
 module.exports.Unit = function (P) {
-   const R = P.root;
-   const U = R.unitKit(my, this, P);
-     U.ver = ver;
-   const T = U.tool;
+  const R = P.root;
+  const U = R.unitKit(my, this, P);
+  const T = U.tool;
+    U.ver = ver;
   U.unitKit = (nm, X, ...arg) => {
     R.unitKit(nm, X, ...arg);
     X.dir = P;
     return X;
-  };
-  U.App = (name, args) => {
-    const JS = require(`./App/yda${name}.js`);
-    return new JS.Unit (U, args);
   };
   let [TMP, H] = [{}];
   const MSG_WARP = U.debug() ? (msg) => {
@@ -44,22 +40,35 @@ module.exports.Unit = function (P) {
   const IS = (o) => { return (TMP.is = o) };
   U.is = () => { return TMP.is };
   U.start = (handler) => {
-    [H, TMP] = [handler, U.tool.c(null)];
+    [H, TMP] = [handler, T.c(null)];
     let type;
     if (U.type() == 'dm') {
-            U.isDM = () => { return true };
+      U.isDM = () => {
+        U.tr(`[Discord:ydM] DM - true.`);
+        return true;
+      };
       TMP.guild_id = TMP.channel_id = '';
        TMP.user_id = H.user.id;
          U.guildID = U.channelID = () => { return '' };
           U.userID = () => { return TMP.user_id };
+        U.nickname = () => { return H.user.username  };
+        U.username = () => { return H.user.username  };
+       U.avatarURL = () => { return H.user.avatarURL };
       Y.tr3('[Discord:ydM] <M>.channel.type:' + (type = 'DM'));
     } else {
-            U.isDM = () => { return false };
+      U.isDM = () => {
+        U.tr(`[Discord:ydM] DM - false.`);
+        return false;
+      };
       TMP.guild_id = H.guild.id;
        TMP.user_id = H.author.id;
          U.guildID = () => { return TMP.guild_id };
        U.channelID = () => { return TMP.channel_id };
           U.userID = () => { return TMP.user_id };
+        U.nickname = () =>
+          { return (H.member.nickname || H.author.username) };
+        U.username = () => { return H.author.username  };
+       U.avatarURL = () => { return H.author.avatarURL };
       type = TMP.channel_id = H.channel.id;
     }
     if (R.brain.isSleep(type, U.userID())) {
@@ -69,6 +78,15 @@ module.exports.Unit = function (P) {
       R.brain.isCall(H.content, IS);
     }
     return U;
+  };
+  let MemberDB;
+  U.finish = () => {
+    if (MemberDB) MemberDB.prepar();
+    return P.finish();
+  };
+  U.App = (name, args) => {
+    const JS = require(`./App/yda${name}.js`);
+    return new JS.Unit (U, args);
   };
   U.type = () => { return H.channel.type };
   U.guildName = () => {
@@ -83,21 +101,12 @@ module.exports.Unit = function (P) {
   U.guildMemberCount = () => {
     return U.isDM() ? 0 : (H.guild.memberCount || 0);
   };
-  U.nickname = () => { return U.isDM()
-    ? U.username(): (H.member.nickname || U.username());
-  };
   U.channelName = () => {
     return U.isDM() ? '(N/A)': H.channel.name;
-  };
-  U.username = () => {
-    return U.isDM() ? H.user.username: H.author.username;
   };
   U.discriminator = () => {
     return U.isDM() ? H.user.discriminator
                     : H.author.discriminator;
-  };
-  U.avatarURL = () => {
-    return U.isDM() ? H.user.avatarURL : H.author.avatarURL;
   };
   U.account = () => {
     let name = U.username()
@@ -148,7 +157,7 @@ module.exports.Unit = function (P) {
     return func(MSG_WARP(msg)).then(P.send2callback(a));
   };
   if (U.debug()
-      && P.im.debug_level && P.im.debug_level > 1) {
+      && P.conf.debug_level && P.conf.debug_level > 1) {
     const DBGsend = SEND;
     const id = U.devel_channelID();
     SEND = (func, msg, a) => {
@@ -183,33 +192,62 @@ module.exports.Unit = function (P) {
     return (TMP.channelId || H.channel.id || '');
   };
   if (U.rack.has('Twitch')) {
-    U.toTwitch = async (uname, msg, nocheck) => {
-      if (U.isDM()) return false;
-      const Key = `discord.guilds.${U.guildID()}.toTwitch`;
-      U.tr3('[Discord:ydM] toTwitch', Key);
-      let cf;
-      await R.sysDB().get(Key).then(x=> cf = x );
-      U.tr5('[Discord:ydM] sysDB: ', cf);
-      if (! cf) return false;
-      U.tr3('[Discord:ydM] toTwitch', 'check');
-      if (! nocheck && U.channelID() != cf.fromCH) {
-        U.tr3('[Discord:ydM] toTwitch', 'Cancel !!');
-        return;
-      }
-//      const me = U.un.im.twitch.chat.loginID;
-      msg = T.tmpl(cf.message, {
-        name: (uname || U.nickname()),
-        message: T.byte2cut((msg || U.content()), 400, '...')
+    U.toTwitch = (uname, msg, func) => {
+      return new Promise (async (resolve, reject) => {
+        if (U.isDM()) return reject
+          ({ YKO:1, result: 'Not available from DM' });
+        let cf;
+        await R.sysDB(`Discord.${U.guildID()}`)
+                 .cash('toTwitch').then(x=> cf = x );
+        U.tr5('[Discord:ydM] sysDB: ', cf);
+        if (! cf) return reject
+          ({ YKO:1, result: 'Configuration not setup.' });
+        if (! func) func = (check, uid) => {
+          return check == uid ? true : false;
+        };
+        U.tr3('[Discord:ydM] toTwitch', 'check');
+        if (! func(cf.fromCH, U.channelID())) {
+          U.tr3('[Discord:ydM] toTwitch', 'Cancel !!');
+          return reject({ YKO:1, result: 'cancel' });
+        }
+        msg = T.tmpl(cf.message, {
+          name: (uname || U.nickname()),
+          message: T.Zcut((msg || U.content()), 400, '...')
+        });
+        return R.Twitch.say(cf.toCH, msg).then(x=> {
+          resolve({ from:cf.fromCH, to:cf.toCH });
+        }).catch(e=> U.throw(`[Discord:toTwitch]`, e));
       });
-      return U.root.Twitch.say(cf.toCH, msg)
-              .then(x=> { return [cf.fromCH, cf.toCH] });
     };
   } else {
-    U.toTwitch = () => {};
+    U.toTwitch = async () => {};
   }
+  U.memberNow = async () => {
+    if (MemberDB) return MemberDB;
+    const Gid = U.guildID()
+    || U.throw(`[Discord:ydM] memberNow: Unknown guildID.`);
+    await U.root.sysDB(`Discord`)
+    .member(`${Gid}.${U.userID()}`).then(x=> MemberDB = x);
+    return MemberDB;
+  };
   U.every = () => {
     U.tr3('[Discord:ydM] every');
-    U.toTwitch(U.nickname(), U.content());
-    U.finish();
+    U.toTwitch(U.nickname(), U.content()).then(x=> {
+      U.$countUpMemberDB(1).then(x=> U.finish());
+    }) .catch(e=> {
+      if (e && T.isHashArray(e) && e.YKO) {
+        if (e.result)
+          U.tr4(`[Discord:ydM] toTwitch:`, e.result);
+        U.$countUpMemberDB(0).then(x=> U.finish());
+      } else {
+        U.throw(`[Discord:ydM]`, e);
+      }
+    });
+  };
+  U.$countUpMemberDB = (Twitch) => {
+    return U.memberNow().then(box=> {
+      box.util().inc('countPost')
+         .util().setDefault('tmLastPost');
+    });
   };
 }

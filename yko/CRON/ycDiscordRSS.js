@@ -1,151 +1,117 @@
 //
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
-const my  = 'ycDiscordRSSroom.js';
-const ver = `yko/CRON/${my} v191015.01`;
-//
-const FeedParser = require('feedparser');
-const request    = require('request');
+const my  = 'ycDiscordRSS.js';
+const ver = `yko/CRON/${my} v191025`;
 //
 module.exports.Unit = function (P) {
-  const S = P.root.unitKit('job_RSS', this, P);
+  const R = P.root;
+  const S = R.unitKit('job_RSS', this, P);
     S.ver = ver;
-  const T = S.tool,
-        R = S.root,
-      DBG = S.un.im.discord.devel;
-  let DEBUG, DBGCH;
-  if (S.debug()) {
-    DEBUG = (id) => { return id == DBG.guild ? true : false };
-    DBGCH = () => { return DBG.channel };
-  } else {
-    DEBUG = () => { return true };
-    DBGCH = (ch) => { return ch };
-  }
+  const T = S.tool;
+  const DBGCH = S.debug()
+      ? ()   => { return R.Discord.conf.devel.channel }
+      : (ch) => { return ch };
   S.run = async () => {
-    let Discord;
-    await R.sysDB().get('discord').then(x=> Discord = x);
-    S.tr5('run - sysDB', Discord);
-    for (let [id, G] of T.e(Discord.guilds)) {
-      if (! G.CRON || ! DEBUG(id)) continue;
-      S.tr3('run - guild id', id);
-      let C = G.CRON.RSSreader;
-      if (! C || ! C.toCH
-        || ! C.sites || C.sites.length < 1) continue;
-      S.tr3('run:for - guild id', id);
-      S.tr3('run:for - to channel', C.toCH);
-      S.tr5('run:for - RSS sites', C.sites);
-      C.id = id;
-      C.dbKey = {
-        id: R.Discord.buildDataID(id),
-        name: '_CRON_RSS_READER__'
-      };
-      return S.RSS(C);
+    for (let Gid of R.Discord.ask.guilds()) {
+      let Ds; await R.sysDB(`Discord.${Gid}`)
+                .cash('CRON.RSSreader').then(x=> Ds = x);
+      S.tr3(`[CRON:RSS] run:sysDB (${Gid})`, Ds);
+      if (! Ds || ! Ds.toCH || ! Ds.sites) continue;
+      Ds.Gid = Gid;
+      const RSS = [];
+      for (let v of Ds.sites) { await S.getRSS(v.url, RSS) }
+      if (RSS.length < 1) continue;
+      await S.output(Ds, T.Sort(RSS));
     }
+    R.finish();
   };
-  S.RSS = async (C) => {
-    S.tr5('RSS:C = ', C);
-    let BOX;
-    await R.box.any('cron', C.dbKey).then(x=> BOX = x );
-    let historys = BOX.isNew() ? [] : BOX.get('historys');
-    const rssGet = new Promise( rsv => {
-      let [count, rssNow] = [0, []];
-      for (let rss of C.sites) {
-        let Err = false;
-        let req = request(rss.url);
-        let fp  = new FeedParser({});
-        let no  = 0;
-        req.on('error', function (err) {
-          S.tr(err);
-        });
-        req.on('response', function (res) {
-          let self = this;
-          if (res.statusCode == 200) {
-            self.pipe(fp);
-          } else {
-            S.tr('Responce Status: '
-              + (res.statusCode || 'No response'), rss.url );
-          }
-        });
-        fp.on('readable', function () {
-          while(i = this.read()) {
-            let lwTitle =
-              T.Zcut(i.title, S.conf.title.low);
-            let edTitle =
-              T.Zcut(i.title, S.conf.title.edit, '...');
-            S.tr5('RSS - parse', edTitle);
-            rssNow.push({
-              no: ++no,
-              url: i.link,
-              lowTitle: lwTitle,
-              editTitle: edTitle
-            });
-          }
-        });
-        fp.on('end', function () {
-          if (++count >= C.sites.length) rsv(rssNow);
-        });
-      }
-    });
-    rssGet.then( rssNow => {
-      rssNow.sort((a, b) => {
-        if (a.no < b.no) return -1;
-        if (a.no > b.no) return  1;
-        return 0;
-      });
-      let output;
-      for (let i of rssNow) {
-        if ( historys.find(o => o.url == i.url)
-          || historys.find(o => o.title == i.lowTitle)) {
-          continue;
-        }
-        output = { title: i.editTitle, url: i.url };
-        historys.push({
-          time : T.unix(),
-          itle : i.lowTitle,
-          url  : i.url
-        });
-        break;
-      }
-      if (output) {
-        BOX.set('historys',
-              T.array2cut(historys, S.conf.history.size) );
-        S.tr2('RSS:output - history size', historys.length);
-        S.tr2('RSS:output - send ch', C.toCH);
-        const SEND = (o) =>
-        { R.Discord.Client().channel_send(DBGCH(C.toCH), o) };
-        R.web.get(output.url).then( bd => {
-          const og = bd.ogp();
-          let url = bd.pageURL() || output.url;
-          if (bd.invalid() || bd.char() == 'UTF32') {
-            SEND(`.\n${url}`);
-          } else {
-            let embed = {
-              title: output.title,
-              url  : url,
-              color: 0x9d9d9d,
-              description: '',
-              timestamp: new Date()
-            };
-            let tmp;
-            if (tmp = bd.pageImage()) {
-              embed.image = { url: tmp };
-            }
-            if (tmp = bd.pageSiteName()) {
-              embed.description = `\`< ${tmp} >\`\n`;
-            }
-            embed.description += bd.pageDescription();
-            if (tmp = bd.pageKeywords()) {
-              embed.footer = { text: tmp };
-            }
-            SEND({ embed: embed });
-          }
-          BOX.prepar();
-          R.finish();
-        });
+  S.output = async (Ds, RSS) => {
+    S.tr5('[CRON:RSS] output');
+    let BOX; await R.box
+    .cash(`ycRSS(${Ds.Gid}:history)`).get().then(x=> BOX = x);
+    BOX.TTL = T.unix_add((5 * (24* 60)), 'm');
+    let History = BOX.hasNew() ? []: BOX.get('history');
+    let OUTPUT  = getOutput(S, T, RSS, History);
+    if (! OUTPUT) {
+      S.tr2('[CRON:RSS] output(There are no new arrivals.)');
+      return R.box.commit();
+    }
+    History = T.array2cut(History, S.conf.history.size);
+    BOX.set('history', History).prepar();
+    S.tr3(`[CRON:RSS] output:CH(${Ds.toCH})`);
+    const SEND = (o) =>
+    { R.Discord.Client().channel_send(DBGCH(Ds.toCH), o) };
+    R.web.get(OUTPUT.url).then( W => {
+      const og = W.ogp();
+      OUTPUT.url = W.pageURL() || OUTPUT.url;
+      if (W.invalid() || W.char() == 'UTF32') {
+        return SEND(`.\n${OUTPUT.url}`);
       } else {
-        S.tr2('_RSS_:output - (There are no new arrivals.)');
-        R.finish();
+        let embed = {
+          title: OUTPUT.title,
+          url  : OUTPUT.url,
+          color: 0x9d9d9d,
+          description: '',
+          timestamp: new Date()
+        };
+        const Image = W.pageImage(),
+           SiteName = W.pageSiteName(),
+           PageText = W.pageDescription(),
+           Keywords = W.pageKeywords();
+        if (Image)
+            embed.image = { url: Image };
+        if (SiteName)
+            embed.description = `\`< ${SiteName} >\`\n`;
+        if (PageText)
+            embed.description += T.Zcut(PageText, 400, '...');
+        if (Keywords)
+            embed.footer = { text: Keywords };
+        return SEND({ embed: embed });
       }
-    });
+    }).then(x=> R.box.commit() );
   };
+  S.getRSS = async (URL, RSS) => {
+    let res, no = 0;
+    await R.web.cash(URL).then(r=> res = r );
+    res.parse($ => {
+      let Atom = $('feed').attr();
+      const Base =
+        (Atom && Atom.xmlns && /Atom/i.test(Atom.xmlns))
+            ? $('entry') : $('item');
+      Base.each ((i, c) => {
+        let Title = $(c).find('title').text();
+        let Link = /<link>\s*([^\s<]+)/im.exec($(c).html())
+                ? RegExp.$1 : $(c).find('link').attr().href;
+        if (Link) {
+          let lowTitle = T.Zcut(Title, S.conf.title.low);
+                 Title = T.Zcut(Title, S.conf.title.edit, '...');
+          RSS.push({
+              no: ++no,
+             url: Link,
+           Title: Title,
+        lowTitle: lowTitle
+          });
+        }
+      });
+    });
+    return S;
+  };
+}
+function getOutput (S, T, RSS, His) {
+  let result;
+  for (let v of T.v(RSS)) {
+    if ( His.find(o => o.url == v.url)
+      || His.find(o => o.lowTitle == v.lowTitle)) {
+      continue;
+    }
+    His.push({
+      time: T.utc(),
+  lowTitle: v.lowTitle,
+       url: v.url
+    });
+    result = { title: v.Title, url: v.url };
+    break;
+  }
+  return result;
 }

@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ydGuild.js';
-const ver = `yko/Discord/${my} v191014.01`;
+const ver = `yko/Discord/${my} v191025`;
 //
 module.exports.Unit = function (P) {
    const R = P.root;
@@ -23,43 +23,52 @@ module.exports.Unit = function (P) {
     S.discriminator = () => { return H.user.discriminator };
     return S;
   };
+  const sdKey = () => { return P.sdKey(S.guildID()) };
   S.join = async () => {
     const Gid = S.guildID();
-    const Key = `discord.guilds.${Gid}.join`;
-    S.tr3('[Discord:G] join', Key);
-    let cf;
-    await R.sysDB().get(Key).then(x=> cf = x );
-    if (cf) {
-      S.tr7('[Discord:G] join:sysDB', cf);
-      if (cf.msg1) S.DMsend
-        (S.userID(), T.tmpl(cf.msg1, { name: S.guildName() }));
-      if (cf.msg2) S.systemCH_send(Gid, cf.msg2, 300);
-      if (cf.LogCH) {
-        S.tr3('[Discord:G] join: Log channel', cf.LogCH);
-        S.channel_send(cf.LogCH, EMBED(S, cf.color));
-    } }
-    return R.finish();
-	};
-	S.exit = async (Yo) => {
-    const Gid = S.guildID();
-    const Key = `discord.guilds.${Gid}.exit`;
-    S.tr3('[Discord:G] exit', Key);
-    let cf;
-    await R.sysDB().get(Key).then(x=> cf = x );
-    if (cf) {
-      S.tr7('[Discord:G] exit:sysDB', cf);
-      if (cf.LogCH) {
-        S.tr3('[Discord:G] exit: Log channel', cf.LogCH);
-        S.channel_send(cf.LogCH, EMBED(S, cf.color));
-    } }
-//    P.MemberDB().view(Gid, S.userID())
-//      .then( box => { if (box.aleady()) box.remove() })
-//      .then(() => { S.finish() });
-    return R.finish();
-	};
-         S.DMsend = P.Client().DMsend;
-  S.systemCH_send = P.Client().systemCH_send;
-   S.channel_send = P.Client().channel_send;
+    S.tr3('[Discord:G] join', S.userID());
+    R.sysDB(sdKey()).cash().then(cf => {
+      if (cf && cf.join) {
+        const jc = cf.join;
+        if (cf.channels) {
+          S.tr3('[Discord:G] channels OK');
+          if (jc.chMsg) {
+            S.tr3('[Discord:G] chMsg OK');
+            P.tmpl(Gid, jc.chMsg, cf.channels)
+             .then(msg=> S.DMsend(S.userID(), msg) );
+          }
+          if (jc.dmMsg) {
+            S.tr3('[Discord:G] dmMsg OK');
+            P.tmpl(Gid, jc.dmMsg, cf.channels)
+             .then(msg=> S.systemCH_send(Gid, msg, 300) );
+          }
+        }
+        if (jc.LogCH) {
+          S.tr3('[Discord:G] join: Log channel', jc.LogCH);
+          S.channel_send(jc.LogCH, EMBED(S, jc.color));
+        }
+      }
+      R.finish();
+    });
+  };
+  S.exit = async () => {
+    S.tr3('[Discord:G] exit', S.userID());
+    R.sysDB(sdKey()).cash().then(cf=> {
+      if (cf && cf.exit) {
+        const ec = cf.exit;
+        S.tr7('[Discord:G] exit:sysDB', ec);
+        if (ec.LogCH) {
+          S.tr3('[Discord:G] exit: Log channel', ec.LogCH);
+          S.channel_send(ec.LogCH, EMBED(S, ec.color));
+        }
+      }
+      R.finish();
+    });
+  };
+          S.DMsend = P.Client().DMsend;
+   S.systemCH_send = P.Client().systemCH_send;
+    S.channel_send = P.Client().channel_send;
+    S.get_channerl = P.Client().get_channel;
 }
 function EMBED (S, color) {
   let tmp, emoji = '';
@@ -68,10 +77,10 @@ function EMBED (S, color) {
   let disc  = S.discriminator();
   if (tmp = S.avatarURL()) embed.author.icon_url = tmp;
   if (tmp = S.nickname()) {
-	  embed.author.name = tmp;
-	  embed.description = S.username() + `#${disc}\n`;
+    embed.author.name = tmp;
+    embed.description = S.username() + `#${disc}\n`;
   } else {
-	  embed.author.name = S.username() + `#${disc}`;
+    embed.author.name = S.username() + `#${disc}`;
   }
   embed.description += '`<' + S.userID() + `> ` + now + '`';
   return { embed: embed };

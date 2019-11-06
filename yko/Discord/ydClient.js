@@ -3,25 +3,44 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ydClient.js';
-const ver = `yko/Discord/${my} v191014.01`;
+const ver = `yko/Discord/${my} v191103`;
 //
 module.exports.Unit = function (P) {
    const R = P.root;
    const S = R.unitKit(my, this, P);
      S.ver = ver;
-	 const B = P.client();
+	 const T = S.tool, B = async (func) => {
+    let clt;
+    await P.super.connect().then(x=> clt = x);
+    return func(clt);
+  };
+  const Ca = {
+    USR: T.c(null),
+    CHL: T.c(null),
+    GMM: T.c(null)
+  };
 	S.get_user = (id) => {
-		if (! id) S.throw(ver, "Unknown 'user id'");
-    S.tr2('[Discord:C] get_user', id);
-		return (B.users.get(id) || false);
+    return B( Clt => {
+  		if (! id) S.throw(`[Discord:C] Unknown 'user id'.`);
+      S.tr3('[Discord:C] get_user', id);
+  		if (Ca.USR[id]) return Ca.USR[id];
+      let o; if (o = Clt.users.get(id)) {
+        return (Ca.USR[id] = o);
+      } else {
+        S.tr3(`[Discord:C] Warning: get_user: Unknown '${id}'.`);
+        return (Ca.USR[id] = {});
+      }
+    });
 		// { bot, id, username, avatarURL,
 		//   discriminator, lastMessageID, lastMessage }
 		// --- <user>.send()
 	};
 	S.get_guild = (id) => {
-		if (! id) S.throw(ver, "Unknown 'guild id'");
-    S.tr2('[Discord:C] get_guild', id);
-		return (B.guilds.get(id) || false);
+    return B( Clt => {
+  		if (! id) S.throw(`[Discord:C] Unknown 'guild id'.`);
+      S.tr2('[Discord:C] get_guild', id);
+  		return Clt.guilds.get(id) || false;
+    });
   	// { id, name, iconURL, region, memberCount, systemChannelID,
 		//   joinedTimestamp, ownerID, members, channels, roles }
   	// --- <members>.get(id)
@@ -29,57 +48,71 @@ module.exports.Unit = function (P) {
 		// --- <roles>.get(id)
 	};
 	S.get_channel = (id) => {
-		if (! id) Y.throw(ver, "[Discord:C] Unknown 'channel id'");
-    S.tr3('[Discord:C] get_channel', id);
-		if (B.channels) {
-      S.tr4(`[Discord:C] <C>.channels.get`, id);
-			return (B.channels.get(id) || false);
-		}
-    if (B.guild && B.guild.channels) {
-      S.tr4(`[Discord:C] <C>.guild.channels.get`, id);
-      return (B.guild.channels.get(id) || false);
-		}
-    return false;
-  	// { type, id, name, parentID, topic, lastMessageID,
+    return B( Clt => {
+  		if (! id) Y.throw(`[Discord:C] Unknown 'channel id'.`);
+      S.tr3('[Discord:C] get_channel', id);
+      if (Ca.CHL[id]) return Ca.CHL[id];
+      let o;
+      if (Clt.channels) {
+        if (o = Clt.channels.get(id)) return (Ca.CHL[id] = o);
+      }
+      if (Clt.guild && B.guild.channels) {
+        if (o = Clt.guild.channels.get(id)) return (Ca.CHL[id] = o);
+      }
+      S.tr3(`[Discord:C] Warning: get_channel: Unknown '${id}'.`);
+      return (Ca.CHL[id] = {});
+  	});
+    // { type, id, name, parentID, topic, lastMessageID,
 		//   lastPinTimestamp, guild { members, channels, roles, ... },
 		// --- <channel>.send()
 	};
-	S.get_guild_member = (gid, mid) => {
-		if (! gid) S.throw(ver, "[Discord:C] Unknown 'guild id'");
-		if (! id)  S.throw(ver, "[Discord:C] Unknown 'member id'");
+	S.get_guild_member = async (gid, mid) => {
+		if (! gid) S.throw(`[Discord:C] Unknown 'guild id'.`);
+		if (! id)  S.throw(`[Discord:C] Unknown 'member id'.`);
     S.tr3('[Discord:C] get_guild_member', `[${gid}] [${mid}]`);
-		const guild = S.get_guild(gid)
-							 || S.throw(ver, "[Discord:C] 'guild' is not found");
-		return (guild.members.get(mid) || false);
+    const Key = `${gid}.${mid}`;
+    return Ca.GMM[Key] || (async () => {
+      let Clt; await S.get_guild(gid).then(x=> Clt = x );
+      let o; if (Clt && (o = Clt.members.get(mid))) {
+        return (Ca.GMM[Key] = o); 
+      }
+      S.tr3(`[Discord:C]`
+          + `Warning: get_guild_member: Unknown '${id}'.`);
+      return (Ca.GMM[Key] = {});
+    }) ();
 		// nickname, joinedTimestamp, _roles [],
 		// user { bot, id, username, avatarURL, discriminator }
 		// guild { members, channels, roles, ... }
 		// --- <member>.send()
 	};
   let SEND, SYSTEMCHID;
-  if (S.debug() && R.im.debug_level && R.im.debug_level > 1) {
-    const dv = P.im.devel;
+  if (S.debug() && R.conf.debug_level && R.conf.debug_level > 1) {
+    const Dv = P.conf.devel;
     const send = SEND;
     SEND = (ch, msg, a) => {
-      S.tr4('[Discord:C] SEND: "' + dv.channel +  '"', msg);
-      ch = S.get_channel(dv.channel);
-      S.tr7('[Discord:C]', ch);
-      return ch.send(msg).then(P.send2callback(a));
+      S.tr4(`[Discord:C] SEND: ${Dv.channel}`, msg,
+            `[DBG:${ch.id}]>>> ${Dv.channel}`);
+      S.get_channel(Dv.channel).then(Ch => {
+        if (Ch.send) return Ch.send(msg).then(P.send2callback(a));
+        S.throw(`[Discord:C] Warning:`,
+                `Not applicable to '${Dv.channel}'.`);
+      });
     };
-    SYSTEMCHID = () => {
-      S.tr3('[Discord:C] systemChannelID - debug', dv.channel);
-      return dv.channel;
+    SYSTEMCHID = async () => {
+      S.tr3('[Discord:C] systemChannelID - debug', Dv.channel);
+      return Dv.channel;
     };
   } else {
-    SEND = (ch, msg, a) => {
+    SEND = (Ch, msg, a) => {
       S.tr3('[Discord:C] SEND', msg);
-      S.tr7('[Discord:C] ', ch);
-		  return ch.send(msg).then(P.send2callback(a));
+      S.tr7('[Discord:C] ', Ch.id);
+		  return Ch.send(msg).then(P.send2callback(a));
     };
-    SYSTEMCHID = (gid) => {
+    SYSTEMCHID = async (gid) => {
       S.tr3('[Discord:C] systemChannelID - Call');
-		  const guild = S.get_guild(gid)
-			|| S.throw(ver, `[Discord:C] 'guild' is not found: ${gid}`);
+      let guild; await S.get_guild(gid).then(cls => {
+        guild = cls || S.throw(`[Discord:C] Not found: ${gid}`);
+      });
       const sysCH = guild.systemChannelID || false;
       S.tr3('[Discord:C] systemChannelID', `(${sysCH}) remote ??`);
 		  return sysCH;
@@ -88,14 +121,17 @@ module.exports.Unit = function (P) {
 	S.systemChannelID = SYSTEMCHID;
 	S.systemCH_send = (gid, msg, a) => {
     S.tr3('[Discord:C] systemCH_send', gid);
-		return S.channel_send(S.systemChannelID(gid), msg, a);
+    return S.systemChannelID(gid)
+        .then(sID => { return S.channel_send(sID, msg, a) });
 	};
 	S.channel_send = (id, msg, a) => {
     S.tr3('[Discord:C] channel_send', id);
-		return SEND(S.get_channel(id), msg, a);
+		return S.get_channel(id)
+        .then(cID => { return SEND(cID, msg, a) });
 	};
 	S.DMsend = (id, msg, a) => {
     S.tr3('[Discord:C] DMsend', id);
-		return SEND(S.get_user(id), msg, a);
+    return S.get_user(id)
+        .then(uID => { return SEND(uID, msg, a) });
 	};
 }

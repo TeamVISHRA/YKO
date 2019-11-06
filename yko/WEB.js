@@ -2,15 +2,16 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'WEB.js';
-const ver = `yko/${my} v191017.01`;
+const ver = `yko/${my} v191025`;
 //
-const metaReg = new RegExp(/<meta\s+[^>\n]+charset=([^\"\']+)/im);
+const metaReg =
+  new RegExp(/<meta\s+[^>\n]+charset=([^\"\']+)/im);
+const defaultCashTTL = 10;  // minute.
 //
 module.exports.Unit = function (R, Ref) {
-  const S = R.unitKit('web', this, R, Ref);
-    S.ver = ver;
-  const T = S.tool;
-  //
+   const S = R.unitKit('web', this, R, Ref);
+     S.ver = ver;
+   const T = S.tool;
 	S.http   = () => { return require('http')  };
 	S.https  = () => { return require('https') };
 	S.follow = () => { return require('follow-redirects') };
@@ -18,6 +19,38 @@ module.exports.Unit = function (R, Ref) {
 									 { return require('request-promise') };
 	S.parser = () => { return require('cheerio') };
 	//
+	S.get = async (o) => {
+		S.tr1('get');
+		let result;
+		await S.getContent(o)
+      .then (re=> result = re ).catch(re=> result = re );
+		return new HTML (S, result);
+	};
+  S.cash = async (URL) => {
+    let BOX;
+    await S.root.box
+        .cash(`yWEB:${URL}`).get().then(b=> BOX = b);
+    let result;
+    if (BOX.hasNew()) {
+  		await S.getContent(URL)
+      .then(re=> result = re ).catch(re=> result = re );
+      BOX.TTL = S.conf.cashTTL || defaultCashTTL;
+      result = {
+	     invalid: result.invalid,
+	        char: result.char,
+	        html: result.html,
+           res: {
+	    httpVersion: result.res.httpVersion,
+	     statusCode: result.res.statusCode,
+	  statusMessage: result.res.statusMessage,
+	    responseUrl: result.res.responseUrl
+      } };
+      BOX.import(result).prepar();
+    } else {
+      result = BOX.ref();
+    }
+    return new HTML (S, result);
+  };
 	S.getContent = (o) => {
 		S.tr1('getContent');
 		return new Promise ((resolve, reject) => {
@@ -51,13 +84,6 @@ module.exports.Unit = function (R, Ref) {
 			});
 		});
 	};
-	S.get = async (o) => {
-		S.tr1('get');
-		let result;
-		await S.getContent(o).then ( re => { result = re })
-												 .catch( re => { result = re });
-		return new HTML (S, result);
-	};
 }
 function HTML (S, RE) {
   const T = S.tool;
@@ -82,9 +108,11 @@ CS.status = CS.res = () => { return RE.res };
 	CS.google = () => { return Base().google };
 	CS.twitter= () => { return Base().twitter };
 	CS.mixi   = () => { return Base().mixi };
+  CS.parse  = (hook) => { return Base(hook) };
 	//
 	CS.pageTitle = (n) => {
-		let v = ValueQuest('title').replace(/^[^\|]+\|\s*/, '');
+		let v = ValueQuest
+          ('title').replace(/^[^\|]+\|\s*/, '');
 		return n ? T.Zcut(v, n, '...'): v;
 	};
 	CS.pageDescription = (n) => {
@@ -113,14 +141,13 @@ CS.status = CS.res = () => { return RE.res };
 			|| BASE.twitter.creator
 			|| BASE.seo.author;
 		if (v) return v;
-		v =  T.quest(RE.res, ['req','res','connection','_host'])
+		v =  T.quest
+      (RE.res, ['req','res','connection','_host'])
 			|| CS.responseURL() || '';
 		S.tr3('pageSiteName (last)', v);
 		return v.replace(/^[^\:]+\:\/\//, '')
 						.replace(/^w+\./i,'');
 	};
-	CS.pageImage = () => { return ValueQuest('image') };
-	//
 	const ValueQuest = (key) => {
 		return Base().ana[key]
 				|| BASE.ogp[key]
@@ -129,8 +156,10 @@ CS.status = CS.res = () => { return RE.res };
 				|| BASE.seo[key]
 				|| '';
 	};
+	CS.pageImage = () => { return ValueQuest('image') };
+	//
 	let $, BASE;
-	const Base = () => {
+	const Base = (hook) => {
 		if ($) return BASE;
   	$ = S.parser().load(RE.html);
 		BASE = { ogp:{},
@@ -140,27 +169,28 @@ CS.status = CS.res = () => { return RE.res };
 		$('head meta').each((i, c) => {
 			const m = $(c);
 			let key = m.attr('property');
-			if (key && key.match(/^og\:(.+)/)) {
+			if (key && /^og\:(.+)/.exec(key)) {
 				BASE.ogp[T.A2a(RegExp.$1)] = m.attr('content');
 			}
 			key = m.attr('name');
 			if (key) {
 				key = T.A2a(key);
-				if (key.match(/^twitter\:(.+)/)) {
+				if (/^twitter\:(.+)/.exec(key)) {
 					BASE.twitter[RegExp.$1] = m.attr('content');
-				} else if (key.match(/^google\-(.+)/)) {
+				} else if (/^google\-(.+)/.exec(key)) {
 					BASE.google[RegExp.$1] = m.attr('content');
-				} else if (key.match(/^mixi\-check\-(.+)/)) {
+				} else if (/^mixi\-check\-(.+)/.exec(key)) {
 					BASE.mixi[RegExp.$1] = m.attr('content');
-				} else if (key.match(/^analyticsAttributes\.(.+)/)) {
+				} else if (/^analyticsAttributes\.(.+)/.exec(key)) {
 					BASE.ana[RegExp.$1] = m.attr('content');
-				} else if (key.match(/^sailthru\.(.+)/)) {
+				} else if (/^sailthru\.(.+)/.exec(key)) {
 					BASE.sai[RegExp.$1] = m.attr('content');
 				} else {
 					BASE.seo[key] = m.attr('content');
 				}
 			}
 		});
+    if (hook) hook($);
 		return BASE;
 	};
 }

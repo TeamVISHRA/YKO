@@ -3,9 +3,10 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'yCRON.js';
-const ver = `yko/${my} v191016`;
+const ver = `yko/${my} v191102`;
 //
 const defaultInterval = 3000;
+const ycJOBS = require(`./CRON/ycJOBS.js`);
 //
 module.exports.Super = function (Y, Ref) {
   Y.throw(`I will not be Super !!`);
@@ -20,12 +21,12 @@ module.exports.init = function (Y, Ref) {
   S.ver = `${ver} :I`;
   init(S);
 };
-module.exports.onFake = function (Y, Ref) {
-  Y.tr3(`[CRON] exports.onFake`);
+module.exports.initFake = function (Y, Ref) {
+  Y.tr3(`[CRON] OK !! initFake.`);
   onFake(Y);
 };
 module.exports.START = function (S) {
-  return (name, args) => {
+  return async (name, args) => {
     let R;
     S.start(`${name} (${ver})`).then( unitRoot => {
       R = unitRoot;
@@ -38,7 +39,7 @@ module.exports.START = function (S) {
   };
 }
 function init (S) {
-  if (S.debug() && S.im.sleep) return;
+  if (S.debug() && S.conf.sleep) return;
   const T = S.tool;
   const CRON = {
     count: 0,
@@ -88,13 +89,10 @@ function init (S) {
   });
 }
 function Worker (U) {
-  let Wk;
   return (name, ...a) => {
-    if (! Wk) {
-      const JS = require(`./CRON/ycJOBS.js`);
-      Wk = JS.Collect (U);
-    }
-    Wk[name](...a);
+    const Wk = ycJOBS.Collect(U);
+    if (Wk[name]) return Wk[name](...a);
+U.tr(`[CRON] !! Warning !!`, `There is no job '${name}'`);
   };
 }
 function onFake (Y) {

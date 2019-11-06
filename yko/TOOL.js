@@ -3,79 +3,96 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'TOOL.js';
-const ver = `yko/${my} v191015.01`;
+const ver = `yko/${my} v191031`;
 //
-const MOMENT = require('moment'),
-   TM_FORMAT = '/DD HH:mm:ss';
+const TM_FORMAT = '/DD HH:mm:ss';
+let tr = console.log,
+ Throw = (...arg) => { throw arg.join(', ') };
 //
-let Y;
-module.exports = function (y) {
-     const T = this;
-       T.ver = ver;
-           Y = y;
-    T.moment = MOMENT;
-      T.util = util;
-        T.fs = fs;
-  T.kuromoji = kuromoji;
-    T.crypto = T.crypt = crypto;
-  T.encodeJP = encodeJP;
-      T.util = util;
+module.exports = function () {
+  const T = this;
+  T.ver = ver;
   //
-  T.c = (o) => { return Object.create(o)  };
-  T.k = (o) => { return Object.kyes(o)    };
-  T.v = (o) => { return Object.values(o)  };
-  T.e = (o) => { return Object.entries(o) };
+T.a = (x, z) => { return Object.assign(x, z) };
+   T.c = (o) => { return Object.create(o)    };
+   T.k = (o) => { return Object.keys(o)      };
+   T.v = (o) => { return Object.values(o)    };
+   T.e = (o) => { return Object.entries(o)   };
   //
-    T.time_msec = time_msec;
-         T.unix = T.time_u = unix;
-     T.unix_add = T.time_u_add = unix_add;
-    T.unix_form = unix_form;
-  T.time_u_form = T.unix_form;
-    T.time_form = time_form;
+        T.moment = () => { return MOMENT };
+          T.util = util;
+            T.fs = fs;
+      T.kuromoji = kuromoji;
+        T.crypto = T.crypt = crypto;
+      T.encodeJP = encodeJP;
+          T.util = util;
+       T.counter = counter;
+       T.inspect = inspect;
   //
-  T.canonical = T.canon = canonical;
-         T.p0 = p0;
-        T.z2h = z2h;
-        T.A2a = A2a;
-        T.a2A = a2A;
-       T.Zcut = T.byte2cut  = Zcut;
-     T.countZ = T.zTwoCount = countZ;
-     T.encode = encode;
+           T.utc = utc;
+          T.unix = unix;
+      T.unix_add = unix_add;
+     T.unix_form = unix_form;
+     T.time_form = time_form;
   //
-  T.sec2form = sec2form;
-  T.min2form = min2form;
-      T.tmpl = tmpl;
+         T.canon = canonical;
+            T.p0 = p0;
+           T.z2h = z2h;
+           T.A2a = A2a;
+           T.a2A = a2A;
+          T.Zcut = Zcut;
+        T.countZ = countZ;
+        T.encode = encode;
   //
-  T.txt2json = T.j2obj  = txt2json;
-  T.json2txt = T.o2json = json2txt;
+      T.sec2form = sec2form;
+      T.min2form = min2form;
+          T.tmpl = tmpl;
   //
-       T.FSread = T.fs_r = FSread;
-      T.FSwrite = T.fs_w = FSwrite;
-     T.FSappend = T.fs_a = FSappend;
-     T.FSunlink = T.fs_unlink = FSunlink;
-   T.FSreadJson = T.fs_r_json = FSreadJson;
-  T.FSwriteJson = T.fs_w_json = FSwriteJson;
+      T.txt2json = txt2json;
+      T.json2txt = json2txt;
   //
-  T.is_object = is_object;
-      T.clone = clone;
-      T.reset = reset;
-      T.quest = quest;
+        T.FSread = FSread;
+       T.FSwrite = FSwrite;
+      T.FSappend = FSappend;
+      T.FSunlink = FSunlink;
+    T.FSreadJson = FSreadJson;
+   T.FSwriteJson = FSwriteJson;
   //
-    T.shuffle = shuffle;
-   T.push2cut = push2cut;
-  T.array2cut = array2cut;
-    T.inspect = (a,b,c,d) => { return util().inspect(a,b,c,d) };
+        T.hasKey = hasKey;
+       T.isArray = isArray;
+   T.isHashArray = isHashArray;
+      T.isObject = isObject;
+      T.isNumber = isNumber;
+         T.isStr = isString;
+      T.isString = isString;
+  T.isStringEasy = isStringEasy;
+         T.clone = clone;
+         T.reset = reset;
+         T.quest = quest;
+          T.Sort = Sort;
+       T.revSort = revSort;
   //
-  T.Try = Try;
+       T.shuffle = shuffle;
+      T.push2cut = push2cut;
+     T.array2cut = array2cut;
   //
-        T.digest  = digest;
-        T.encrypt = encrypt;
-        T.decrypt = decrypt;
-  T.create_ticket = create_ticket;
-        T.ini2hex = ini2hex;
+       T.digest  = digest;
+       T.encrypt = encrypt;
+       T.decrypt = decrypt;
+    T.makeTicket = makeTicket;
+       T.ini2hex = ini2hex;
+  //
+  T.Try  = Try;
+  T.init = (Y) => {
+       tr = Y.tr;
+    Throw = Y.throw; 
+    return T;
+  };
 };
 //
-const JS = {};
+const JS = Object.create(null);
+function moment ()
+{ return JS.moment || (JS.moment = require('moment')) }
 function fs ()
 { return JS.fs || (JS.fs = require('fs')) }
 function kuromoji ()
@@ -87,54 +104,60 @@ function encodeJP ()
 function util ()
 { return JS.util || (JS.util = require('util')) }
 //
+let COUNT = 0;
+function counter () {
+  return ++COUNT <= 100000 ? COUNT: (COUNT = 1);
+}
+function inspect (...a) {
+  return util().inspect(...a);
+}
 function digest (str) {
-  let result;
-  return Try([() => {
+  return Try(()=> {
     let hash = crypto().createHash('sha256')
     hash.update(str, 'utf8');
-    result = hash.digest('base64');
-  }]) ? result : false;
+    return hash.digest('base64');
+  });
 }
-function encrypt (str) {
+function encrypt (str, salt) {
   let secret;
-  return Try([() => {
-    let crypt = require('crypto');
+  return Try(() => {
     let cip = crypto().createCipher('aes256', salt);
     secret = cip.update(str, 'utf8', 'hex');
-    secret += cip.final('hex');
-  }]) ? secret : false;
+    return (secret + cip.final('hex'));
+  });
 }
 function decrypt (sec) {
   let str;
-  return Try([() => {
+  return Try(() => {
     let crypt = require('crypto');
     let dec = crypt.createDecipher('aes256', salt);
     str = dec.update(sec,'hex','utf8');
-    str += dec.final('utf8');
-  }]) ? str : false;
+    return (str + dec.final('utf8'));
+  });
 }
-function create_ticket () {
-  return ini2hex( time_form(0, 'YYYYMMDDmss') + time_msec() );
+function makeTicket () {
+  return ini2hex(utc());
 }
 function ini2hex (i) {
   return Number(i).toString(16).toUpperCase();
 }
-function time_msec () {
-  return moment().milliseconds();
+function utc () {
+  return (new Date()).getTime();
 }
 function unix (t) {
-  return t ? MOMENT.unix(t) : MOMENT().unix();
+  return t ? moment().unix(t) : moment()().unix();
 }
 function unix_add (n, o) {
-  if (! n) Y.throw(ver, 'Losing argument');
-  return MOMENT().add(n, (o || 'm')).unix();
+  if (! n) Throw(`${ver} Losing argument.`);
+  return moment()().add(n, (o || 'm')).unix();
 }
 function unix_form (n, f) {
-  if (! n) Y.throw(ver, 'Losing argument');
-  return MOMENT.unix(n).format(f || TM_FORMAT);
+  if (! n) Throw(`${ver} Losing argument.`);
+  return moment().unix(Number(n)).format(f || TM_FORMAT);
 }
 function time_form (n, f) {
-  return MOMENT(n || undefined).format(f || TM_FORMAT);
+  return moment()
+    (n ? Number(n): undefined).format(f || TM_FORMAT);
 }
 function canonical (v) {
   if (!v) return '';
@@ -160,7 +183,7 @@ function a2A (s) {
   return s ? s.toUpperCase(): '';
 }
 function Zcut (str, n, ident) {
-  if (! n) Y.throw(ver, 'Insufficient arguments');
+  if (! n) Throw(`${ver} Insufficient arguments.`);
   str = canonical(str);
   let [b, result] = [0, ''];
   for (let v of Object.values( str.split('') )) {
@@ -224,18 +247,45 @@ function FSwriteJson (path, json, cr, err) {
 function FSunlink (path) {
   let status;
   try { fs().unlinkSync(path); status = true }
-  catch (err) { status = false, Y.tr2('[TOOL] FSunlink', err) }
+  catch (err) { status = false; tr('[TOOL] FSunlink', err) }
   return status;
 }
 function txt2json (txt) {
-  return JSON.parse(txt);
+  try { return JSON.parse(txt) } catch (e) {
+    tr(`[TOOL] Warning Error:`, e);
+    return Object.create(null);
+  }
 }
 function json2txt (json) {
-  return JSON.stringify(json, null, '  ');
+  try { return JSON.stringify(json, null, '  ') }
+  catch (e) {
+    tr(`[TOOL] Warning Error:`, e);
+    return Object.create(null);
+  };
 }
-function is_object (o) {
-  return (o != null
-    && ! Array.isArray(o) && typeof o == 'object');
+function hasKey (o, key) {
+  return (isHashArray(o) && (key in o));
+}
+function isArray (o) {
+  return ((o instanceof Object) && (o instanceof Array));
+}
+function isHashArray (o) {
+  return ((o instanceof Object) && ! (o instanceof Array));
+}
+function isObject (o) {
+  return (o && typeof o == 'object');
+}
+function isString (o) {
+  return (typeof o == 'string');
+}
+function isStringEasy (o) {
+  return (o == null || o == undefined || typeof o == 'string');
+}
+function isNumber (o) {
+  return ((o || o === 0) && Number.isInteger(o));
+}
+function isFunction (o) {
+  return (o && typeof o == 'function');
 }
 function clone (o) {
   return Object.assign(Object.create(null), o);;
@@ -244,7 +294,9 @@ function reset (o) {
   for(let key in o){ delete o[key] }
 }
 function quest (v, keys) {
-  Y.tr3('[TOOL] quest', keys);
+//  tr('[TOOL] quest', keys);
+  if (! keys) return v;
+  if (! isArray(keys)) keys = keys.trim().split(/\s*\.\s*/);
   for (let k of keys) {
 //		if (! k in v) return undefined;
     if (v[k] === undefined) return undefined;
@@ -266,7 +318,7 @@ function push2cut (b, i, n) {
   return array2cut(b, n);
 }
 function array2cut (b, n) {
-  if (! n || n < 2) Y.throw(ver, 'Abnormal argument');
+  if (! n || n < 2) Throw(`${ver} Abnormal argument.`);
   if (b.length > n) b.splice(0, (b.length - n));
   return b;
 }
@@ -276,7 +328,7 @@ function encode (buf, result) {
   }
   const Char = encodeJP().detect(buf); // || 'UTF8';
   if (! Char || Char == 'BINARY')
-    { return result(Char, '', true) }
+    { return result(Char, buf, true) }
   if ( Char == 'UNICODE' || Char == 'UTF8'
     || Char == 'UTF32'   || Char == 'ASCII' )
     { return result(Char, buf.toString(), false) }
@@ -285,30 +337,39 @@ function encode (buf, result) {
   return result(Char, Text, false);
 }
 function tmpl (tmpl, obj) {
-  if (! tmpl) Y.throw('Unknown template');
-  return tmpl.replace(/<\s*([^<>\r\n\t]+)\s*>/g, (tmp, fr) => {
-    let [o, args] = [(obj || {})];
-    fr = fr.trim();
+  if (! tmpl) Throw(`${ver} Unknown template.`);
+  let REG;
+  if (isArray(tmpl)) { [REG, tmpl] = tmpl }
+  else { REG = /<\s*([^<>\r\n\t]+)\s*>/g }
+  if (! obj ) obj  = Object.create(null);
+  const FUNC = isFunction(obj) ? obj : (tmp, x) => {
+    let [o, args] = [obj, []];
+    let fr = x = x.trim();
     if (fr.match(/([^\(]+)\s*\(\s*([^\)]+)\s*\)/)) {
       [fr, args] = [RegExp.$1.trim(), RegExp.$2];
       args = args.trim().split(/\s*\,\s*/);
     }
     for (let key of fr.split(/\s*\.\s*/)) {
-      o = (! o[key] && o[key] != 0) ? tmp : o[key];
-      if (typeof o == 'function') return o(args || '');
-      if (typeof o != 'object') return o;
+      o = hasKey(o, key) ? o[key] : tmp;
+      if (isFunction(o)) return o(...args);
+      if (! isObject(o)) return o;
     }
     return tmp;
+  };
+  return tmpl.replace(REG, FUNC);
+}
+function Sort    (o) { return _SORT_(o, -1,  1) }
+function revSort (o) { return _SORT_(o,  1, -1) }
+function _SORT_ (o, n1, n2) {
+  o.sort((a, b) => {
+    if (a.no < b.no) return n1;
+    if (a.no > b.no) return n2;
+    return 0;
   });
+  return o;
 }
-function Try (Fmain, Ferr) {
-  try {
-    return Fmain();
-  } catch (error) {
-    return Ferr ? Ferr(error) : Y.tr('[TOOL]', error);
-  }
-}
-function sleep (n) {
-  let start = MOMENT().unix();
-  while (true) { if ((MOMENT().unix() - start) > n) break }
+function Try (Func, Err) {
+  if (! Err) Err = () => { return false };
+  try { return Func() }
+  catch (e) { return Err(e) };
 }

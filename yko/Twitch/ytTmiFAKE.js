@@ -3,14 +3,15 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ytTmiFAKE.js';
-const ver = `yko/Twitch/${my} v191015.01`;
+const ver = `yko/Twitch/${my} v191028`;
 //
-module.exports.call = function (P, ARGV) {
+module.exports.call = function (P) {
   const Y = P.un;
+  const ARGV = Y.ARGV.get();
   Y.tr3('[Twitch:F] Debug:call', ARGV);
   Y.onFake();
   switch (ARGV.shift()) {
-    case 'evM':
+    case '-m':
       Y.Next = x => { x.$evMessage(ARGV.join(' ')) };
       break;
     default:
@@ -20,8 +21,8 @@ module.exports.call = function (P, ARGV) {
   return P;
 };
 module.exports.on = function (Y) {
-  this.ver = ver;
 	const S = this;
+  S.ver = ver;
   S.say = async (...args) => {
     return Y.tr('[Twitch:F] say', ...args);
   };

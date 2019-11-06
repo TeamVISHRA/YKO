@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ydaSplittime.js';
-const ver = `${my} v191015.01`;
+const ver = `${my} v191028`;
 //
 const C = {
   barColor: 0xb1eb34,
@@ -14,8 +14,9 @@ const C = {
     TTLmax: (3* (24* 60))
   }
 };
-let S;
-module.exports.Unit = function (P) {
+let R, P, S, T;
+module.exports.Unit = function (p) {
+  R = p.root, P = p, T = p.tool;
   S = P.unitKit('app:splittime', this, P);
   S.run = (crum) => {
   if (! P.isDM()) P.delete();
@@ -34,48 +35,44 @@ module.exports.Unit = function (P) {
     run_help();
   } };
 }
-function prefix () { return S.root.brain.prefix() }
+function PF () { return S.root.brain.prefix() }
 function res () {
-  const PF = prefix();
   return {
-    already: `既に計測中どす。\n\`終了： ${PF}sp end\``,
-    nostart: `まだ開始してないよ。\n\`開始： ${PF}sp start\``,
-     nodata: `データが無いです・・・\n\`計測： ${PF}sp start\``
+    already: `既に計測中どす。\n\`終了： ${PF()}sp end\``,
+    nostart: `まだ開始してないよ。\n\`開始： ${PF()}sp start\``,
+     nodata: `データが無いです・・・\n\`計測： ${PF()}sp start\``
   }
 }
 function run_help () {
-  const PF = prefix();
-  S.par.send({ embed: {
+  P.send({ embed: {
     title: '時間計測機能のヘルプ',
     color: 0x0083FC, fields: [
-      { name: `${PF}sp start`,
+      { name: `${PF()}sp start`,
       value: '`・計測の開始`' },
-      { name: `${PF}sp lap`,
+      { name: `${PF()}sp lap`,
       value: '`・開始からの経過時間を記録\n　※最大記録件数： 20`' },
-      { name: `${PF}sp history`,
+      { name: `${PF()}sp history`,
       value: '`・記録の履歴表示`' },
-      { name: `${PF}sp reset-start`,
+      { name: `${PF()}sp reset-start`,
       value: '`・履歴を初期化して再計測`' },
-      { name: `${PF}sp end`,
+      { name: `${PF()}sp end`,
       value: '`・計測終了（データ消去）`' }
     ],
     footer: ver
   } }, 60);
-  S.finish();
+  R.finish();
 }
 function run_start (str, next) {
-  const P = S.par, T = S.tool;
   box(next, BOX => {
     let Title;
     if (next) {
       Title = 'データ初期化（計測を継続）';
     } else {
-      if (! BOX.isNew()) return P.reply(res().already, 5);
+      if (! BOX.hasNew()) return P.reply(res().already, 5);
       Title = '時間の計測を開始';
     }
-    const PF = prefix(),
-       START = BOX.set('startTime', T.unix());
-     BOX.TTL = checkTTL(str);
+    const START = BOX.set('startTime', T.unix());
+    BOX.TTL = checkTTL(str);
     BOX.set('laps', []);
     BOX.prepar();
     const embed = baseEmbed({ title: Title });
@@ -85,29 +82,27 @@ function run_start (str, next) {
 -----------------------------------
 有効時間：　${T.min2form(BOX.TTL)}
 
-\`${PF}sp lap で経過時間を記録します。\`
+\`${PF()}sp lap で経過時間を記録します。\`
 `;
-    return P.send({ embed: embed }, 60);
+    P.send({ embed: embed }, 60);
+    return true;
   });
 }
 function run_resetStart (str) {
-  const P = S.par;
   box(0, BOX => {
-    if (BOX.isNew()) return P.reply(res().nostart, 5);
-//    BOX.del('laps');
-    run_start(str, BOX);
+    BOX.hasNew() ? P.reply(res().nostart, 5)
+                 : run_start(str, BOX);
+    return false;
   });
 }
 function run_lap () {
-  const P = S.par, T = S.tool;
   box(0, BOX => {
-    if (BOX.isNew()) return P.reply(res().nostart, 5);
-      const PF = prefix(),
-          Laps = BOX.get('laps'),
-         Stime = BOX.get('startTime'),
-           Now = T.unix();
-    const Diff = Now - Number(Stime);
-    const Humn = T.sec2form(Diff);
+    if (BOX.hasNew()) return P.reply(res().nostart, 5);
+      const Now = T.unix(),
+           Laps = BOX.get('laps'),
+          Stime = BOX.get('startTime');
+     const Diff = Now - Number(Stime);
+     const Humn = T.sec2form(Diff);
     BOX.set('laps', T.push2cut(Laps,
     { time: Now, diff: Diff, humn: Humn }, C.history.limit));
     BOX.prepar();
@@ -117,18 +112,17 @@ ${T.unix_form(Stime)} ～ ${T.unix_form(Now)}
 -----------------------------------
 経過：　**${Humn}**
 
-\`※履歴の確認\`　 ${PF}sp history
+\`※履歴の確認\`　 ${PF()}sp history
 `;
-    return P.send({ embed: embed }, 15);
+    P.send({ embed: embed }, 15);
+    return true;
   });
 }
 function run_history () {
-  const P = S.par, T = S.tool;
   box(0, BOX => {
-    if (BOX.isNew()) return P.reply(res().nostart, 5);
-    const PF = prefix(),
-        Laps = BOX.get('laps'),
-       Stime = BOX.get('startTime');
+    if (BOX.hasNew()) return P.reply(res().nostart, 5);
+    const Laps = BOX.get('laps'),
+         Stime = BOX.get('startTime');
     if (Laps.length < 1) return P.reply(res().nodata, 5);
     const embed = baseEmbed
           ({ title: '経過時間の計測履歴', fields: [] });
@@ -142,24 +136,18 @@ function run_history () {
        value: `\`${T.unix_form(v.time)}\``
       });
     }
-    embed.footer = `※計測リセット　${PF}sp reset-start`;
-    return P.send({ embed: embed }, 90);
+    embed.footer = `※計測リセット　${PF()}sp reset-start`;
+    P.send({ embed: embed }, 90);
+    return true;
   });
 }
 function run_end () {
   box(0, BOX => {
-    const P = S.par;
-    if (BOX.isNew()) return P.reply(res().nostart, 5);
+    if (BOX.hasNew()) return P.reply(res().nostart, 5);
     BOX.remove();
-    return P.reply('計測を終了（データ消去済）', 10);
+    P.reply('計測を終了（データ消去済）', 10);
+    return true;
   });
-}
-function cashKey () {
-  const P = S.par;
-  return {
-      id: P.par.buildDataID(P.guildID()),
-    name: `APP_SPLITTIME:${P.userID()}`
-  };
 }
 function checkTTL (n) {
   if (n = Number(n)) {
@@ -171,23 +159,25 @@ function checkTTL (n) {
   }
 }
 function baseEmbed (a) {
-  const P = S.par,
-        T = S.tool;
   const embed = {
-    color: C.barColor,
-    author: { name: P.nickname(),	icon_url: P.avatarURL()	}
+   color: C.barColor,
+  author: {
+       name: P.nickname(),
+   icon_url: P.avatarURL()
+    }
   };
   if (a) { for (let [k, v] of T.e(a)) { embed[k] = v } }
   return embed;
 }
 function box (box, func) {
+  const Key = `Discord:AppSpTime(${P.userID()})`;
   new Promise ( resolve => {
     if (box) {
-      resolve(func(box));
+      return resolve(func(box));
     } else {
-      S.root.box.cash(cashKey())
+      return R.box.cash(Key).get()
           .then(db=> resolve(func(db)))
           .catch(e=> S.throw(e));
     }
-  }) .then(x=> S.finish() );
+  }) .then(x=> { if (x) R.finish() });
 }

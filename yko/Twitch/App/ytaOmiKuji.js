@@ -28,8 +28,9 @@ const CashTTL = (24* 60),
 ];
 const BaseKeys = { id: `TWITCH_APP_OMIKUJI` };
 //
-let S;
-module.exports.Unit = function (P, Ref) {
+let R, P, S;
+module.exports.Unit = function (p, Ref) {
+  R = p.root, P = p;
   S = P.unitKit('app:omikuji', this, P, Ref);
 //S.tr(P.handler().say('test'));
   S.ver = ver;
@@ -44,28 +45,28 @@ module.exports.Unit = function (P, Ref) {
     }
   };
 }
+function PF () { return R.brain.prefix() }
 function run_help () {
-  const PF = S.root.brain.prefix();
-  S.par.reply(`HELP>> `
-    + `${PF}ok で「おみくじ」が引けます。`
-    + `${PF}ok rand [数字] で、[数字]回シャッフルします。`
-  );
-  S.finish();
+  P.reply(`HELP>> `
+    + `${PF()}ok で「おみくじ」が引けます。`
+    + `${PF()}ok rand [数字] で、[数字]回シャッフルします。`
+  ).then(x=> R.finish() );
 }
 function run_omikuji (crum) {
-   const P = S.par;
   const CH = P.channel(),
      dName = P.dispName();
   S.tr3('[Twitch:app] sp:run_omikuji');
   box( BOX => {
-    if (BOX.isNew()) initDB(BOX);
+    if (BOX.hasNew()) initDB(BOX);
     const Lott = BOX.get('bowl');
     if (Lott.length < 1) Lott = initDB(BOX);
      const Kuji = Lott.shift();
+     const Left = Lott.filter(x=> x.name == Kuji.name).length;
     const Lsize = BOX.get('LottSize');
     BOX.update().prepar();
     const msg = `${dName}さん > `
-      + `「${Kuji.name}」でたよ... (${Kuji.num}/${Lsize})`;
+    + `「${Kuji.name}」でたよ... (${Left}/${Kuji.num}/${Lsize})\n`
+    + `※ ${PF()}ok rand [数字] でかき混ぜます。`;
     P.reply(msg);
     P.toDiscord(CH, S.loginID(), msg);
   });
@@ -75,21 +76,19 @@ function run_shuffle (num) {
   let sn = Number(num) || 1;
   if (sn > MaxShaffle) sn = MaxShaffle;
   box( BOX => {
-    if (BOX.isNew()) initDB(BOX);
+    if (BOX.hasNew()) initDB(BOX);
     const Lt = BOX.get('bowl');
     BOX.set('bowl', shuffle(Lt, sn));
     BOX.prepar();
-    S.par.reply(`おみくじを、${sn}回 かき混ぜたよ。`);
+    P.reply(`おみくじを、${sn}回 かき混ぜたよ。`);
   });
 }
 function box (func) {
   S.tr3('[Twitch:app] sp:box');
-  const R = S.root, P = S.par;
-  const CH = P.channel();
-  const Keys = { name: `CH_${CH}`, ...BaseKeys };
-  new Promise ( async resolve => {
-    await R.box.cash(Keys).then(db=> func(db) );
-    resolve(true);
+  const Key =
+    `Twitch:AppOmikuji(${P.channel()},${P.username()})`;
+  return new Promise ( async resolve => {
+    R.box.cash().get(Key).then(db=> resolve(func(db)) );
   })
   .then(x=> { R.finish() });
 }

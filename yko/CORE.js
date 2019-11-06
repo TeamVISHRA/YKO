@@ -1,20 +1,21 @@
 'use strict'; 
 //
-// yko/CORE.js - Ver:5.001
+// yko/CORE.js - Ver:5.110
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'CORE.js';
-const ver = `yko/${my} v191017`;
+const ver = `yko/${my} v191105`;
 //
+let Config;
 module.exports = function (ARGS) {
 	const Y = this;
+	[Y.ver, Y.un, Y.exit] = [ver, Y, process.exit];
   if (! ARGS) ARGS = Object.create(null);
-	 Y.ver = ver;
-    Y.un = Y;
-    Y.im = require('../im/now.js');
-  Y.conf = require('../y-config.js');
-  Y.exit = process.exit;
-  if (Y.im.location == 'devel') {
+  const [,, ...ARGV] = process.argv;
+  if (ARGV.length > 0) Y.ARGV = new LaunchUtil(Y, ARGV);
+  Y.conf = require
+     (Config || ARGS.config || '../y-config-secret.js');
+  if (Y.conf.location == 'devel') {
     Y.debug = () => { return true };
     Y.c = console.log;
     Y.log = Logger(Y.c);
@@ -43,8 +44,8 @@ module.exports = function (ARGS) {
    Y.throw = Throw(Y);
   const Lv = initDebugLv(Y);
   Y.tr1('[CORE] debug_level', Lv);
-  const Tool = require('./TOOL.js');
-  const T = Y.tool = new Tool (Y);
+  const T = Y.tool = new (require('./TOOL.js'));
+  T.init(Y);
   const Gd = Y.rack = new Map([
     ['CASH',    {}],
     ['START',   []],
@@ -90,7 +91,8 @@ module.exports = function (ARGS) {
     $onFake: () => {}
     };
   };
-  let MAIN, Super;
+  let MAIN;
+  let Super = (X) => { return X };
   Y.init = (...setup) => {
     if (setup[0] && setup[0].match(/\S+\s+\S+/)) {
       setup = setup[0].split(/\s+/);
@@ -111,8 +113,6 @@ module.exports = function (ARGS) {
       Add = ` ${MAIN.$name} -`;
       Unn.push(MAIN.$name);
       Gd.set('MAIN', MAIN);
-    } else {
-      Super = (X) => { return X };
     }
     for (let name of setup) { Regist(name) }
     for (let key of T.v(REQ).reverse()) {
@@ -127,6 +127,9 @@ module.exports = function (ARGS) {
       const Ref = Gd.get(j);
       Ref.$JS.init(Y, Ref);
     }
+    Y.hasRequire = (name) => {
+      return REQ.find(x=> x == name);
+    };
     Y.tr3(`[CORE]${Add} Complete initialization.`);
     Y.init = false;
     return Y;
@@ -144,53 +147,46 @@ module.exports = function (ARGS) {
   Y.onFake = () => {
     Y.tr3('[CORE] Y.onFake');
     for (let key of T.v(Gd.get('REQUIRES'))) {
-      if (Y[key] && Y[key].onFake) {
+      if (MAIN && MAIN.$name == key && Y[key].onFake) {
         Y[key].onFake();
       } else {
         const Ref = Gd.get(key);
-        if (Ref.$JS.onFake) Ref.$JS.onFake(Y, Ref);
+        if (Ref.$JS.initFake) {
+          Ref.$JS.initFake(Y, Ref);
+        } else {
+//Y.tr(Ref.$JS);
+          Y.tr3(`[CORE] ${Ref.$name} is not make 'onFake'.`);
+        }
       }
   } };
-  const Unn = ['run', 'init', 'onFake'];
+  const Unn = ['init', 'run', 'onFake'];
   Y.superKit = (name, x, P, Ref) => {
     Y.tr6('[CORE] Y.superKit', name);
     const X = Object.assign(x, Y);
     X.par = P;
-    if (P) {
-      if (P.im)   X.im   = P.im[name]   || P.im;
+    if (P && P.conf) {
       if (P.conf) X.conf = P.conf[name] || P.conf;
     }
     if (Ref) X.Ref = Ref;
-    for (let k of Unn) { delete X[k] }
+    for (let k of Unn) { X[k] = false }
     return X;
   };
-  Y.tr1(`[CORE] ${ver}`, '>>> Radey ...');
+  Y.tr1(`[CORE] Loaded Config:`, Y.conf.ver);
 };
 function UNIT (myName, Y, Gd, Super) {
   const R = this, T = Y.tool;
   R.ver = `${myName} (${my})`;
-  [R.un, R.conf, R.im] = [Y, Y.conf, Y.im];
+  [R.un, R.root, R.conf] = [Y, R, Y.conf];
   R.unitKit = (name, X, P, Ref) => {
     Y.tr5('[UNIT] unitKit', name);
     Y.superKit(name, X, P, Ref);
-        X.root = R;
-    X.rollback = R.rollback;
-      X.finish = R.finish;
-    X.finished = R.finished;
+     X.root = R;
+    X.start = false;
+ X.rollback = R.rollback;
+   X.finish = R.finish;
     return Super(X);
   };
   R.tmp = { $START: 1 };
-  for (let key of ['box', 'brain', 'web']) {
-    const Ref = Gd.get(key);
-    R[key] = new Ref.$JS.Unit (R, Ref);
-  }
-  const SYSd = Gd.get('sysdata');
-  R.sysDB = (keys) =>
-      { return new SYSd.$JS.Unit (R, SYSd, keys) };
-  for (let key of T.v(Gd.get('REQUIRES'))) {
-    const Ref = Gd.get(key);
-    R[key] = new Ref.$JS.Unit (R, Ref);
-  }
   R.rollback = () => {
     for (let F of T.v(Gd.get('ROLLBACK'))) { F(R) };
     R.box.rollback();
@@ -201,19 +197,74 @@ function UNIT (myName, Y, Gd, Super) {
   R.finished = () => {
     return R.tmp.$START ? false : true; 
   };
-  R.finish = () => {
+  R.finish = async () => {
     if (! R.tmp.$START) {
       Y.tr3(`[UNIT] Warning: `
       + `FINISH didn't exec ...(${R.ver})\n${sen}`);
       return false;
     }
     for (let F of T.v(Gd.get('FINISH'))) { F(R) };
-    R.box.commit();
+    await R.box.commit();
     R.tmp = T.c(null);
     Y.tr3(`[UNIT] >> ${myName} - FINISH !!`);
     return R;
   };
+  let procCash;
+  R.procCash = () => {
+    return procCash
+    || (procCash = new ProcCASH (R, T, Gd.get('CASH')));
+  };
+  R.see = async (fr) => {
+    if (! fr.match
+       (/^\s*\%([a-zA-Z0-9_]+)\s*\:\s*(.+)/)) return fr;
+    const [key, arg] = [RegExp.$1, RegExp.$2];
+    Y.tr3(`[UNIT] see`, key, arg);
+    let result;
+    await R[key].see(arg).then(r=> result = r);
+    return result || '... (N/A) ...';
+  };
+  for (let key of ['box', 'brain', 'web']) {
+    const Ref = Gd.get(key);
+    R[key] = new Ref.$JS.Unit (R, Ref);
+  }
+  R.box.begin();
+  const SYSd = Gd.get('sysdata');
+  R.sysDB = (keys) =>
+      { return new SYSd.$JS.Unit (R, SYSd, keys) };
+  for (let key of T.v(Gd.get('REQUIRES'))) {
+    const Ref = Gd.get(key);
+    R[key] = new Ref.$JS.Unit (R, Ref);
+  }
   for (let F of T.v(Gd.get('START'))) { F(R) };
+}
+function ProcCASH (R, T, Ref) {
+  const C = this;
+  C.get = (key) => {
+    return Ref[key] ? Ref[key].value: null;
+  };
+  C.has = (key) => {
+    return Ref[key] ? true : false;
+  };
+  C.set = (key, value) => {
+    return (Ref[key] =
+      { TTL: T.unix_add(30, 'm'), value: value });
+  };
+  C.clean = async () => {
+    const now = T.unix();
+    for (let [key, v] of T.e(Ref))
+        { if (v.TTL < now) delete Ref[key] }
+    return true;
+  };
+}
+function LaunchUtil (Y, argv) {
+  const A = this,
+    Utils = {},
+    ARGV  = [];
+  for (let v of argv) {
+    if (/^\-C\=(.+)/.exec(v)) { Config = RegExp.$1 }
+    else { ARGV.push(v) }
+  }
+  A.get = () => { return ARGV };
 }
 function Logger (c) {
   return {
@@ -222,15 +273,26 @@ function Logger (c) {
   };
 }
 function initDebugLv (Y) {
-   const Lv = Y.im.debug_level;
+  const  Lv = Y.conf.debug_level;
   const Ass = Lv
-    ? (i) => { return i <= Lv ? Y.tr: () => {} }
-    : (i) => { return () => {} };
+    ? (i) => { return i <= Lv ? Y.tr: async () => {} }
+    : (i) => { return async () => {} };
   [...Array(7)].map((_, i) => { ++i; Y[`tr${i}`] = Ass(i) });
   return Lv;
 }
+function Inspect (Y, o) {
+  return Y.tool.inspect(o, {
+        depth: 3,
+       colors: true,
+   showHidden: true,
+    showProxy: true,
+maxArayLength: 10,
+  breakLength: 120,
+  ...Y.conf.inspect
+  });
+}
 const sen  = '-----------------------------------';
-const sen2 = '==================================='; 
+const sen2 = '===================================';
 function Trace (Y) {
   return async (...args) => {
     const trace = new Error().stack;
@@ -240,16 +302,15 @@ function Trace (Y) {
     let [op, err] = [[], []];
     for (let v of Object.values(args)) {
       if (typeof v == 'object') {
-        if (v instanceof Array) {
-          op.push('[' + v.map(x=> `"${x}"`).join(',') + ']');
-        } else {
-          try {
-            let txt = Y.tool.json2txt(v);
-            if (txt.length <= 5) { err.push(v)  }
-            else                 { op.push(txt) }
-          } catch (e)            { err.push(v)  }
+        try {
+          let txt = Inspect(Y, v);
+          txt.length <= 5 ? err.push(v): op.push(txt);
+        } catch (e) {
+          err.push(v);
         }
-      } else { op.push(`"${v}"`) }
+      } else {
+        op.push(`"${v}"`);
+      }
     }
     if (op.length > 2) {
       Y.c(`${pref}> ` + op.join(`\n${sen}\n`) + `\n${sen}` ); 
