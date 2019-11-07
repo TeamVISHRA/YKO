@@ -4,7 +4,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'CORE.js';
-const ver = `yko/${my} v191105`;
+const ver = `yko/${my} v191108`;
 //
 let Config;
 module.exports = function (ARGS) {
@@ -341,11 +341,11 @@ function Throw (Y) {
     for (let v of mor) {
       if (typeof v === 'object') {
         const tmp = Y.tool.inspect(v);
-        if (tmp.match(/^[^\:]*Error[^\:]*\:.+\s+at\s+/g))
-             { out += `\n${sen}\n` + TRACE(tmp, 1) }
-        else if (tmp.match(/^([^\n]+)/))
-             { out += `\n${sen}\n${RegExp.$1}` }
-        else { out += `\n${v}` }
+        if (/^(.+\n[^\n]*Error\:[^\n]+)\n\s+at\s+.+/s.exec(tmp)) {
+          out += `\n${sen}\n` + TRACE(tmp, 1);
+        } else if (tmp.match(/^([^\n]+)/)) {
+          out += `\n${sen}\n${RegExp.$1}`;
+        } else { out += `\n${v}` }
       } else { out += `\n${sen}\n${v}` }
     }
     Y.tr(`throw:${out}\n${sen2}`);

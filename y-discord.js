@@ -3,7 +3,7 @@
 //
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
-const ver = `y-discord.js v191024`;
+const ver = `y-discord.js v191107`;
 //
 const yko = require('./yko/CORE.js');
 const Y = new yko ();
@@ -14,7 +14,7 @@ Y.Discord.DebugCall().run()
   .then(Y.Next).catch(e => { Y.throw(e) });
 
 function include () {
-Y.init('yDiscord yTwitch yCRON');  //  yLINE yHTTP
+Y.init('yDiscord yTwitch yCRON yHTTP');  //  yLINE
 }
 function advance () {
 // ===== < Discord > =====
@@ -48,8 +48,16 @@ Y.on('discord_join_guild', ydG => { ydG.join() });
 Y.on('discord_exit_guild', ydG => { ydG.exit() });
 
 // ===== < HTTP > =====
-Y.on('http_responce', async (yH, url) => {
-  return yH.responceNotFound;
+Y.on('http_responce', async (yH, is) => {
+  if (! is.ident) return yH.responceNotFound();
+  switch (is.ident) {
+    case 'LINE':
+      yH.Api('Line').run(is);
+      break;
+    default:
+      yH.responceForbidden();
+      break;
+  }
 });
 
 // ===== < CRON > =====
