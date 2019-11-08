@@ -3,12 +3,12 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'yHTTP.js';
-const ver = `yko/${my} v191102`;
+const ver = `yko/${my} v191108`;
 //
   const Enc = 'utf8',
-  RestartIv =  15000,
- ListenPort =   8000,
-  SocketTTL =   4000,
+  RestartIv = 15000,
+ ListenPort =  8000,
+  SocketTTL =  4000,
     DataMax = (3* 1024* 1024),
 ContentJSON = `application/json; charset=utf-8`,
 ContentTYPE = `text/html; charset=utf-8`,
@@ -57,129 +57,166 @@ function build_super_comp (S) {
 }
 function build_unit_comp (U) {
   const T = U.tool;
+  U.json = new responceJSON (U, T);
   let req, res;
   U.start = (q, s) => {
     U.request  = req = q;
     U.responce = res = s;
-//        U.json = U.tool.c(null);
     return U;
   };
-  U.Api = (name) => {
-    const JS = require(`./HTTP/yhAPI_${name}.js`);
-    return new JS.Unit (U);
+  let DerayFinish;
+  U.DerayFinish = () => {
+    DerayFinish = true;
+    return U;
   };
-     U.status = () => { return res.statusCode };
-  U.reqMethod = () => { return req.method };
   let ReqURL;
   U.reqURL = () => {
     return ReqURL || (() => {
-      
-      ReqURL = (req.url || '')
+      let url = (req.url || '')
              .replace(/\/index\.[^\/\.]+/i, '/');
-      U.tr3(`[HTTP] reqURL`, ReqURL);
-      if (ReqURL == '/') { U.responceHello(); ReqURL = null }
-      return ReqURL;
+      U.tr3(`[HTTP] reqURL`, url);
+      if (url == '/') { U.responceHello(); url = null }
+      return (ReqURL = url);
     }) ();
   };
-  let ContentTYPE;
-  U.contentType = (str) => {
-    return str ? (ContentTYPE = str): str;
+  U.reqMethod = () => { return req.method };
+  U.statusCode = (code) =>
+    { return code ? (res.statusCode = code): res.statusCode };
+  U.statusMessage = (msg) =>
+    { return msg ? (res.statusMessage = msg): res.statusMessage };
+  U.setHeader = (name, value) =>
+    { return res.setHeader(name, value) };
+  //
+  U.responceHello = () => {
+    return U.json.success
+      ({ body: 'Hello !!' }).send().then(x=> $finish_(x));
   };
-  U.send = async (code, head, json) => {
-    if (U.root.finished()) {
-      U.tr3(`[HTTP] send`, 'Recursive call !!');
-      return true;
-    }
-    U.tr3(`[HTTP] send`);
-    if (code) { res.statusCode = code }
-    else if (! res.statusCode) { res.statusCode = 200 }
-    res.setHeader
-         ('Content-Type', (head || ContentTYPE || ContentJSON));
-    res.end( T.json2txt(json || U.json) );
-    U.tr3
-(`[HTTP] responce status:${res.statusCode}`, req.url, req.method);
+  U.responceSuccess = (o) => {
+    return U.json.success
+      (o || {}).send().then(x=> $finish_(x));
   };
-  let GET;
-  U.parseGET = () => {
+  U.responceAny = (code, o) => {
+    return U.json.any
+      ((code || 500), (o || {})).send().then(x=> $finish_(x));
+  };
+  U.responceNotFound = (o) => { return U.responceAny(404, o) };
+U.responceBatRequest = (o) => { return U.responceAny(400, o) };
+ U.responceForbidden = (o) => { return U.responceAny(403, o) };
+     U.responceError = (o) => { return U.responceAny(500, o) };
+  //
+  U.Api = (name) => {
+    const JS = require(`./HTTP/yha${name}.js`);
+    return new JS.Unit (U);
+  };
+  const DATA = { read: '' };
+  U.parseGET = async () => {
     U.tr3('[HTTP] GET');
-    return GET || (GET = new Promise (resolve => {
-      const get = URL.parse(req.url, true).query || T.c(null);
-      return resolve(get);
-    }));
+    return URL.parse(req.url, true).query || {};
   };
-  let POST;
   U.parsePOST = () => {
     U.tr3('[HTTP] parsePOST');
-    return U.getDATA().then( db => {
-      return db.data ? QUERY.parse(db.data): false;
-    }).catch(e=> U.throw(e));
+    return $readData_().then(d=> {
+      return d.ref ? QUERY.parse(d.ref): {};
+    });
   };
-  let BODY;
+  U.parseJSON = () => {
+    U.tr3('[HTTP] parseJSON');
+    return $readData_().then(d=> {
+      if (! d.ref) return {};
+      try {
+        d.json = T.txt2json(d.ref);
+        delete d.ref;
+      } catch (e) {
+        d.error = e;
+      }
+      return d;
+    });
+  };
   U.parseBODY = () => {
     U.tr3('[HTTP] parseBODY');
-    return U.getDATA()
-      .then( db => { return db }).catch(e=> U.throw(e));
+    return $readData_();
   };
-  let DATA;
-  const OverFlow = (s) => {
-    if (s.data.length < DataMax) return false;
-    U.tr3('[HTTP] Warning: !!! DATA OverFlow !!!');
-    s.data = null;
-    U.responceBatRequest();
-    return true;
-  };
-  U.getDATA = () => {
-    U.tr3('[HTTP] getDATA');
-    return DATA || (DATA = new Promise ((resolve, reject) => {
-      const s = { data: '' };
+  function $readData_ () {
+    return new Promise ((resolve, reject) => {
+      if (DATA.ref) return resolve(DATA);
       req.on('data', chunk => {
-        s.data += chunk;
-        if (OverFlow(s)) return reject('OverFlow');
-      }).on('end', () => {
-        U.tr4(`[HTTP] getDATA: end`, s.data);
-        return resolve(s);
+        DATA.read += chunk;
+        if ($OverFlow_(DATA))
+          return reject({ overFlow: true });
       });
-    }));
+      req.on('end', () => {
+        U.tr7(`[HTTP:readData] end`, DATA.read);
+        DATA.ref = DATA.read;
+        delete DATA.read;
+        return resolve(DATA);
+      });
+    });
+  }
+  U.absFinish = (code) => {
+    DerayFinish = false;
+    return $finish_(code);
   };
-  const JsonBase = (code, msg) => {
+  function $OverFlow_ (d) {
+    if (d.read.length < DataMax) return false;
+    U.tr3('[HTTP] Warning: !!! DATA OverFlow !!!');
+    d.read = '';
+    U.responceAny(413); // Payload Too Large.
+    return true;
+  }
+  function $finish_ (code) {
+    if (U.root.finished() || DerayFinish) return;
+    U.tr3(`[HTTP] responce status:`, code);
+    (code && code == 200) ? U.root.finish(): U.root.rollback();
+  }
+}
+function responceJSON (U, T) {
+  const J = this;
+  function setHeader (code, headers) {
+    const msg = HTTP.STATUS_CODES[code || (code = 500)]
+             || HTTP.STATUS_CODES[code = 500];
+    U.statusCode(code);
+    U.statusMessage(msg);
+    U.setHeader('Content-Type', ContentJSON);
+    for (let [name, value] of T.e(headers))
+        { U.setHeader(name, value) }
     return {
       statusCode: code,
    statusMessage: msg,
      ContentType: ContentJSON,
     };
   };
-  U.responceError = () => {
-    U.json = JsonBase(500, 'Internal Server Error.');
-    U.send(U.json.statusCode);
-    U.root.rollback();
+  J.success = (body, headers) => {
+    J.body = {
+      ...body,
+      ...(setHeader(200, (headers || {}))),
+      result: 'Success',
+      Success: true
+    };
+    return J;
   };
-  U.responceBatRequest = () => {
-    U.json = JsonBase(400, 'Bat Request.');
-    U.send(U.json.statusCode);
-    U.root.rollback();
+  J.any = (code, body, headers) => {
+    J.body = {
+      ...body,
+      ...(setHeader(code, (headers || {}))),
+      Success: false
+    };
+    return J;
   };
-  U.responceForbidden = () => {
-    U.json = JsonBase(403, 'Forbidden.');
-    U.send(U.json.statusCode);
-    U.root.rollback();
+  J.content = (body) => {
+    if (! J.body) U.throw(`[HTTP:JSON] body is not created.`);
+    return T.json2txt({ ...(J.body), ...(body || {}) });
   };
-  U.responceNotFound = () => {
-    U.json = JsonBase(404, 'Not Found.');
-    U.send(U.json.statusCode);
-    U.root.rollback();
-  };
-  U.responceSuccess = () => {
-    U.json = JsonBase(200, 'OK');
-    U.json.result  = 'Success';
-    U.json.Success = true;
-    U.send();
-    U.root.finish();
-  };
-  U.responceHello = () => {
-    U.json = JsonBase(200, 'OK');
-    U.json.body = 'Hello !!';
-    U.send();
-    U.root.rollback();
+  J.send = (body) => {
+    return new Promise ((resolve, reject) => {
+      if (U.Sended) {
+        U.tr3(`[HTTP] send`, '!! Recursive call !!');
+        return reject(0);
+      }
+      U.tr3(`[HTTP] send:`);
+      U.responce.end(J.content(body));
+      U.Sended = true;
+      return resolve(U.statusCode());
+    });
   };
 }
 function build_init_comp (S) {
@@ -188,31 +225,32 @@ function build_init_comp (S) {
 	S.on('runners', 'HTTP', S.server);
 }
 function build_base_comp (X, RUNS) {
-   const ON = X.rack.get('ON'),
-      Socks = new Map([]),
-       Port = (X.conf.port      || ListenPort),
-    SockTTL = (X.conf.socketTTL || SocketTTL );
-  const Action = ON.http_responce
-              || (async () => { return false });
-  let SRV, count = 0;
+  const ON = X.rack.get('ON');
+  const Socks = new Map([]),
+         Port = (X.conf.port      || ListenPort),
+      SockTTL = (X.conf.socketTTL || SocketTTL ),
+       Action = ON.http_responce || (() => { return false });
+  let SRV, ports = 0;
   X.server = () => {
-    if (SRV) return SRV;
-    SRV = HTTP.createServer();
-    SRV.on('request', build_api(X, ON, Action));
-    SRV.on('connection', socket => {
-      const Id = ++count;
-      Socks.set(Id, socket);
-      X.tr4(`[HTTP] socket = opened: ${Id}`);
-      socket.on('close', () => {
-        X.tr4(`[HTTP] socket - closed: ${Id}`);
-        Socks.delete(Id);
-      })
-      socket.setTimeout(SockTTL);
+    return new Promise ((resolve, reject) => {
+      if (SRV) return resolve(SRV);
+      const server = HTTP.createServer();
+      server.on('request', build_api(X, Action));
+      server.on('connection', socket => {
+        const Id = ++ports > 10000 ? (ports = 1): ports;
+        Socks.set(Id, socket);
+        X.tr4(`[HTTP] socket = opened: ${Id}`);
+        socket.on('close', () => {
+          X.tr4(`[HTTP] socket - closed: ${Id}`);
+          Socks.delete(Id);
+        })
+        socket.setTimeout(SockTTL);
+      });
+      server.listen(Port, () => {
+        X.tr(`[HTTP] Started !! port:${Port}`);
+        return resolve(SRV = server);
+      });
     });
-    SRV.listen(Port, () => {
-      X.tr(`[HTTP] Started !! port:${Port}`);
-    });
-    return SRV;
   };
   X.close = () => {
     if (SRV) {
@@ -222,52 +260,41 @@ function build_base_comp (X, RUNS) {
         Socks[id].destroy();
         Socks.delete(id);
       }
-      count = 0;
-      SRV = false;
+      [SRV, ports] = [false, 0];
+      X.tr(`[HTTP] !! CLOSE !!`);
+    } else {
+      X.tr(`[HTTP] close: Server is Not Active.`);
     }
-    X.tr(`[HTTP] << CLOSE >>`);
+    return X;
   };
 }
-function build_api (X, ON, Action) {
+function build_api (X, Action) {
+  const cmdReg = '[A-Z0-9\\-\\_]+';
+  const isReg = new RegExp
+        (`^/(${cmdReg})\.(${cmdReg})\/([^\/]+)`);
   return (req, res) => {
     let R;
     X.start(my).then(unitRoot=> {
       R = unitRoot;
       req.setEncoding(Enc);
       res.setHeader('X-Robots-Tag', 'noindex, nofollow');
-         const U = R.HTTP.start(req, res);
-      const Docs = U.conf.HTDOC;
+      return R.HTTP.start(req, res);
+    }).then(U => {
       const Url = U.reqURL();
       if (! Url) return false;
-      if (Url.match(/^\/(WH|API)\/([^\/]+)\/([^\/]+)/)) {
-        let [type, id, token, x] =
-            [RegExp.$1, RegExp.$2, RegExp.$3];
-        if (x = Docs[type]) {
-          if (x = x[id]) {
-            return R[x.name][type](U, token).then(x => {
-              return x.success
-                ? U.responceSuccess()
-                : U.responceForbidden();
-            }). catch(e=> {
-              U.responceError();
-              U.throw(`[HTTP] ${U.ver}`, e);
-            });
-          }
-        }
-      }
-      Action(U, Url).then(x=> {
-        if (! R.finished()) U.responceNotFound();
-      });
-    }).catch(err => {
-      if (R && ! R.finished()) {
-        R.rollback();
-        res.statusCode = 500;
-        res.end(X.tool.json2txt({
-           statusCode: 500,
-        statusMessage: 'Internal Server Error'
-        }));
-      }
-      X.throw(ver, err);
+      U.is = Url.match(isReg) ? {
+          Url: Url,
+        ident: RegExp.$1,
+          cmd: RegExp.$2,
+        token: RegExp.$3
+      }: {
+          Url: Url
+      };
+      return Action(U, U.is);
+    })
+    .catch(err => {
+      if (R) R.HTTP.responceError();
+      X.throw('[HTTP]', err);
     });
   };
 }

@@ -341,10 +341,11 @@ function Throw (Y) {
     for (let v of mor) {
       if (typeof v === 'object') {
         const tmp = Y.tool.inspect(v);
-        if (/^(.+\n[^\n]*Error\:[^\n]+)\n\s+at\s+.+/s.exec(tmp)) {
-          out += `\n${sen}\n` + TRACE(tmp, 1);
-        } else if (tmp.match(/^([^\n]+)/)) {
+        if (/^(.+\n[^\n]*Error\:[^\n]+\n\s+at\s+[^\n]+).+/s
+        .exec(tmp)) {
           out += `\n${sen}\n${RegExp.$1}`;
+        } else if (/^[^\n]+\n\s+at\s+[^\n]+/s.test(tmp)) {
+          out += `\n${sen}\n` + TRACE(tmp, 1);
         } else { out += `\n${v}` }
       } else { out += `\n${sen}\n${v}` }
     }

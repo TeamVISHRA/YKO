@@ -14,7 +14,7 @@ Y.Discord.DebugCall().run()
   .then(Y.Next).catch(e => { Y.throw(e) });
 
 function include () {
-Y.init('yDiscord yTwitch yCRON yHTTP');  //  yLINE
+Y.init('yDiscord yTwitch yLINE yCRON yHTTP'); 
 }
 function advance () {
 // ===== < Discord > =====

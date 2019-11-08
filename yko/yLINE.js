@@ -136,18 +136,18 @@ function build_unit_comps (U) {
   };
 }
 function build_guest_comps (G) {
-  if (! G.im.CHtoken)
-      G.throw(`[Line] 'im.CHtoken' setting is empty.`);
-  if (! G.im.CHsecret)
-      G.throw(`[Line] 'im.CHtoken' setting is empty.`);
+  if (! G.conf.CHtoken)
+      G.throw(`[Line] '<conf>.CHtoken' setting is empty.`);
+  if (! G.conf.CHsecret)
+      G.throw(`[Line] '<conf>.CHtoken' setting is empty.`);
   let MoreComp;
-  if (G.rack.get('REQUIRES').Discord) {
-    let WRAP;
+  if (G.rack.has('Discord')) {
+    let WHWRAP;
     if (G.debug()) {
-      const wh = G.discord.devel.webhook;
-      WHWRAP = (to) => { return [wh.id, wh.token] };
+//      const wh = G.discord.devel.webhook;
+//      WHWRAP = (to) => { return [wh.id, wh.token] };
     } else {
-      WHWRAP = (to) => { return [to.id, to.token] };
+//      WHWRAP = (to) => { return [to.id, to.token] };
     }
     MoreComp = U => {
       U.toDiscord = async (to, name, msg) => {
