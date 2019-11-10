@@ -3,7 +3,7 @@
 //
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
-const ver = `y-discord.js v191107`;
+const ver = `y-discord.js v191109`;
 //
 const yko = require('./yko/CORE.js');
 const Y = new yko ();
@@ -44,8 +44,8 @@ Y.on('discord_message', (ydM, is) => {
       break;
   }
 });
-Y.on('discord_join_guild', ydG => { ydG.join() });
-Y.on('discord_exit_guild', ydG => { ydG.exit() });
+Y.on('discord_join_guild', ydG => ydG.join());
+Y.on('discord_exit_guild', ydG => ydG.exit());
 
 // ===== < HTTP > =====
 Y.on('http_responce', async (yH, is) => {

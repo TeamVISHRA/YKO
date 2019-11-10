@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'BOX.js';
-const ver = `yko/${my} v191022`;
+const ver = `yko/${my} v191110`;
 //
 module.exports.init = function (Y, Ref) {
   const S = Y.superKit('box', this, Y, Ref);
@@ -28,7 +28,6 @@ module.exports.Unit = function (R, Ref) {
   U.rollback = () => {
     U.tr3('[BOX] << rollback >>');
     Bowl.set('PREPARS', []);
-    U.disconnect();
   };
   U.regist = (F) => {
     Bowl.get('PREPARS').push(F);

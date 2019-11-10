@@ -2,7 +2,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my   = 'y-BUILD-DB.js';
-const ver  = `utils/${my} v191023`;
+const ver  = `utils/${my} v191110`;
 const yko  = require('../yko/CORE.js');
 const Y = new yko ();
 //
@@ -12,6 +12,7 @@ const TwitchCH = C.twitch.devel.chatChannel;
 const LineID   = C.line.devel.userID; 
 //
 const yDB = require('./y-DB-Template-secret.js');
+const UpdateOK = true;
 //
 let R;
 Y.init().start(my).then(async unitRoot => {
@@ -26,8 +27,10 @@ Y.init().start(my).then(async unitRoot => {
     await R.sysDB(`${Name}.${Id}`).box().then(db=> BOX = db);
     if (BOX.hasNew()) {
 	    Y.tr(`[BUILD:${Name}] New setup !!`);
-      BOX.import( Templates[Name] );
-      BOX.prepar();
+      BOX.import( Templates[Name] ).prepar();
+    } else if (UpdateOK) {
+	    Y.tr(`[BUILD:${Name}] Update !!`);
+      BOX.import( Templates[Name] ).prepar();
     } else {
       Y.tr('[BUILD:Discord] No update allowed !!');
     }

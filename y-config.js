@@ -162,6 +162,20 @@ exports.line = {
  CHsecret: '( Channel Secret. )',
     devel: {
       userID: '( UserID of bot assigned by Line. )'
+  },
+  webhook: {
+    '( A moderately long string to include in "webhook URL". )': {}
+  },
+  responce: {
+    froms: {
+      '( Source LINE ID [userId or groupId or roomId] )': {
+        toChannelID: '( To 'Discord Channel' )'
+      },
+      '( Source LINE ID [userId or groupId or roomId] )': {
+        toChannelID: '( To 'Discord Channel' )'
+      },
+      default: { toUserID: exports.discord.devel.userID }
+    }
   }
 };
 exports.http = {

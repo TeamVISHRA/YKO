@@ -5,6 +5,18 @@
 const my  = 'ydMessage.js';
 const ver = `yko/Discord/${my} v191105`;
 //
+const Defaults = {
+  twitch: {
+    sizeMid:  400,
+    sizeMax:  500,
+    message: '👀 <name>：<message> - From Discord.'
+  },
+  line: {
+    sizeMid:  800,
+    sizeMax: 1000,
+    message: `👀 <name>： <message> - From Discord`
+  }
+}
 module.exports.Unit = function (P) {
   const R = P.root;
   const U = R.unitKit(my, this, P);
@@ -43,23 +55,19 @@ module.exports.Unit = function (P) {
     [H, TMP] = [handler, T.c(null)];
     let type;
     if (U.type() == 'dm') {
-      U.isDM = () => {
-        U.tr(`[Discord:ydM] DM - true.`);
-        return true;
-      };
+      U.tr3(`[Discord:M] DM mode !!`);
+      U.isDM = () => { return true };
       TMP.guild_id = TMP.channel_id = '';
-       TMP.user_id = H.user.id;
+       TMP.user_id =
+        (H.user ? H.user.id: (H.author ? H.author.id: '(N/A)'));
          U.guildID = U.channelID = () => { return '' };
           U.userID = () => { return TMP.user_id };
         U.nickname = () => { return H.user.username  };
         U.username = () => { return H.user.username  };
        U.avatarURL = () => { return H.user.avatarURL };
-      Y.tr3('[Discord:ydM] <M>.channel.type:' + (type = 'DM'));
+      U.tr3('[Discord:M] <M>.channel.type:' + (type = 'DM'));
     } else {
-      U.isDM = () => {
-        U.tr(`[Discord:ydM] DM - false.`);
-        return false;
-      };
+      U.isDM = () => { return false };
       TMP.guild_id = H.guild.id;
        TMP.user_id = H.author.id;
          U.guildID = () => { return TMP.guild_id };
@@ -192,60 +200,98 @@ module.exports.Unit = function (P) {
     return (TMP.channelId || H.channel.id || '');
   };
   if (U.rack.has('Twitch')) {
-    U.toTwitch = (uname, msg, func) => {
-      return new Promise (async (resolve, reject) => {
-        if (U.isDM()) return reject
-          ({ YKO:1, result: 'Not available from DM' });
-        let cf;
-        await R.sysDB(`Discord.${U.guildID()}`)
-                 .cash('toTwitch').then(x=> cf = x );
-        U.tr5('[Discord:ydM] sysDB: ', cf);
-        if (! cf) return reject
-          ({ YKO:1, result: 'Configuration not setup.' });
-        if (! func) func = (check, uid) => {
-          return check == uid ? true : false;
-        };
-        U.tr3('[Discord:ydM] toTwitch', 'check');
-        if (! func(cf.fromCH, U.channelID())) {
-          U.tr3('[Discord:ydM] toTwitch', 'Cancel !!');
-          return reject({ YKO:1, result: 'cancel' });
-        }
-        msg = T.tmpl(cf.message, {
-          name: (uname || U.nickname()),
-          message: T.Zcut((msg || U.content()), 400, '...')
-        });
-        return R.Twitch.say(cf.toCH, msg).then(x=> {
-          resolve({ from:cf.fromCH, to:cf.toCH });
-        }).catch(e=> U.throw(`[Discord:toTwitch]`, e));
+    U.toTwitch = (toCH, msg) => {
+      return new Promise ( resolve => {
+        if (! toCH || ! msg)
+          { return resolve({ failed: 'Incomplete argument.' }) }
+        if (U.isDM())
+          { return resolve({ failed: 'Not available from DM' }) }
+        return R.Twitch.say
+        (toCH, T.Zcut(msg, Defaults.twitch.sizeMax, '...'))
+          .then(x=> resolve({ success: true }))
+          .catch(e=> U.throw(`[Discord:toTwitch]`, e));
       });
     };
   } else {
     U.toTwitch = async () => {};
   }
-  U.memberNow = async () => {
-    if (MemberDB) return MemberDB;
-    const Gid = U.guildID()
-    || U.throw(`[Discord:ydM] memberNow: Unknown guildID.`);
-    await U.root.sysDB(`Discord`)
-    .member(`${Gid}.${U.userID()}`).then(x=> MemberDB = x);
-    return MemberDB;
-  };
+  if (U.rack.has('LINE')) {
+    U.toLine = (toID, msg) => {
+      return new Promise ( resolve => {
+        if (! toID || ! msg)
+          { return resolve({ failed: 'Incomplete argument.' }) }
+        if (U.isDM())
+          { return resolve({ failed: 'Not available from DM' }) }
+        return R.LINE.sayText
+        (toID, T.Zcut(msg, Defaults.line.sizeMax, '...'))
+          .then(x=> resolve({ success: true }))
+          .catch(e=> U.throw(`[Discord:toTwitch]`, e));
+      });
+    };
+  } else {
+    U.toLine = async () => {};
+  }
   U.every = () => {
     U.tr3('[Discord:ydM] every');
-    U.toTwitch(U.nickname(), U.content()).then(x=> {
-      U.$countUpMemberDB(1).then(x=> U.finish());
-    }) .catch(e=> {
-      if (e && T.isHashArray(e) && e.YKO) {
-        if (e.result)
-          U.tr4(`[Discord:ydM] toTwitch:`, e.result);
-        U.$countUpMemberDB(0).then(x=> U.finish());
-      } else {
-        U.throw(`[Discord:ydM]`, e);
-      }
+    const [Guid, ChID] = [U.guildID(), U.channelID()];
+    if (! Guid || ! ChID) { return $finish() }
+    let Conf;
+    R.sysDB(`Discord.${Guid}`).cash().then(async x=> {
+      Conf = x;
+      await $toTwitch(Conf.toTwitch);
+    }).then(async x=> {
+      await $toLine(Conf.toLine);
+    }).then(x=> {
+      return $finish();
+    }).catch(e=> {
+      U.tr(`[Discord:M] every`, e);
     });
+    function $toTwitch (C) {
+      U.tr3
+      if (! C || ! C.toCH || ! C.fromCH || ChID != C.fromCH) {
+        return false;
+      }
+      const Def = Defaults.twitch;
+      let tmpl = C.message || Def.message;
+      return U.toTwitch(C.toCH, T.tmpl(tmpl, {
+           name: U.nickname(),
+        message: T.Zcut(U.content(), Def.sizeMid, '...')
+      }));
+    }
+    function $toLine (C) {
+      if (! C || ! C.tokens) { return false }
+      let toID = C.tokens[ChID];
+      if (! toID) { return false }
+      const Def = Defaults.line;
+      let tmpl = C.message || Def.message;  
+      return U.toLine(toID, T.tmpl(tmpl, {
+           name: U.nickname(),
+        message: T.Zcut(U.content(), Def.sizeMid, '...')
+      })).then(x=> {
+        if (x && T.isHashArray(x) && x.failed)
+          { U.tr3(`[Discord:M] toLine - failed:`, x.failed) }
+        return x;
+      });
+    }
+    function $finish () {
+      if (! U.isDM() && U.content()) {
+        U.$countUpMemberDB(0).then(x=> U.finish())
+      } else {
+        U.finish();
+      }
+    }
+  };
+  U.memberNow = async () => {
+    if (MemberDB) return MemberDB;
+    let Gid; if (Gid = U.guildID()) {
+      await U.root.sysDB(`Discord`)
+      .member(`${Gid}.${U.userID()}`).then(x=> MemberDB = x);
+    }
+    return MemberDB;
   };
   U.$countUpMemberDB = (Twitch) => {
     return U.memberNow().then(box=> {
+      if (! box) return;
       box.util().inc('countPost')
          .util().setDefault('tmLastPost');
     });

@@ -1,9 +1,6 @@
 //
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
-//  Updated on 2019-10-24
-//
-
 let C, GuildID, TwitchCH, LineID;
 
 module.exports.templates = function (c) {
@@ -57,20 +54,23 @@ function dbDiscord () {
 toTwitch: {
        toCH: TwitchCH,
      fromCH: '579199949233717268', // Linked channel ID.
-    message: 'HolidayOrnament <name>：<message>'
+    message: '👀 <name>：<message> - From Discord.'
   },
 toLine: {
    tokens: {
       '( [ID] From discord channel. )': '( [ID] To Line group. )'
-    }
+      ...
+      ...
+    },
+    message: '👀 <name>： <message> - From Discord'
   },
     CRON: {
   RSSreader: {
           toCH: '613717562936655872', // News channel ID.
          sites: [
-{ url: '( RSS URL No.1 )' },
-{	url: '( RSS URL No.2 )' },
-{ url: '( RSS URL No.2 )' }
+          { url: '( RSS URL No.1 )' },
+          {	url: '( RSS URL No.2 )' },
+          { url: '( RSS URL No.3 )' }
         ]
       }
     },
@@ -97,7 +97,7 @@ function dbTwitch () {
     },
 toDiscord: {
     webhook: `%Discord:WH(${GuildID}.twitchLive)`,
-    message: '>**<name>**：<message> -Twitch'
+    message: '👀 **<name>**：<message>\n- From Twitch.'
     }
   };
 }

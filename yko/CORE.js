@@ -4,7 +4,9 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'CORE.js';
-const ver = `yko/${my} v191108`;
+const ver = `yko/${my} v191110`;
+//
+const T = new (require('./TOOL.js'));
 //
 let Config;
 module.exports = function (ARGS) {
@@ -13,6 +15,7 @@ module.exports = function (ARGS) {
   if (! ARGS) ARGS = Object.create(null);
   const [,, ...ARGV] = process.argv;
   if (ARGV.length > 0) Y.ARGV = new LaunchUtil(Y, ARGV);
+  Y.tool = T.init(Y);
   Y.conf = require
      (Config || ARGS.config || '../y-config-secret.js');
   if (Y.conf.location == 'devel') {
@@ -42,10 +45,10 @@ module.exports = function (ARGS) {
   }
       Y.tr = Trace(Y);
    Y.throw = Throw(Y);
+   Y.TRACE = $TRACE_;
+   Y.STACKTRACE = () => { return $TRACE_(new Error().stack, 3) };
   const Lv = initDebugLv(Y);
   Y.tr1('[CORE] debug_level', Lv);
-  const T = Y.tool = new (require('./TOOL.js'));
-  T.init(Y);
   const Gd = Y.rack = new Map([
     ['CASH',    {}],
     ['START',   []],
@@ -154,7 +157,6 @@ module.exports = function (ARGS) {
         if (Ref.$JS.initFake) {
           Ref.$JS.initFake(Y, Ref);
         } else {
-//Y.tr(Ref.$JS);
           Y.tr3(`[CORE] ${Ref.$name} is not make 'onFake'.`);
         }
       }
@@ -186,29 +188,31 @@ function UNIT (myName, Y, Gd, Super) {
    X.finish = R.finish;
     return Super(X);
   };
-  R.tmp = { $START: 1 };
+  R.tmp = { $START: true };
   R.rollback = () => {
+    $changeFlag_();
     for (let F of T.v(Gd.get('ROLLBACK'))) { F(R) };
     R.box.rollback();
-    R.tmp = T.c(null);
+    R.box.disconnect();
     Y.tr3(`[UNIT] >> ${myName} - ROLLBACK !!`);
     return R;
   };
-  R.finished = () => {
-    return R.tmp.$START ? false : true; 
-  };
-  R.finish = async () => {
-    if (! R.tmp.$START) {
-      Y.tr3(`[UNIT] Warning: `
-      + `FINISH didn't exec ...(${R.ver})\n${sen}`);
+  R.finished = () => { return R.tmp.$START ? false: true };
+  R.away     = () => { return FINISH(x=> R.box.rollback()) };
+  R.finish   = () => { return FINISH(x=> R.box.commit()) };
+  function $changeFlag_ () { R.tmp = { $FINISH: true } }
+  async function FINISH (func) {
+    if (R.tmp.$FINISH) {
+      Y.tr3(`[UNIT:${R.ver}] FINISH !! Duplicate call !!`)
+       .then(e=> Y.c(Y.TRACE(e, 4)));
       return false;
     }
+    $changeFlag_();
     for (let F of T.v(Gd.get('FINISH'))) { F(R) };
-    await R.box.commit();
-    R.tmp = T.c(null);
-    Y.tr3(`[UNIT] >> ${myName} - FINISH !!`);
+    await func();
+    Y.tr3(`[UNIT:${R.ver}] FINISH !!`);
     return R;
-  };
+  }
   let procCash;
   R.procCash = () => {
     return procCash
@@ -298,7 +302,7 @@ function Trace (Y) {
     const trace = new Error().stack;
     const stacks = trace.split(/\s+at\s+/);
     stacks[2].match(/([^\/]+)\:\d+\)?\s*$/);
-    let pref = RegExp.$1;
+    let pref = RegExp.$1;7
     let [op, err] = [[], []];
     for (let v of Object.values(args)) {
       if (typeof v == 'object') {
@@ -321,22 +325,23 @@ function Trace (Y) {
     return stacks;
   };
 }
+function $TRACE_ (stack, n) {
+  const stacks =
+      T.isArray(stack) ? stack: stack.split(/\s+at\s+/);
+  let point = stacks[0].match(/^Error\:?$/)
+              ? '': `${stacks[0]}\n`;
+  for (let v of stacks.splice(n, stacks.length)) {
+    if (v) { v = v.trim();
+      if (v.match(/\/(yko\/[^\)]+)\:\d+\)\s*$/i)) {
+        point += '> ' + RegExp.$1 + '\n';
+      } else if (v.match(/(y\-[^/\)]+)\:\d+\)\s*$/)) {
+        point += '> ' + RegExp.$1 + '\n';
+  } } }
+  return point;
+}
 function Throw (Y) {
-  const TRACE = (stack, n) => {
-    const stacks = stack.split(/\s+at\s+/);
-    let point = stacks[0].match(/^Error\:?$/)
-                ? '': `${stacks[0]}\n`;
-    for (let v of stacks.splice(n, stacks.length)) {
-      if (v) { v = v.trim();
-        if (v.match(/\/(yko\/[^\)]+)\:\d+\)\s*$/i)) {
-          point += '> ' + RegExp.$1 + '\n';
-        } else if (v.match(/(y\-[^/\)]+)\:\d+\)\s*$/)) {
-          point += '> ' + RegExp.$1 + '\n';
-    } } }
-    return point;
-  };
   return (...mor) => {
-    const point = TRACE(new Error().stack, 2);
+    const point = $TRACE_(new Error().stack, 2);
     let out = '';
     for (let v of mor) {
       if (typeof v === 'object') {
@@ -345,7 +350,7 @@ function Throw (Y) {
         .exec(tmp)) {
           out += `\n${sen}\n${RegExp.$1}`;
         } else if (/^[^\n]+\n\s+at\s+[^\n]+/s.test(tmp)) {
-          out += `\n${sen}\n` + TRACE(tmp, 1);
+          out += `\n${sen}\n` + $TRACE_(tmp, 1);
         } else { out += `\n${v}` }
       } else { out += `\n${sen}\n${v}` }
     }

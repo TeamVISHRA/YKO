@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const  my = 'ybBaseSchema.js';
-const ver = `yko/${my} v191107`;
+const ver = `yko/${my} v191110`;
 //
 const T = new (require('../TOOL.js'));
 //
@@ -264,10 +264,11 @@ module.exports.component = function (B, S) {
     if (key && S.$COLUMNS[key]) S.$COLUMNS[key] = [1];
     return B;
   };
-    B.keys = ()  => { return T.k(Db.value) };
-     B.ref = ()  => { return Db.value }
-  B.export = ()  => { return T.clone(Db.value) }
-  B.import = (o) => {
+     B.keys = ()  => { return T.k(Db.value) };
+      B.ref = ()  => { return Db.value };
+B.Reference = ()  => { return Db };
+   B.export = ()  => { return T.clone(Db.value) };
+   B.import = (o) => {
     if(! T.isHashArray(o))
         S.throw(`[${B.ver}] Type is different.`);
     UPDATE = true;

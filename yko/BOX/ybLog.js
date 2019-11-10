@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const  my = 'ybLog.js';
-const ver = `yko/${my} v191031`;
+const ver = `yko/${my} v191110`;
 //
 const T = new (require('../TOOL.js')),
    Base = require('./ybBaseShema.js'),
@@ -30,7 +30,7 @@ module.exports.Unit = function (P, Cls, co, ...Args) {
     ['timeStampUTC', 'utc()', ['isKey']],
     ['ident',  null, ['isString']],
     ['status', null, ['isString', 'toLowerCase',
-      'regex("^(?:info|error|warn|report)$", "i")'
+      'regex("^(?:info|error|warn|report|)$", "i")'
     ]],
     ['Processed', 0, ['isNumber']]
   ];

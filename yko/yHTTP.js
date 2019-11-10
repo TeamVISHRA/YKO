@@ -56,19 +56,31 @@ function build_super_comp (S) {
   };
 }
 function build_unit_comp (U) {
-  const T = U.tool;
+  const R = U.root,
+        T = U.tool;
   U.json = new responceJSON (U, T);
-  let req, res;
+  U.Api = (name) => {
+    const JS = require(`./HTTP/yha${name}.js`);
+    return new JS.Unit (U);
+  };
+  let req, res, Delay, Finish;
   U.start = (q, s) => {
     U.request  = req = q;
     U.responce = res = s;
     return U;
   };
-  let DerayFinish;
-  U.DerayFinish = () => {
-    DerayFinish = true;
-    return U;
+  U.delay = () => { Delay = true; return U };
+  U.final = (code) => {
+    Delay = false;
+    return $finish_(code);
   };
+  U.finish = $finish_;
+  function $finish_ (code) {
+    if (Finish || Delay || R.finished()) return;
+    Finish = true;
+    U.tr3(`[HTTP] responce status:`, code);
+    return (code && code == 200) ? R.finish(): R.away();
+  }
   let ReqURL;
   U.reqURL = () => {
     return ReqURL || (() => {
@@ -104,10 +116,6 @@ U.responceBatRequest = (o) => { return U.responceAny(400, o) };
  U.responceForbidden = (o) => { return U.responceAny(403, o) };
      U.responceError = (o) => { return U.responceAny(500, o) };
   //
-  U.Api = (name) => {
-    const JS = require(`./HTTP/yha${name}.js`);
-    return new JS.Unit (U);
-  };
   const DATA = { read: '' };
   U.parseGET = async () => {
     U.tr3('[HTTP] GET');
@@ -152,21 +160,12 @@ U.responceBatRequest = (o) => { return U.responceAny(400, o) };
       });
     });
   }
-  U.absFinish = (code) => {
-    DerayFinish = false;
-    return $finish_(code);
-  };
   function $OverFlow_ (d) {
     if (d.read.length < DataMax) return false;
     U.tr3('[HTTP] Warning: !!! DATA OverFlow !!!');
     d.read = '';
     U.responceAny(413); // Payload Too Large.
     return true;
-  }
-  function $finish_ (code) {
-    if (U.root.finished() || DerayFinish) return;
-    U.tr3(`[HTTP] responce status:`, code);
-    (code && code == 200) ? U.root.finish(): U.root.rollback();
   }
 }
 function responceJSON (U, T) {
