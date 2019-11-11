@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'TOOL.js';
-const ver = `yko/${my} v191031`;
+const ver = `yko/${my} v191112`;
 //
 const TM_FORMAT = '/DD HH:mm:ss';
 let tr = console.log,
@@ -40,6 +40,7 @@ T.a = (x, z) => { return Object.assign(x, z) };
            T.z2h = z2h;
            T.A2a = A2a;
            T.a2A = a2A;
+           T.cut = cut;
           T.Zcut = Zcut;
         T.countZ = countZ;
         T.encode = encode;
@@ -160,9 +161,12 @@ function time_form (n, f) {
     (n ? Number(n): undefined).format(f || TM_FORMAT);
 }
 function canonical (v) {
-  if (!v) return '';
-  return String(v).replace(/\r?\n/g, '')
-  .replace(/\s+/g, ' ').trim() || '';
+  if (! v) return '';
+  return String(v)
+    .replace(/\r/g, '')
+    .replace(/\t/g, ' ')
+    .replace(/\n\n\n+/g, '\n\n')
+    .replace(/([ 　])\1\1+/g, RegExp.$1).trim() || '';
 }
 function p0 (n, l) {
   if (! l) l = 2;
@@ -182,6 +186,12 @@ function A2a (s) {
 function a2A (s) {
   return s ? s.toUpperCase(): '';
 }
+function cut (str, n, ident) {
+  if (! n) Throw(`${ver} Insufficient arguments.`);
+  if (str.length <= n) return str;
+  str = str.substr(0, n);
+  return ident ? (str + ident): str;
+}
 function Zcut (str, n, ident) {
   if (! n) Throw(`${ver} Insufficient arguments.`);
   str = canonical(str);
@@ -190,8 +200,7 @@ function Zcut (str, n, ident) {
     v.match(/[\!-\~ ]/) ? ++b : (b += 2);
     if (b <= n) result += v;
   }
-  if (ident && b > n) result += ident;
-  return result;
+  return (ident && b > n) ? (result + ident): result;
 }
 function countZ (str) {
   str = canonical(str);

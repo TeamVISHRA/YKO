@@ -216,15 +216,16 @@ module.exports.Unit = function (P) {
     U.toTwitch = async () => {};
   }
   if (U.rack.has('LINE')) {
-    U.toLine = (toID, msg) => {
+    U.toLine = (toID, name, text) => {
       return new Promise ( resolve => {
         if (! toID || ! msg)
           { return resolve({ failed: 'Incomplete argument.' }) }
         if (U.isDM())
           { return resolve({ failed: 'Not available from DM' }) }
-        return R.LINE.sayText
-        (toID, T.Zcut(msg, Defaults.line.sizeMax, '...'))
-          .then(x=> resolve({ success: true }))
+        return R.LINE.sayFlexStyle(toID, {
+          userName: (name || U.nickname()),
+              text: (text || U.content())
+        }).then(x=> resolve({ success: true }))
           .catch(e=> U.throw(`[Discord:toTwitch]`, e));
       });
     };
@@ -264,10 +265,7 @@ module.exports.Unit = function (P) {
       if (! toID) { return false }
       const Def = Defaults.line;
       let tmpl = C.message || Def.message;  
-      return U.toLine(toID, T.tmpl(tmpl, {
-           name: U.nickname(),
-        message: T.Zcut(U.content(), Def.sizeMid, '...')
-      })).then(x=> {
+      return U.toLine(toID).then(x=> {
         if (x && T.isHashArray(x) && x.failed)
           { U.tr3(`[Discord:M] toLine - failed:`, x.failed) }
         return x;

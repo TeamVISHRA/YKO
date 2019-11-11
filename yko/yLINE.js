@@ -3,12 +3,17 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'yLINE.js';
-const ver = `yko/${my} v191108`;
+const ver = `yko/${my} v1911112`;
 //
  const SDK = require('@line/bot-sdk'),
     Accept = require('./LINE/ylAccept.js'),
   Responce = require('./LINE/ylResponce.js'),
-RefreshTTL = 12* 60; // minute.
+ FlexStyle = require('./LINE/ylFlesStyle.js'),
+RefreshTTL = 12* 60, // minute.
+  Defaults = {
+       MaxText: 800,
+    MaxaltText: 400
+  };
 //
 let STATE = 'Normal';
 //
@@ -54,13 +59,34 @@ function build_unit_comps (U, Meth) {
            U.accept = new Accept.Unit(U),
          U.responce = new Responce[Meth](U),
           U.sayText = sayText,
+          U.sayFlex = sayFlex;
+     U.sayFlexStyle = sayFlexStyle;
        U.getProfile = getProfile;
   U.profileFromLine = profileFromLine;
   //
   function sayText (id, msg) {
     U.tr3(`[LINE] sayText:`, id, msg);
-    return U.client()
-      .pushMessage(id, { type: 'text', text: msg });
+    return U.client().pushMessage(id, {
+      type: 'text',
+      text: T.Zcut(msg, Defaults.MaxText, '...')
+    });
+  }
+  function sayFlex (id, alt, flex) {
+    U.tr4(`[LINE] sayFlex:`, id, flex);
+    return U.client().pushMessage(id, {
+        type: 'flex',
+     altText: (alt || 'carousel'),
+    contents: flex
+    });
+  }
+  function sayFlexStyle (id, arg) {
+    if (! arg.text) return (async () => {});
+    if (/^text\:(.+)/i.exec(arg.text)) {
+      return sayText(id, `🔷 *${arg.userName}* 🔷`
+            + `\n${RegExp.$1}\n📌 _by Discord_`);
+    }
+    return sayFlex
+      (id, arg.altText, FlexStyle.create(U, arg));
   }
   let BOX;
   async function getProfile (type, id, from) {
