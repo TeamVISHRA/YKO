@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ydMessage.js';
-const ver = `yko/Discord/${my} v191105`;
+const ver = `yko/Discord/${my} v191112`;
 //
 const Defaults = {
   twitch: {
@@ -218,7 +218,7 @@ module.exports.Unit = function (P) {
   if (U.rack.has('LINE')) {
     U.toLine = (toID, name, text) => {
       return new Promise ( resolve => {
-        if (! toID || ! msg)
+        if (! toID)
           { return resolve({ failed: 'Incomplete argument.' }) }
         if (U.isDM())
           { return resolve({ failed: 'Not available from DM' }) }
@@ -248,10 +248,11 @@ module.exports.Unit = function (P) {
       U.tr(`[Discord:M] every`, e);
     });
     function $toTwitch (C) {
-      U.tr3
+      U.tr3(`[Discord:M] $toTwitch`);
       if (! C || ! C.toCH || ! C.fromCH || ChID != C.fromCH) {
         return false;
       }
+      U.tr3(`[Discord:M] $toTwitch - To:`, C.toCH);
       const Def = Defaults.twitch;
       let tmpl = C.message || Def.message;
       return U.toTwitch(C.toCH, T.tmpl(tmpl, {
@@ -260,8 +261,10 @@ module.exports.Unit = function (P) {
       }));
     }
     function $toLine (C) {
+      U.tr3(`[Discord:M] $toLine`);
       if (! C || ! C.tokens) { return false }
       let toID = C.tokens[ChID];
+      U.tr3(`[Discord:M] $toLine - To:`, toID);
       if (! toID) { return false }
       const Def = Defaults.line;
       let tmpl = C.message || Def.message;  

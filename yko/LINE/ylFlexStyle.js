@@ -2,7 +2,7 @@
 //
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
-const my  = 'ylFlesStyle.js';
+const my  = 'ylFlexStyle.js';
 const ver = `yko/${my} v191112`;
 //
 const baseBgColor = "#BBBBFF",
@@ -15,8 +15,8 @@ const baseBgColor = "#BBBBFF",
 //
 module.exports.create = function (U, A) {
   if (! A || ! A.userName || ! A.text)
-      U.throw(`[LINE:FlesStyle] Incomplete argument`);
-  const flex = $template_();
+      U.throw(`[LINE:FlexStyle] Incomplete argument`);
+  const flex = $template_(A.style || 'Discord');
   const Body = flex.body.contents,
        Links = [],
       Images = [];
@@ -55,7 +55,16 @@ module.exports.create = function (U, A) {
       }
     };
   }
-  function $template_ () {
+  function $template_ (style) {
+    switch (style.toLowerCase()) {
+      case 'discord':
+        return $DiscordStyle();
+        break;
+      default:
+        U.throw(`[LINE:FlexStyle] There is no '${style}'.`);
+    }
+  }
+  function $DiscordStyle () {
     return {
   "type": "bubble",
   "header": {

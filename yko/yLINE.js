@@ -8,7 +8,7 @@ const ver = `yko/${my} v1911112`;
  const SDK = require('@line/bot-sdk'),
     Accept = require('./LINE/ylAccept.js'),
   Responce = require('./LINE/ylResponce.js'),
- FlexStyle = require('./LINE/ylFlesStyle.js'),
+ FlexStyle = require('./LINE/ylFlexStyle.js'),
 RefreshTTL = 12* 60, // minute.
   Defaults = {
        MaxText: 800,
@@ -81,7 +81,7 @@ function build_unit_comps (U, Meth) {
   }
   function sayFlexStyle (id, arg) {
     if (! arg.text) return (async () => {});
-    if (/^text\:(.+)/i.exec(arg.text)) {
+    if (/^text\>\s*(.+)/i.exec(arg.text)) {
       return sayText(id, `🔷 *${arg.userName}* 🔷`
             + `\n${RegExp.$1}\n📌 _by Discord_`);
     }
