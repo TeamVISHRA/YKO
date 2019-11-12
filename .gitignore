@@ -1,6 +1,7 @@
 test/
 node_modules/
 build/
+labo/
 yko-old/
 *-secret.js
 now.js
