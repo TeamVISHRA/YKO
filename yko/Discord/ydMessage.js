@@ -83,7 +83,7 @@ module.exports.Unit = function (P) {
       R.brain.wokeup(W_CHECK, W_BOW, IS)
              .Try(type, U.userID(), H.content);
     } else {
-      R.brain.isCall(H.content, IS);
+      R.brain.isCall(U.content(), IS);
     }
     return U;
   };
@@ -174,7 +174,14 @@ module.exports.Unit = function (P) {
       return DBGsend(m=> { return ch.send(m) }, msg, a);
     };
   }
-  U.content = () => { return H.content || '' };
+  U.content = () => {
+    return TMP.$content || (()=> {
+      let text = H.content || '';
+      if (H.attachments)
+      { H.attachments.forEach(v=> { text += `\n${v.url}` }) }
+      return (TMP.$content = text);
+    }) ();
+  };
   U.handler = () => { return H };
   U.delete  = () => { H.delete() };
   // === test ==========================================

@@ -48,6 +48,7 @@ module.exports.create = function (U, A) {
         }
       }
     }
+    if (! Main.text) Body.shift();
     if (Images.length> 0) Body.splice(Body.length, 0, ...Images);
     return resolve([Alt, flex]);
   });
