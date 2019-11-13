@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ydMessage.js';
-const ver = `yko/Discord/${my} v191112`;
+const ver = `yko/Discord/${my} v191113`;
 //
 const Defaults = {
   twitch: {
@@ -218,13 +218,13 @@ module.exports.Unit = function (P) {
   if (U.rack.has('LINE')) {
     U.toLine = (toID, name, text) => {
       return new Promise ( resolve => {
-        if (! toID)
-          { return resolve({ failed: 'Incomplete argument.' }) }
         if (U.isDM())
           { return resolve({ failed: 'Not available from DM' }) }
+        if (! toID)
+          { return resolve({ failed: 'Incomplete argument.' }) }
         return R.LINE.sayFlexStyle(toID, {
           userName: (name || U.nickname()),
-              text: (text || U.content())
+              text: (text || U.content() || '...')
         }).then(x=> resolve({ success: true }))
           .catch(e=> U.throw(`[Discord:toTwitch]`, e));
       });
@@ -266,8 +266,6 @@ module.exports.Unit = function (P) {
       let toID = C.tokens[ChID];
       U.tr3(`[Discord:M] $toLine - To:`, toID);
       if (! toID) { return false }
-      const Def = Defaults.line;
-      let tmpl = C.message || Def.message;  
       return U.toLine(toID).then(x=> {
         if (x && T.isHashArray(x) && x.failed)
           { U.tr3(`[Discord:M] toLine - failed:`, x.failed) }

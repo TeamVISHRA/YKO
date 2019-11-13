@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'yLINE.js';
-const ver = `yko/${my} v1911112`;
+const ver = `yko/${my} v1911113`;
 //
  const SDK = require('@line/bot-sdk'),
     Accept = require('./LINE/ylAccept.js'),
@@ -75,18 +75,19 @@ function build_unit_comps (U, Meth) {
     U.tr4(`[LINE] sayFlex:`, id, flex);
     return U.client().pushMessage(id, {
         type: 'flex',
-     altText: (alt || 'carousel'),
+     altText: (alt || '... <N/A>'),
     contents: flex
     });
   }
-  function sayFlexStyle (id, arg) {
-    if (! arg.text) return (async () => {});
+  async function sayFlexStyle (id, arg) {
+    if (! arg.text) return;
     if (/^text\>\s*(.+)/i.exec(arg.text)) {
       return sayText(id, `🔷 *${arg.userName}* 🔷`
             + `\n${RegExp.$1}\n📌 _by Discord_`);
     }
-    return sayFlex
-      (id, arg.altText, FlexStyle.create(U, arg));
+    let result;
+    await FlexStyle.create(U, arg).then(x=> result = x);
+    return sayFlex(id, ...result);
   }
   let BOX;
   async function getProfile (type, id, from) {

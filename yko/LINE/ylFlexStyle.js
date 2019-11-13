@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ylFlexStyle.js';
-const ver = `yko/${my} v191112`;
+const ver = `yko/${my} v191113`;
 //
 const baseBgColor = "#BBBBFF",
     titleTxtColor = "#3355AA",
@@ -17,41 +17,75 @@ module.exports.create = function (U, A) {
   if (! A || ! A.userName || ! A.text)
       U.throw(`[LINE:FlexStyle] Incomplete argument`);
   const flex = $template_(A.style || 'Discord');
-  const Body = flex.body.contents,
-       Links = [],
-      Images = [];
-  A.text.replace(/(https?\:\/\/[^\s\n]+)/g, x=> {
-    if (/\.(?:jpe?g|gif|png)$/i.test(x))
-         { Images.push($imageType_(x)) }
-    else { Links.push($linkType_(x)) }
-    return x;
+  const Alt = U.tool.Zcut(A.text, 25, '...'),
+       Body = flex.body.contents,
+       Main = Body[0],
+      Links = [],
+     Images = [];
+  let count = 0;
+  return new Promise ( async resolve => {
+    A.text = A.text.replace(/(https?\:\/\/[^\s\n]+)/g, x=> {
+      if (/\.(?:jpe?g|gif|png)$/i.test(x)) {
+        Images.push($imageType_(x));
+        return '';
+      }
+      Links.push([++count, x]);
+      return `{ ${$label_(count)} }`;
+    });
+    if (/^\s*\[[^\]+]\]\s*$/g.test(A.text)) A.text = '';
+    Main.text = U.tool.cut(A.text, 700, '...');
+    if (Links.length > 0) {
+      for (let [label, url] of Links) {
+        let image;
+        await $requestCheck_(url).then(o=> image = o);
+        if (image) {
+          Images.push($imageType_(image, url));
+          Main.text = Main.text.replace( new RegExp
+          (`\s*\\{\\s+LINK\\(${label}\\)\\s+\\}\\s*`, 'g'), '')
+          .trim();
+        } else {
+          Body.push($linkType_($label_(label), url));
+        }
+      }
+    }
+    if (Images.length> 0) Body.splice(Body.length, 0, ...Images);
+    return resolve([Alt, flex]);
   });
-  if (Links.length > 0) Body.splice(Body.length, 0, ...Links);
-  if (Images.length> 0) Body.splice(Body.length, 0, ...Images);
-  return flex;
-  //
-  function $imageType_ (url) {
+  function $label_ (label) {
+    return `LINK(${label})`;
+  }
+  async function $requestCheck_ (url) {
+    let image;
+    await U.root.web.head(url).then(r=> {
+      if (r) { let type;
+        if (type = r.headers['content-type']) {
+          if (/image\/(?:jpeg|gif|png)/i.type) image = url;
+      } }
+    });
+    if (! image) {
+      await U.root.web
+          .cash(url).then(r=> image = r.pageImage());
+    }
+    return image;
+  }
+  function $imageType_ (image, link) {
     return {
          type: "image",
-          url: url,
+          url: image,
          size: "full",
   aspectRatio: "2:1",
    aspectMode: "cover",
-       action: {
-    type: "uri",
-     uri: url
-      }
+       action: { type: "uri", uri: (link || image) }
     };
   }
-  function $linkType_ (url) {
+  function $linkType_ (label, url) {
     return {
       type: "button",
      style: "link",
     height: "sm",
-    action: {
-   type: "uri",
-  label: U.tool.cut(url, 35, '...'),
-    uri: url
+    action: { type: "uri",
+    uri: url,
+  label: label // U.tool.cut(url, 35, '...')
       }
     };
   }
@@ -102,7 +136,7 @@ module.exports.create = function (U, A) {
     "contents": [
       {
         "type": "text",
-        "text": U.tool.Zcut(A.text, 1000, '...'),
+        "text": "",
         "color": bodyTxtColor,
         "size": "md",
         "wrap": true

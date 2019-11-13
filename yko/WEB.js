@@ -2,7 +2,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'WEB.js';
-const ver = `yko/${my} v191025`;
+const ver = `yko/${my} v191113`;
 //
 const metaReg =
   new RegExp(/<meta\s+[^>\n]+charset=([^\"\']+)/im);
@@ -20,12 +20,30 @@ module.exports.Unit = function (R, Ref) {
 	S.parser = () => { return require('cheerio') };
 	//
 	S.get = async (o) => {
-		S.tr1('get');
+		S.tr3('get');
 		let result;
 		await S.getContent(o)
       .then (re=> result = re ).catch(re=> result = re );
 		return new HTML (S, result);
 	};
+  S.head = (URL, callback) => {
+		S.tr3('head');
+    let [_, ssl, host, port, path] =
+      /^http(s)?\:\/\/([^\/\:]+)(\:\d+)?(.*)/.exec(URL);
+    const Http = ssl ? S.https() : S.http();
+    if (! host) S.throw(`[WEB:head] Unknown host.`);
+    if (! port) port = ssl ? 443: 80;
+    if (! path) path = '/';
+    return new Promise ( resolve => {
+      const Req = Http.request({
+      method: 'HEAD',
+        port: port,
+        host: host,
+        path: path
+      }, responce => resolve(responce));
+      Req.end();
+    });
+  };
   S.cash = async (URL) => {
     let BOX;
     await S.root.box
