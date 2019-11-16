@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const  my = 'ybBaseSchema.js';
-const ver = `yko/${my} v191110`;
+const ver = `yko/${my} v191114`;
 //
 const T = new (require('../TOOL.js'));
 //
@@ -56,6 +56,22 @@ function _UTIL_ (B, S, Db) {
   U.dec = (key, n) => {
     const val = $Number(key);
     val[key] -= (n || 1); return B.update(key);
+  };
+  U.setHash = (key, v) => {
+    const [k1, k2] = T.isArray(key) ? key: key.split('.');
+    if (! k1 || ! k2)
+        S.throw(`[${B.ver}] Insufficient arguments.`);
+    const val = $Hash(k1)[k1];
+    val[k2] = v; return B.update(k1);
+  };
+  U.rmHash = (...key) => {
+    const [k1, k2] = key[1] ? key:
+        (T.isArray(key[0]) ? key[0]: key[0].split('.'));
+    if (! k1 || ! k2)
+        S.throw(`[${B.ver}] Insufficient arguments.`);
+    const val = $Hash(k1)[k1];
+    if (val[k2]) delete val[k2];
+    return B.update(k1);
   };
   U.push = (key, v) => {
     const val = $Array(key)[key];
@@ -200,7 +216,7 @@ function _SETUP_ (judge, B, S, Db) {
         B._id = () => { return Db._id };
      B.hasNew = () => { return false  };
   } else {
-    B.lawData = Db = { value: S.tool.c(null) };
+    B.lawData = Db = { value: S.tool.c(null) };7
         B._id = () => { return false };
      B.hasNew = () => { return true  };
   }
@@ -247,6 +263,16 @@ module.exports.component = function (B, S) {
       UPDATE = 1;
       return B
     };
+    B.delete = (key) => {
+      if (key in Db.value) {
+        delete Db.value[key];
+        UPDATE = 1;
+      } else if (key in COLS) {
+        S.throw
+        (`[${B.ver}] Cannot delete data in predefined columns.`);
+      }
+      return B
+    };
   } else {
     S.$DEFAULTS = T.c(null);
     S.$VALIDS   = T.c(null);
@@ -254,6 +280,10 @@ module.exports.component = function (B, S) {
     B.has = (key)  => { return (key in Db.value) };
     B.get = (key)  => { return Db.value[key] };
     B.set = (k, v) => { Db.value[k] = v; UPDATE = 1; return B };
+    B.delete = (key) => {
+      if (B.has(key)) { delete Db.value[key]; UPDATE = 1 }
+      return B;
+    };
   }
   for (let method of exports.Reserv) {
     B[method] = () => { return Db[method] };
@@ -261,7 +291,11 @@ module.exports.component = function (B, S) {
   B.regist = S.par.regist;
   B.update = (key) => {
     UPDATE = 1;
-    if (key && S.$COLUMNS[key]) S.$COLUMNS[key] = [1];
+    if (key) {
+      for (let k of (T.isArray(key) ? key: [key])) {
+        if (S.$COLUMNS[k]) S.$COLUMNS[k] = [1];
+      }
+    }
     return B;
   };
      B.keys = ()  => { return T.k(Db.value) };
@@ -306,15 +340,15 @@ B.Reference = ()  => { return Db };
     return B;
   };
   B.commit = () => { return S.par.commit() };
-  B.remove = () => {
-    S.tr3(`[${B.ver}] remove`);
+  B.DataRemove = () => {
+    S.tr3(`[${B.ver}] DataRemove`);
     if (! B.$ID) S.throw(I, 'This data does not exist.');
       // Equivalent to preper
     B.regist(x=> {
       return S.cls
         .updateOne(B.$ID, { timeTrash: T.unix() });
     });
-    B.remove = B.update = B.prepar = false;
+    B.DataRemove = B.update = B.prepar = false;
     return B;
   };
 }

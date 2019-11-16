@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'TOOL.js';
-const ver = `yko/${my} v191112`;
+const ver = `yko/${my} v191115`;
 //
 const TM_FORMAT = '/DD HH:mm:ss';
 let tr = console.log,
@@ -44,10 +44,10 @@ T.a = (x, z) => { return Object.assign(x, z) };
           T.Zcut = Zcut;
         T.countZ = countZ;
         T.encode = encode;
-  //
       T.sec2form = sec2form;
       T.min2form = min2form;
           T.tmpl = tmpl;
+      T.validPSW = validPSW;
   //
       T.txt2json = txt2json;
       T.json2txt = json2txt;
@@ -366,6 +366,26 @@ function tmpl (tmpl, obj) {
     return tmp;
   };
   return tmpl.replace(REG, FUNC);
+}
+function validPSW (str, a) {
+  a = { ...(a || {}),
+  min:  8,  // length.
+  max: 20,  // length.
+ poor:  5
+  };
+  if (! str)              return { bad: 'unknown' };
+  if (! isString(str))    return { bad: 'notString' };
+  if (str.length < a.min) return { bad: 'minLength' };
+  if (str.length < a.max) return { bad: 'maxLength' };
+  if (str.length != countZ(str))
+                          return { bad: 'illegalChar' };
+  const org = Object.create(null);
+  for (let char of str.split('')) { org[char] = 1 }
+  if (Object.keys(org).length < a.poor)
+                          return { bad: 'poor' };
+  if (/(?:pa?s+wo?r?d?)/i.test(str))
+                          return { bad: 'badword' };
+  return { success: true };
 }
 function Sort    (o) { return _SORT_(o, -1,  1) }
 function revSort (o) { return _SORT_(o,  1, -1) }

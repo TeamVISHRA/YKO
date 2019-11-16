@@ -106,7 +106,7 @@ module.exports.create = function (U, A) {
     "type": "box",
     "layout": "baseline",
     "paddingAll": "2px",
-    "paddingStart": "xxl",
+    "paddingStart": "xl",
     "backgroundColor": baseBgColor,
     "spacing": "md",
     "action": {
@@ -124,7 +124,7 @@ module.exports.create = function (U, A) {
         "color": titleTxtColor,
         "text": A.userName,
         "weight": "bold",
-        "size": "md",
+        "size": "sm",
         "flex": 5
       }
     ],
@@ -139,7 +139,7 @@ module.exports.create = function (U, A) {
         "type": "text",
         "text": "",
         "color": bodyTxtColor,
-        "size": "md",
+        "size": "sm",
         "wrap": true
       }
     ],

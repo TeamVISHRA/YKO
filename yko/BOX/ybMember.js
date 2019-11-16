@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const  my = 'ybMember.js';
-const ver = `yko/${my} v191030`;
+const ver = `yko/${my} v191114`;
 //
 const Base = require('./ybBaseShema.js');
 //
@@ -21,8 +21,8 @@ module.exports.Unit = function (P, Cls, co, baseKey) {
     });
   };
   S.columns = co.columns || [
-    ['groupID', null, ['isKey']],
     ['userID',  null, ['isKey']],
+    ['groupID', null, ['isStringEasy']],
     ['timelastPost', 'UTC()', ['isNumber']]
   ];
   Base.init(S);

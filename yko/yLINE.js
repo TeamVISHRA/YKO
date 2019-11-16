@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'yLINE.js';
-const ver = `yko/${my} v1911113`;
+const ver = `yko/${my} v191114`;
 //
  const SDK = require('@line/bot-sdk'),
     Accept = require('./LINE/ylAccept.js'),
@@ -93,14 +93,9 @@ function build_unit_comps (U, Meth) {
   async function getProfile (type, id, from) {
     if (! type || ! id || ! from)
         U.throw(`[LINE] getProfile: Incomplete argument.`);
-    await R.box.line(`${id}.${from}`).get().then(d=> BOX = d);
-    if (BOX.hasNew()) {
-      BOX.set('type', type)
+    await R.box.line(id).get().then(d=> BOX = d);
+    if (BOX.hasNew() || BOX.get('refreshTTL') < T.unix()) {
       await $setupData_(type, id, from);
-    } else {
-      if (BOX.get('refreshTTL') < T.unix()) {
-        await $setupData_(type, id, from);
-      }
     }
     BOX.util().inc('countPost')
        .util().setDefault('tmLastPost')

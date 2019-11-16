@@ -229,8 +229,8 @@ function prepare_child_comps (Y, Ref) {
       if (MemberDB) return MemberDB;
       const Ch = U.channel()
       || U.throw(`[Twitch:ydM] memberNow: Unknown channel.`);
-      await U.root.sysDB(`Discord`)
-      .member(`${Ch}.${U.username()}`).then(x=> MemberDB = x);
+      await U.root.sysDB(`Twitch`)
+      .member(U.username()).then(x=> MemberDB = x);
       return MemberDB;
     };
     U.$countUpMemberDB = () => {

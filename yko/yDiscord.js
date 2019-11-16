@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'yDiscord.js';
-const ver = `yko/${my} v191107`;
+const ver = `yko/${my} v191114`;
 //
 const Discord = require('discord.js');
 const ydFake  = './Discord/ydFAKE.js';
@@ -118,7 +118,7 @@ function prepare_unit_comp (S) {
     S.tr5('[Discord] build_unit_comp');
     let COMPS = S.tool.c(null);
     for (let k of
-    ['ydClient','ydMessage','ydGuild','ydMemberDB']) {
+    ['ydClient','ydMessage','ydGuild']) {
       const key = (k.match(/^yd(.+)/))[1];
       U[key] = () => {
         return COMPS[key] || (() => {
@@ -226,6 +226,8 @@ function askGuild (S, T) {
     const gm = DB.get(GuildID);
     return gm ? gm.EXPERTS : false;
   };
+  DB.extGameName = $gameName_;
+  //
   DB.refresh = async (Clt) => {
     S.tr1('[Discord] ask:refresh');
     let Devel = S.conf.devel.guild || '';
@@ -244,24 +246,28 @@ function askGuild (S, T) {
       GD.EXPERTS = T.c(null);
       GD.GAMES   = T.c(null);
       g.roles.forEach(ro => {
-        const nm = ro.name;
+        const [id, nm] = [ro.id, ro.name];
         if (ro.permissions > AdminRoleLevel) {
           S.tr4('[Discord] ask:refresh - role', nm);
-          GD.EXPERTS[ro.id] = { id: ro.id, name: nm,
+          GD.EXPERTS[id] = { id: id, name: nm,
             permissions: ro.permissions, color: ro.color };
         }
-        if (   /^([^\@]+)\@game$/i.exec(nm)
-            || /^([^\@]+)\@play(?:er)?$/i.exec(nm)
-            || /^game[\_\-\=\:](.+)$/i.exec(nm) ) {
-          let alias = T.a2A(RegExp.$1);
-          S.tr4('[Discord] ask:refresh - game', alias);
-          GD.GAMES[ro.id] =
-            { id: ro.id, name: nm, alias: alias };
+        let game; if (game = $gameName_(nm)) {
+          S.tr4('[Discord] ask:refresh - game', game);
+          GD.GAMES[id] = { id: id, name: nm, alias: game };
         }
       });
       return (GUILDS = Guilds);
     });
   };
+  function $gameName_ (nm) {
+    if ( /^([^\@]+)\@game$/i.exec(nm)
+      || /^([^\@]+)\@play(?:er)?$/i.exec(nm)
+      || /^game[\_\-\=\:](.+)$/i.exec(nm) ) {
+      return T.a2A(RegExp.$1);
+    }
+    return false;
+  }
 }
 function isSleep (X) {
   if (X.debug()) {

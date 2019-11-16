@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ydGuild.js';
-const ver = `yko/Discord/${my} v191025`;
+const ver = `yko/Discord/${my} v191116`;
 //
 module.exports.Unit = function (P) {
    const R = P.root;
@@ -52,7 +52,8 @@ module.exports.Unit = function (P) {
     });
   };
   S.exit = async () => {
-    S.tr3('[Discord:G] exit', S.userID());
+    const [Gid, Uid] = [S.guildID(), S.userID()];
+    S.tr3('[Discord:G] exit', Uid);
     R.sysDB(sdKey()).cash().then(cf=> {
       if (cf && cf.exit) {
         const ec = cf.exit;
@@ -62,6 +63,10 @@ module.exports.Unit = function (P) {
           S.channel_send(ec.LogCH, EMBED(S, ec.color));
         }
       }
+      R.sysDB(`Discord`).member(Uid).then(md=> {
+        if (! md.hasNew() && md.get('guilds')[Gid])
+            { md.util().rmHash('guilds', Gid).prepar() }
+      });
       R.finish();
     });
   };

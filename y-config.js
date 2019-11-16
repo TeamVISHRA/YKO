@@ -48,13 +48,16 @@ exports.box = {
      schema: 'member',
        conf: {
       columns: [
-        ['userID',  null, ['isKey']], // or groupID.
-        ['groupID', null, ['isKey']],
-        ['type',    null, ['isString']],
-        ['age',     null, ['isStringEasy']],
-        ['zone',    null, ['isStringEasy']],
+        ['userID',  null, ['isKey']],
+        ['name',    null, ['isString']],
+        ['iconURL', null, ['isStringEasy']],
+        ['groups',    {}, ['isHashArray']],
+        ['rooms',     {}, ['isString']],
         ['countPost',  0, ['isNumber']],
-        ['tmLastPost', 'utc()', ['isUTC']]
+        ['tmLastPost', 'utc()', ['isUTC']],
+        ['point',      0, ['isNumber']],
+        ['rank',       0, ['isNumber']],
+        ['refreshTTL', 0, ['isNumber']]
         ]
       }
     },
@@ -63,13 +66,9 @@ exports.box = {
      schema: 'member',
        conf: {
       columns: [
-        ['guildID', null, ['isKey']],
         ['userID',  null, ['isKey']],
+        ['guilds',    {}, ['isHashArray']],
         ['games',     [], ['isArray']],
-        ['roles',     [], ['isArray']],
-        ['inVia',   null, ['isStringEasy']],
-        ['age',     null, ['isStringEasy']],
-        ['zone',    null, ['isStringEasy']],
         ['countPost',  0, ['isNumber']],
         ['tmLastPost', 'utc()', ['isUTC']],
         ['point',      0, ['isNumber']],
@@ -82,9 +81,9 @@ exports.box = {
      schema: 'member',
        conf: {
       columns: [
-        ['userID',  null, ['isKey']],
-        ['channel', null, ['isKey']],
-        ['games',     [], ['isArray']],
+        ['userID',   null, ['isKey']],
+        ['channels',   {}, ['isHashArray']],
+        ['games',      {}, ['isHashArray']],
         ['countPost',  0, ['isNumber']],
         ['tmLastPost', 'utc()', ['isUTC']],
         ['point',      0, ['isNumber']],

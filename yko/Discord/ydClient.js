@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ydClient.js';
-const ver = `yko/Discord/${my} v191103`;
+const ver = `yko/Discord/${my} v191115`;
 //
 module.exports.Unit = function (P) {
    const R = P.root;
@@ -26,15 +26,17 @@ module.exports.Unit = function (P) {
   		if (Ca.USR[id]) return Ca.USR[id];
       let o; if (o = Clt.users.get(id)) {
         return (Ca.USR[id] = o);
-      } else {
-        S.tr3(`[Discord:C] Warning: get_user: Unknown '${id}'.`);
-        return (Ca.USR[id] = {});
       }
+      S.tr3(`[Discord:C] Warning: get_user: Unknown '${id}'.`);
+      return (Ca.USR[id] = {});
     });
 		// { bot, id, username, avatarURL,
 		//   discriminator, lastMessageID, lastMessage }
 		// --- <user>.send()
 	};
+  S.get_guilds = () => {
+    return B( Clt => { return Clt.guilds });
+  };
 	S.get_guild = (id) => {
     return B( Clt => {
   		if (! id) S.throw(`[Discord:C] Unknown 'guild id'.`);
@@ -54,10 +56,12 @@ module.exports.Unit = function (P) {
       if (Ca.CHL[id]) return Ca.CHL[id];
       let o;
       if (Clt.channels) {
-        if (o = Clt.channels.get(id)) return (Ca.CHL[id] = o);
+        if (o = Clt.channels.get(id))
+            return (Ca.CHL[id] = o);
       }
       if (Clt.guild && B.guild.channels) {
-        if (o = Clt.guild.channels.get(id)) return (Ca.CHL[id] = o);
+        if (o = Clt.guild.channels.get(id))
+            return (Ca.CHL[id] = o);
       }
       S.tr3(`[Discord:C] Warning: get_channel: Unknown '${id}'.`);
       return (Ca.CHL[id] = {});
@@ -73,7 +77,7 @@ module.exports.Unit = function (P) {
     const Key = `${gid}.${mid}`;
     return Ca.GMM[Key] || (async () => {
       let Clt; await S.get_guild(gid).then(x=> Clt = x );
-      let o; if (Clt && (o = Clt.members.get(mid))) {
+      let o; if (Clt.id && (o = Clt.members.get(mid))) {
         return (Ca.GMM[Key] = o); 
       }
       S.tr3(`[Discord:C]`
@@ -93,9 +97,12 @@ module.exports.Unit = function (P) {
       S.tr4(`[Discord:C] SEND: ${Dv.channel}`, msg,
             `[DBG:${ch.id}]>>> ${Dv.channel}`);
       S.get_channel(Dv.channel).then(Ch => {
-        if (Ch.send) return Ch.send(msg).then(P.send2callback(a));
-        S.throw(`[Discord:C] Warning:`,
-                `Not applicable to '${Dv.channel}'.`);
+        if (Ch.id) {
+          return Ch.send(msg).then(P.send2callback(a));
+        }
+        S.tr(`[Discord:C] !! WARNING !! `
+           + `'${Dv.channel}' is unknown channel.`);
+        return Promise.resolve(false);
       });
     };
     SYSTEMCHID = async () => {

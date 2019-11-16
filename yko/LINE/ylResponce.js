@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ylResponce.js';
-const ver = `yko/${my} v191108`;
+const ver = `yko/${my} v191116`;
 //
 const ImageStamp = {
   S: '/iPhone/sticker_key.png',
@@ -11,7 +11,14 @@ const ImageStamp = {
 };
 const BaseStamp =
   'https://stickershop.line-scdn.net/stickershop/v1/sticker/';
-//
+const BaseProxy =
+  'https://vishra.club/LINE.MEDIA/';
+const MediaTypes = {
+   text: makeTextMessage,
+sticker: makeStickerMessage,
+  image: makeImageMessage,
+default: makeMediaMessage
+};
 let T;
 module.exports.toDiscord = function (P) {
   const R = P.root;
@@ -36,23 +43,10 @@ module.exports.toDiscord = function (P) {
           (json.source.type, User, From).then(x=> PF = x);
       if ($hasFailed_(PF))
           return $warning_(json).then(x=> resolve(x));
-      switch (Type) {
-        case 'text':
-          msg = makeTextMessage(PF, json.message);
-          break;
-        case 'sticker':
-          msg = makeStickerMessage(PF, json.message);
-          break;
-        case 'image':
-          msg = makeMediaMessage(PF, json.message);
-          break;
-        case 'video':
-          msg = makeMediaMessage(PF, json.message);
-          break;
-        case 'audio':
-          msg = makeMediaMessage(PF, json.message);
-          break;
-      }
+      U.tr3(`[LINE:R] toDiscord > Type:`, Type);
+      const Proc = MediaTypes[Type] || MediaTypes.default;
+U.tr(json.message);
+      msg = Proc(PF, json.message);
       if (! msg) return $warning_(json).then(x=> resolve(x));
       if (CF.toUserID) {
         return R.Discord.Client().DMsend
@@ -97,13 +91,26 @@ function makeStickerMessage (PF, json) {
     return `${BaseStamp}${id}${ImageStamp[(size || 'L')]}`;
   };
 }
+function makeImageMessage (PF, json) {
+  let cp = $contentProviderType_(json);
+  if (cp.type != 'line') return makeMediaMessage(PF, json);
+  if (! json.id) return false;
+  return { embed: {
+    ...($baseEmbed_(PF)),
+    image: { url: `${BaseProxy}${json.id}` }
+  } };
+}
 function makeMediaMessage (PF, json) {
-  let cp = json.contentProvider;
-  if (! cp || ! cp.type || cp.type != 'external') return false;
+  let cp = $contentProviderType_(json);
+  if (cp.type != 'external') return false;
   return { embed: {
     ...($baseEmbed_(PF)),
     image: { url: cp.originalContentUrl }
   } };
+}
+function $contentProviderType_ (j) {
+  let c = j.contentProvider || {};
+  return { type: 'unknown', ...c };
 }
 function $baseEmbed_ (PF) {
   const embed = {

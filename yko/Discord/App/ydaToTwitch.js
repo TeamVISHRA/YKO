@@ -2,9 +2,9 @@
 // yko/Discord/App/ydaToTwitch.js
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
-const ver = 'ydaToTwitch.js v190912.01';
+const my  = `ydaToTwitch.js`;
+const ver = `${my} v191114`;
 //
-const here = require('here').here;
 let R, P, S;
 module.exports.Unit = function (p) {
   R = p.root, P = p, T = p.tool;

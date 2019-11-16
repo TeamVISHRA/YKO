@@ -36,6 +36,9 @@ Y.on('discord_message', (ydM, is) => {
     case 'utc':
       ydM.App('Tools').run(`utc ${is.crum}`);
       break;
+    case 'ticket':
+      ydM.App('Ticket').run(is.crum);
+      break;
     case 'to':
       ydM.App('ToTwitch').run(is.crum);
       break;
