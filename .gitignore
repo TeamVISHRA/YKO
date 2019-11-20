@@ -3,6 +3,7 @@ node_modules/
 build/
 labo/
 yko-old/
+secrets/
 *-secret.js
 now.js
 index.js
