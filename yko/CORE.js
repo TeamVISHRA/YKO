@@ -4,7 +4,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'CORE.js';
-const ver = `yko/${my} v191110`;
+const ver = `yko/${my} v191121`;
 //
 const T = new (require('./TOOL.js'));
 //
@@ -16,9 +16,8 @@ module.exports = function (ARGS) {
   const [,, ...ARGV] = process.argv;
   if (ARGV.length > 0) Y.ARGV = new LaunchUtil(Y, ARGV);
   Y.tool = T.init(Y);
-  Y.conf = require
-     (Config || ARGS.config || '../y-config-secret.js');
-  if (Y.conf.location == 'devel') {
+  Y.conf = require(Config || ARGS.config || '../y-config.js');
+  if (Y.conf.location.toLowerCase() == 'devel') {
     Y.debug = () => { return true };
     Y.c = console.log;
     Y.log = Logger(Y.c);
@@ -65,7 +64,7 @@ module.exports = function (ARGS) {
       $args: ARGS[low]
     });
   }
-  Gd.get('sysdata').CASH = Y.tool.c(null);
+  Gd.get('sysdata').CASH = T.c(null);
   //
   Y.on = (key, ...arg) => {
     if ( key.match(/^start$/i)
@@ -176,7 +175,7 @@ module.exports = function (ARGS) {
   Y.tr1(`[CORE] Loaded Config:`, Y.conf.ver);
 };
 function UNIT (myName, Y, Gd, Super) {
-  const R = this, T = Y.tool;
+  const R = this;
   R.ver = `${myName} (${my})`;
   [R.un, R.root, R.conf] = [Y, R, Y.conf];
   R.unitKit = (name, X, P, Ref) => {
@@ -188,45 +187,13 @@ function UNIT (myName, Y, Gd, Super) {
    X.finish = R.finish;
     return Super(X);
   };
-  R.tmp = { $START: true };
-  R.rollback = () => {
-    $changeFlag_();
-    for (let F of T.v(Gd.get('ROLLBACK'))) { F(R) };
-    R.box.rollback();
-    R.box.disconnect();
-    Y.tr3(`[UNIT] >> ${myName} - ROLLBACK !!`);
-    return R;
-  };
+       R.tmp = { $START: true };
   R.finished = () => { return R.tmp.$START ? false: true };
-  R.away     = () => { return FINISH(x=> R.box.rollback()) };
-  R.finish   = () => { return FINISH(x=> R.box.commit()) };
-  function $changeFlag_ () { R.tmp = { $FINISH: true } }
-  async function FINISH (func) {
-    if (R.tmp.$FINISH) {
-      Y.tr3(`[UNIT:${R.ver}] FINISH !! Duplicate call !!`)
-       .then(e=> Y.c(Y.TRACE(e, 4)));
-      return false;
-    }
-    $changeFlag_();
-    for (let F of T.v(Gd.get('FINISH'))) { F(R) };
-    await func();
-    Y.tr3(`[UNIT:${R.ver}] FINISH !!`);
-    return R;
-  }
-  let procCash;
-  R.procCash = () => {
-    return procCash
-    || (procCash = new ProcCASH (R, T, Gd.get('CASH')));
-  };
-  R.see = async (fr) => {
-    if (! fr.match
-       (/^\s*\%([a-zA-Z0-9_]+)\s*\:\s*(.+)/)) return fr;
-    const [key, arg] = [RegExp.$1, RegExp.$2];
-    Y.tr3(`[UNIT] see`, key, arg);
-    let result;
-    await R[key].see(arg).then(r=> result = r);
-    return result || '... (N/A) ...';
-  };
+      R.away = () => { return FINISH(x=> R.box.rollback()) };
+    R.finish = () => { return FINISH(x=> R.box.commit()) };
+  R.rollback = ROLLBACK;
+  R.procCash = PROCCASH;
+       R.see = SEE;
   for (let key of ['box', 'brain', 'web']) {
     const Ref = Gd.get(key);
     R[key] = new Ref.$JS.Unit (R, Ref);
@@ -240,8 +207,42 @@ function UNIT (myName, Y, Gd, Super) {
     R[key] = new Ref.$JS.Unit (R, Ref);
   }
   for (let F of T.v(Gd.get('START'))) { F(R) };
+  let pC;
+  function PROCCASH () {
+    return pC || (pC = new ProcCASH (R, Gd.get('CASH')));
+  }
+  async function SEE (fr) {
+    if (! fr.match
+       (/^\s*\%([a-zA-Z0-9_]+)\s*\:\s*(.+)/)) return fr;
+    const [key, arg] = [RegExp.$1, RegExp.$2];
+    Y.tr3(`[UNIT] see`, key, arg);
+    let result;
+    await R[key].see(arg).then(r=> result = r);
+    return result || '... (N/A) ...';
+  }
+  function $changeFlag_ () { R.tmp = { $FINISH: true } }
+  function ROLLBACK () {
+    $changeFlag_();
+    for (let F of T.v(Gd.get('ROLLBACK'))) { F(R) };
+    R.box.rollback();
+    R.box.disconnect();
+    Y.tr3(`[UNIT] >> ${myName} - ROLLBACK !!`);
+    return R;
+  }
+  async function FINISH (func) {
+    if (R.tmp.$FINISH) {
+      Y.tr3(`[UNIT:${R.ver}] FINISH !! Duplicate call !!`)
+       .then(e=> Y.c(Y.TRACE(e, 4)));
+      return false;
+    }
+    $changeFlag_();
+    for (let F of T.v(Gd.get('FINISH'))) { F(R) };
+    await func();
+    Y.tr3(`[UNIT:${R.ver}] FINISH !!`);
+    return R;
+  }
 }
-function ProcCASH (R, T, Ref) {
+function ProcCASH (R, Ref) {
   const C = this;
   C.get = (key) => {
     return Ref[key] ? Ref[key].value: null;
@@ -292,7 +293,7 @@ function Inspect (Y, o) {
     showProxy: true,
 maxArayLength: 10,
   breakLength: 120,
-  ...Y.conf.inspect
+  ...( Y.conf.inspect )
   });
 }
 const sen  = '-----------------------------------';
