@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'yLINE.js';
-const ver = `yko/${my} v191108`;
+const ver = `yko/${my} v191121`;
 //
 module.exports.Unit = function (P) {
   const A = P.root.unitKit('accept', this, P);
@@ -19,6 +19,7 @@ module.exports.Unit = function (P) {
       if (Soc && Msg) {
         const From =
         (Soc.type == 'user') ? Soc.userId: Soc[`${Soc.type}Id`];
+        if (json.replyToken) P.replys.set(From, json.replyToken);
         await P.responce.toDiscord
         (Msg.type, From, Soc.userId, json).then(cd=> resolve(cd));
       } else {

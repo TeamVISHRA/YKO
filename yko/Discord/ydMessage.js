@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ydMessage.js';
-const ver = `yko/Discord/${my} v191115`;
+const ver = `yko/Discord/${my} v191122`;
 //
 const Defaults = {
   twitch: {
@@ -229,7 +229,7 @@ module.exports.Unit = function (P) {
           { return resolve({ failed: 'Not available from DM' }) }
         if (! toID)
           { return resolve({ failed: 'Incomplete argument.' }) }
-        return R.LINE.sayFlexStyle(toID, {
+        return R.LINE.flexMessageStyle(toID, {
           userName: (name || U.nickname()),
               text: (text || U.content() || '...')
         }).then(x=> resolve({ success: true }))

@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'yLINE.js';
-const ver = `yko/${my} v191114`;
+const ver = `yko/${my} v191122`;
 //
  const SDK = require('@line/bot-sdk'),
     Accept = require('./LINE/ylAccept.js'),
@@ -58,36 +58,67 @@ function build_unit_comps (U, Meth) {
         T = U.tool;
            U.accept = new Accept.Unit(U),
          U.responce = new Responce[Meth](U),
-          U.sayText = sayText,
-          U.sayFlex = sayFlex;
-     U.sayFlexStyle = sayFlexStyle;
-       U.getProfile = getProfile;
-  U.profileFromLine = profileFromLine;
+     U.replyMessage = replyMessage,
+      U.pushMessage = pushMessage,
+      U.textMessage = textMessage,
+      U.flexMessage = flexMessage,
+ U.flexMessageStyle = flexMessageStyle,
+       U.getProfile = getProfile,
+  U.profileFromLine = profileFromLine,
+      U.replys = new REPLYS (U);
   //
-  function sayText (id, msg) {
-    U.tr3(`[LINE] sayText:`, id, msg);
-    return U.client().pushMessage(id, {
+  function replyMessage (token, json) {
+    U.tr4(`[LINE] replyMessage:`, token, json);
+    return U.client().replyMessage(token, json);
+  }
+  function pushMessage (id, json) {
+    U.tr3(`[LINE] pushMessage:`, id, json);
+    return U.client().pushMessage(id, json);
+  }
+  async function switchSend (to, json) {
+    const is = U.replys.get(to);
+    if (is.code429) return is;
+    if (is.token) {
+      return replyMessage(is.token, json).catch(e=> {
+        if (e.statusCode) {
+          if (e.statusCode == 400) {
+            U.replys.del(to, is.token);
+            return switchSend(to, json);
+          } else if (e.statusCode == 429) {
+            return U.replys.set429();
+          }
+        }
+        U.throw(`[LINE:switchSend] push Error:`, e);
+      });
+    }
+    return pushMessage(to, json).catch(e=> {
+      if (e.statusCode && e.statusCode == 429)
+          { return U.replys.set429() }
+      U.throw(`[LINE:switchSend] push Error:`, e);
+    });
+  }
+  function textMessage (id, msg) {
+    return switchSend(id, {
       type: 'text',
       text: T.Zcut(msg, Defaults.MaxText, '...')
     });
   }
-  function sayFlex (id, alt, flex) {
-    U.tr4(`[LINE] sayFlex:`, id, flex);
-    return U.client().pushMessage(id, {
+  function flexMessage (id, alt, flex) {
+    return switchSend(id, {
         type: 'flex',
      altText: (alt || '... <N/A>'),
     contents: flex
     });
   }
-  async function sayFlexStyle (id, arg) {
+  async function flexMessageStyle (id, arg) {
     if (! arg.text) return;
     if (/^text\>\s*(.+)/i.exec(arg.text)) {
-      return sayText(id, `🔷 *${arg.userName}* 🔷`
+      return pushMessage(id, `🔷 *${arg.userName}* 🔷`
             + `\n${RegExp.$1}\n📌 _by Discord_`);
     }
     let result;
     await FlexStyle.create(U, arg).then(x=> result = x);
-    return sayFlex(id, ...result);
+    return flexMessage(id, ...result);
   }
   let BOX;
   async function getProfile (type, id, from) {
@@ -134,5 +165,49 @@ function build_unit_comps (U, Meth) {
         resolve({ failed: true });
       });
     });
+  }
+}
+function REPLYS (U) {
+  const Se = this,
+        Ca = U.root.procCash,
+       TTL = (6* 60); // minute.
+    Se.set = SET;
+    Se.get = GET;
+    Se.del = DEL;
+ Se.set429 = SET429;
+  //
+  function GET (to) {
+    const key = $KEY(to);
+    const Tokens = Ca.get(key);
+    if (! Tokens) return false;
+    return Ca.has(key) ? Ca.get(key).shift(): {};
+  }
+  function SET (from, token) {
+    const key = $KEY(from);
+    const Tokens = (Ca.get(key) || []);
+    if (Tokens.find(x=> x.code429 == true)) return Se;
+    if (! Tokens.find(x=> from == x)) {
+      tokens.push({ token: token });
+      Ca.set(key, Tokens, TTL);
+    }
+    return Se;
+  }
+  function DEL (to, token) {
+    if (! to || ! token)
+      { U.throw(`[LINE:REPLYS] DEL: Incomplete argument.`) }
+    const key = $KEY(from);
+    const Tokens = Ca.get(key);
+    if (! Tokens) return false;
+    Ca.set(key, Tokens.splice(1, Tokens.length));
+    return Se;
+  }
+  function SET429 (to) {
+    const key = $KEY(to);
+    const result = { code429: true };
+    Ca.set(key, [result], TTL);
+    return { ...Se, ...result };
+  }
+  function $KEY (from) {
+    return `LINE:REPLY-${from}`;
   }
 }

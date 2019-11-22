@@ -160,7 +160,7 @@ module.exports = function (ARGS) {
         }
       }
   } };
-  const Unn = ['init', 'run', 'onFake'];
+  const Unn = ['init', 'run', 'onFake', 'start'];
   Y.superKit = (name, x, P, Ref) => {
     Y.tr6('[CORE] Y.superKit', name);
     const X = Object.assign(x, Y);
@@ -178,20 +178,12 @@ function UNIT (myName, Y, Gd, Super) {
   const R = this;
   R.ver = `${myName} (${my})`;
   [R.un, R.root, R.conf] = [Y, R, Y.conf];
-  R.unitKit = (name, X, P, Ref) => {
-    Y.tr5('[UNIT] unitKit', name);
-    Y.superKit(name, X, P, Ref);
-     X.root = R;
-    X.start = false;
- X.rollback = R.rollback;
-   X.finish = R.finish;
-    return Super(X);
-  };
        R.tmp = { $START: true };
   R.finished = () => { return R.tmp.$START ? false: true };
       R.away = () => { return FINISH(x=> R.box.rollback()) };
     R.finish = () => { return FINISH(x=> R.box.commit()) };
   R.rollback = ROLLBACK;
+   R.unitKit = UNITKIT;
   R.procCash = PROCCASH;
        R.see = SEE;
   for (let key of ['box', 'brain', 'web']) {
@@ -207,6 +199,16 @@ function UNIT (myName, Y, Gd, Super) {
     R[key] = new Ref.$JS.Unit (R, Ref);
   }
   for (let F of T.v(Gd.get('START'))) { F(R) };
+  //
+  function UNITKIT (name, X, P, Ref) {
+    Y.tr5('[UNIT] unitKit', name);
+    Y.superKit(name, X, P, Ref);
+    X.root = R;
+    for (let method of
+      ['away', 'rollback', 'finish', 'procCash', 'see'] )
+      { X[method] = R[method] }
+    return Super(X);
+  }
   let pC;
   function PROCCASH () {
     return pC || (pC = new ProcCASH (R, Gd.get('CASH')));
@@ -244,22 +246,30 @@ function UNIT (myName, Y, Gd, Super) {
 }
 function ProcCASH (R, Ref) {
   const C = this;
-  C.get = (key) => {
+    C.get = PC_GET;
+    C.has = PC_HAS;
+    C.set = PC_SET;
+    C.del = PC_DEL;
+  C.clean = PC_CLEAN;
+  function PC_GET (key) {
     return Ref[key] ? Ref[key].value: null;
-  };
-  C.has = (key) => {
+  }
+  function PC_HAS (key) {
     return Ref[key] ? true : false;
-  };
-  C.set = (key, value) => {
+  }
+  function PC_SET (key, value, ttl) {
     return (Ref[key] =
-      { TTL: T.unix_add(30, 'm'), value: value });
-  };
-  C.clean = async () => {
+      { TTL: T.unix_add((30 || ttl), 'm'), value: value });
+  }
+  function PC_DEL (key) {
+    return Ref[key] ? (delete Ref[key]): false;
+  }
+  async function PC_CLEAN () {
     const now = T.unix();
     for (let [key, v] of T.e(Ref))
         { if (v.TTL < now) delete Ref[key] }
     return true;
-  };
+  }
 }
 function LaunchUtil (Y, argv) {
   const A = this,
