@@ -160,7 +160,7 @@ module.exports = function (ARGS) {
         }
       }
   } };
-  const Unn = ['init', 'run', 'onFake', 'start'];
+  const Unn = ['init', 'run', 'onFake'];
   Y.superKit = (name, x, P, Ref) => {
     Y.tr6('[CORE] Y.superKit', name);
     const X = Object.assign(x, Y);
@@ -209,9 +209,8 @@ function UNIT (myName, Y, Gd, Super) {
       { X[method] = R[method] }
     return Super(X);
   }
-  let pC;
   function PROCCASH () {
-    return pC || (pC = new ProcCASH (R, Gd.get('CASH')));
+    return R.$pC || (R.$pC = new ProcCASH (R, Gd.get('CASH')));
   }
   async function SEE (fr) {
     if (! fr.match

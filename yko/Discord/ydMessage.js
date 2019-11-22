@@ -14,7 +14,7 @@ const Defaults = {
   line: {
     sizeMid:  800,
     sizeMax: 1000,
-    message: `👀 <name>： <message> - From Discord`
+    message: `👀 <name>： <message> - From Discord.`
   }
 }
 module.exports.Unit = function (P) {

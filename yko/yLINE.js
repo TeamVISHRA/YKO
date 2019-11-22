@@ -77,6 +77,7 @@ function build_unit_comps (U, Meth) {
   }
   async function switchSend (to, json) {
     const is = U.replys.get(to);
+    
     if (is.code429) return is;
     if (is.token) {
       return replyMessage(is.token, json).catch(e=> {
@@ -169,7 +170,7 @@ function build_unit_comps (U, Meth) {
 }
 function REPLYS (U) {
   const Se = this,
-        Ca = U.root.procCash,
+        Ca = U.root.procCash(),
        TTL = (6* 60); // minute.
     Se.set = SET;
     Se.get = GET;
@@ -180,14 +181,14 @@ function REPLYS (U) {
     const key = $KEY(to);
     const Tokens = Ca.get(key);
     if (! Tokens) return false;
-    return Ca.has(key) ? Ca.get(key).shift(): {};
+    return Ca.has(key) ? Ca.get(key)[0]: {};
   }
   function SET (from, token) {
     const key = $KEY(from);
     const Tokens = (Ca.get(key) || []);
     if (Tokens.find(x=> x.code429 == true)) return Se;
     if (! Tokens.find(x=> from == x)) {
-      tokens.push({ token: token });
+      Tokens.push({ token: token });
       Ca.set(key, Tokens, TTL);
     }
     return Se;
@@ -195,10 +196,11 @@ function REPLYS (U) {
   function DEL (to, token) {
     if (! to || ! token)
       { U.throw(`[LINE:REPLYS] DEL: Incomplete argument.`) }
-    const key = $KEY(from);
+    const key = $KEY(to);
     const Tokens = Ca.get(key);
     if (! Tokens) return false;
-    Ca.set(key, Tokens.splice(1, Tokens.length));
+    Tokens.shift();
+    Tokens.length > 0 ? Ca.set(key, Tokens): Ca.del(key);
     return Se;
   }
   function SET429 (to) {
@@ -207,7 +209,7 @@ function REPLYS (U) {
     Ca.set(key, [result], TTL);
     return { ...Se, ...result };
   }
-  function $KEY (from) {
-    return `LINE:REPLY-${from}`;
+  function $KEY (id) {
+    return `LINE:REPLY-${id}`;
   }
 }
