@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'yDiscord.js';
-const ver = `yko/${my} v191114`;
+const ver = `yko/${my} v191122`;
 //
 const Discord = require('discord.js');
 const ydFake  = './Discord/ydFAKE.js';
@@ -151,7 +151,7 @@ function baseMessage (S, T, ON) {
     S.tr7(H);
     if (H.author.bot) return botAction(S, H);
     let R;
-    S.start(my).then( unitRoot => {
+    S.un.start(my).then( unitRoot => {
       R = unitRoot;
       return R.Discord.Message().start(H);
     }).then( ydM => {
