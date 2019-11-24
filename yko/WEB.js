@@ -2,31 +2,35 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'WEB.js';
-const ver = `yko/${my} v191113`;
+const ver = `yko/${my} v191123`;
 //
 const metaReg =
   new RegExp(/<meta\s+[^>\n]+charset=([^\"\']+)/im);
 const defaultCashTTL = 10;  // minute.
 //
 module.exports.Unit = function (R, Ref) {
-   const S = R.unitKit('web', this, R, Ref);
-     S.ver = ver;
-   const T = S.tool;
-	S.http   = () => { return require('http')  };
-	S.https  = () => { return require('https') };
-	S.follow = () => { return require('follow-redirects') };
-	S.requestPromise = S.request = () =>
-									 { return require('request-promise') };
-	S.parser = () => { return require('cheerio') };
-	//
-	S.get = async (o) => {
+  const S = R.unitKit('web', this, R, Ref);
+  const T = S.tool;
+    S.ver = ver;
+	  S.http   = () => { return require('http')  };
+	  S.https  = () => { return require('https') };
+	  S.follow = () => { return require('follow-redirects') };
+	  S.parser = () => { return require('cheerio') };
+   S.request = S.requestPromise = () =>
+									   { return require('request-promise') };
+	     S.get = get ;
+      S.head = head;
+      S.cash = cash;
+S.getContent = getContent;
+  //
+  async function get (o) {
 		S.tr3('get');
 		let result;
 		await S.getContent(o)
       .then (re=> result = re ).catch(re=> result = re );
-		return new HTML (S, result);
-	};
-  S.head = (URL, callback) => {
+		return new HTML (S, T, result);
+	}
+  function head (URL, callback) {
 		S.tr3('head');
     let [_, ssl, host, port, path] =
       /^http(s)?\:\/\/([^\/\:]+)(\:\d+)?(.*)/.exec(URL);
@@ -43,8 +47,8 @@ module.exports.Unit = function (R, Ref) {
       }, responce => resolve(responce));
       Req.end();
     });
-  };
-  S.cash = async (URL) => {
+  }
+  async function cash (URL) {
     let BOX;
     await S.root.box
         .cash(`yWEB:${URL}`).get().then(b=> BOX = b);
@@ -67,9 +71,9 @@ module.exports.Unit = function (R, Ref) {
     } else {
       result = BOX.ref();
     }
-    return new HTML (S, result);
-  };
-	S.getContent = (o) => {
+    return new HTML (S, T, result);
+  }
+  function getContent (o) {
 		S.tr1('getContent');
 		return new Promise ((resolve, reject) => {
 			if (! o) {
@@ -83,8 +87,7 @@ module.exports.Unit = function (R, Ref) {
 				return reject({ invalid:1, html:'',
             res:{ error: 'Invalid URL', url: url } });
 			}
-			const Http =
-          RegExp.$1 ? S.follow().https : S.follow().http;
+			const Http = RegExp.$1 ? S.follow().https : S.follow().http;
 			Http.get(o, res => {
 				const Chunks = [];
 				res.on('data', c => { Chunks.push(c) });
@@ -101,10 +104,9 @@ module.exports.Unit = function (R, Ref) {
 				return reject({ invalid:1, res:err, html:'' });
 			});
 		});
-	};
+	}
 }
-function HTML (S, RE) {
-  const T = S.tool;
+function HTML (S, T, RE) {
 	S.tr1('CharCode', RE.char);
 	const CS = this;
 	const Length = RE.html ? RE.html.length : 0;
@@ -119,6 +121,7 @@ CS.status = CS.res = () => { return RE.res };
 	  CS.responseUrl = () => { return RE.res.responseUrl };
 	         CS.char = () => { return RE.char };
 	         CS.html = () => { return RE.html };
+       CS.jsonBody = () => { return T.txt2json(RE.html) };
 	CS.contentLength = () => { return Length };
 	//
 	CS.seo    = () => { return Base().seo };
@@ -128,25 +131,35 @@ CS.status = CS.res = () => { return RE.res };
 	CS.mixi   = () => { return Base().mixi };
   CS.parse  = (hook) => { return Base(hook) };
 	//
-	CS.pageTitle = (n) => {
-		let v = ValueQuest
-          ('title').replace(/^[^\|]+\|\s*/, '');
+	      CS.pageTitle = pageTitle;
+	CS.pageDescription = pageDescription;
+	        CS.pageURL = pageURL;
+	   CS.pageKeywords = pageKeywords;
+	   CS.pageSiteName = pageSiteName;
+	      CS.pageImage = pageImage;
+	//
+	let $, BASE;
+  function pageTitle (n) {
+		let v = ValueQuest('title').replace(/^[^\|]+\|\s*/, '');
 		return n ? T.Zcut(v, n, '...'): v;
-	};
-	CS.pageDescription = (n) => {
+	}
+  function pageDescription (n) {
 		let v = ValueQuest('description');
 		return n ? T.Zcut(v, n, '...'): v;
-	};
-	CS.pageURL = () => {
+	}
+  function pageURL () {
 		return CS.responseURL() || ValueQuest('url');
-	};
-	CS.pageKeywords = () => {
+  }
+  function pageKeywords () {
 		return ValueQuest('keywordSlug')
 				|| ValueQuest('news_keywords')
 				|| ValueQuest('classification')
 				|| ValueQuest('keywords');
-	};
-	CS.pageSiteName = () => {
+	}
+  function pageImage () {
+    return ValueQuest('image');
+  }
+  function pageSiteName () {
 		let v = Base().ogp.site_name;
 		if (v && ! v.match(/^(?:jp)$/i)) {
 			S.tr3('pageSiteName - ogp.site_name', v);
@@ -165,22 +178,19 @@ CS.status = CS.res = () => { return RE.res };
 		S.tr3('pageSiteName (last)', v);
 		return v.replace(/^[^\:]+\:\/\//, '')
 						.replace(/^w+\./i,'');
-	};
-	const ValueQuest = (key) => {
+	}
+	function ValueQuest (key) {
 		return Base().ana[key]
 				|| BASE.ogp[key]
 				|| BASE.twitter[key]
 				|| BASE.mixi[key]
 				|| BASE.seo[key]
 				|| '';
-	};
-	CS.pageImage = () => { return ValueQuest('image') };
-	//
-	let $, BASE;
-	const Base = (hook) => {
-		if ($) return BASE;
+	}
+  function Base (hook) {
+		if (BASE) return BASE;
   	$ = S.parser().load(RE.html);
-		BASE = { ogp:{},
+		const Bs = { ogp:{},
 			google:{}, twitter:{}, mixi:{}, ana:{}, sai:{},
 			seo:{ title: $('head title').text() }
 		};
@@ -188,27 +198,27 @@ CS.status = CS.res = () => { return RE.res };
 			const m = $(c);
 			let key = m.attr('property');
 			if (key && /^og\:(.+)/.exec(key)) {
-				BASE.ogp[T.A2a(RegExp.$1)] = m.attr('content');
+				Bs.ogp[T.A2a(RegExp.$1)] = m.attr('content');
 			}
 			key = m.attr('name');
 			if (key) {
 				key = T.A2a(key);
 				if (/^twitter\:(.+)/.exec(key)) {
-					BASE.twitter[RegExp.$1] = m.attr('content');
+					Bs.twitter[RegExp.$1] = m.attr('content');
 				} else if (/^google\-(.+)/.exec(key)) {
-					BASE.google[RegExp.$1] = m.attr('content');
+					Bs.google[RegExp.$1] = m.attr('content');
 				} else if (/^mixi\-check\-(.+)/.exec(key)) {
-					BASE.mixi[RegExp.$1] = m.attr('content');
+					Bs.mixi[RegExp.$1] = m.attr('content');
 				} else if (/^analyticsAttributes\.(.+)/.exec(key)) {
-					BASE.ana[RegExp.$1] = m.attr('content');
+					Bs.ana[RegExp.$1] = m.attr('content');
 				} else if (/^sailthru\.(.+)/.exec(key)) {
-					BASE.sai[RegExp.$1] = m.attr('content');
+					Bs.sai[RegExp.$1] = m.attr('content');
 				} else {
-					BASE.seo[key] = m.attr('content');
+					Bs.seo[key] = m.attr('content');
 				}
 			}
 		});
     if (hook) hook($);
-		return BASE;
-	};
+		return (BASE = Bs);
+	}
 }

@@ -4,7 +4,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'CORE.js';
-const ver = `yko/${my} v191121`;
+const ver = `yko/${my} v191124`;
 //
 const T = new (require('./TOOL.js'));
 //
@@ -275,10 +275,11 @@ function LaunchUtil (Y, argv) {
     Utils = {},
     ARGV  = [];
   for (let v of argv) {
-    if (/^\-C\=(.+)/.exec(v)) { Config = RegExp.$1 }
+    if (/^\-C\=([^\s]+)/.exec(v)) { Config = RegExp.$1 }
     else { ARGV.push(v) }
   }
-  A.get = () => { return ARGV };
+  A.get  = () => { return ARGV };
+  A.join = () => { return ARGV.join(' ') };
 }
 function Logger (c) {
   return {

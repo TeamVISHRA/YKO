@@ -1,7 +1,7 @@
 //
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
-exports.ver = 'y-config.js v191121';
+exports.ver = 'y-config.js v191125';
 //
 const stc = require('./secrets/y-configuration.js');
 //
@@ -10,6 +10,7 @@ exports.debug_level = stc.debug_level;
 //
 exports.brain = {
   cmd_prefix: stc.prefix,
+  kuromojiDicPath: './node_modules/kuromoji/dict/',
   talk: { DataKeys: { type: 'YKO_TALK' } }
 };
 exports.log4js = {
@@ -24,7 +25,7 @@ exports.log4js = {
   } }
 };
 exports.inspect = {
-         depth: 1,
+         depth: 3,
 //        colors: true,
 //    showHidden: true,
 //     showProxy: true,
@@ -56,7 +57,7 @@ exports.box = {
         ['countPost',  0, ['isNumber']],
         ['tmLastPost', 'utc()', ['isUTC']],
         ['point',      0, ['isNumber']],
-        ['rank',       0, ['isNumber']],
+        ['level',      0, ['isNumber']],
         ['refreshTTL', 0, ['isNumber']]
         ]
       }
@@ -72,7 +73,7 @@ exports.box = {
         ['countPost',  0, ['isNumber']],
         ['tmLastPost', 'utc()', ['isUTC']],
         ['point',      0, ['isNumber']],
-        ['rank',       0, ['isNumber']]
+        ['level',      0, ['isNumber']]
         ]
       }
     },
@@ -85,7 +86,7 @@ exports.box = {
         ['countPost',  0, ['isNumber']],
         ['tmLastPost', 'utc()', ['isUTC']],
         ['point',      0, ['isNumber']],
-        ['rank',       0, ['isNumber']]
+        ['level',      0, ['isNumber']]
         ]
       }
     },

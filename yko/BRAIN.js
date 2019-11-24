@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'BRAIN.js';
-const ver = `yko/${my} v191024`;
+const ver = `yko/${my} v191025`;
 //
 module.exports.init = function (Y, Ref) {
   init(Y, Ref, Y.tool);
@@ -53,16 +53,30 @@ function init (Y, Ref, T) {
   return Ref;
 }
 function build_component (S) {
-   const T = S.tool,
-       Ref = S.Ref;
-  S.prefix = () => { return Ref.prefix };
-  S.talk = (keys) => {
-    if (! Ref.Talk) Ref.Talk = require('./BRAIN/ybTalk.js');
-    return Ref.Talk.build(S, keys);
-  };
-  const SLEEP = T.clone(Ref.SLEEP);
-  S.sleep = () => { return SLEEP };
-  S.setSleep = (k1, k2, a) => {
+  const T = S.tool,
+      Ref = S.Ref;
+ const SLEEP = T.clone(Ref.SLEEP);
+    S.prefix = () => { return Ref.prefix };
+     S.sleep = () => { return SLEEP };
+  S.setSleep = setSleep;
+   S.isSleep = isSleep;
+S.cleanSleep = cleanSleep;
+    S.isCall = isCall;
+ S.txt2token = txt2token;
+    S.mkTalk = mkTalk;
+    S.buildK = buildK;
+      S.talk = talk;
+    S.wokeup = (check, bow) =>
+        { return new WOKEUP (S, check, bow) };
+  //
+  function isSleep (k1, k2) {
+    S.tr3('[BRAIN] isSleep');
+    if (SLEEP[k1]) return true;
+    if (SLEEP[`${k2}@${k1}`]) return true;
+    if (SLEEP.__ALWAYS__) return true;
+    return false;
+  }
+  function setSleep (k1, k2, a) {
     S.tr3('[BRAIN] setSleep');
     if (! k1) Y.throw(ver, "Unknown 'key 1'");
     if (a) {
@@ -84,15 +98,8 @@ function build_component (S) {
     }
     if (update) Ref.SLEEP = T.clone(SLEEP);
     return true;
-  };
-  S.isSleep = (k1, k2) => {
-    S.tr3('[BRAIN] isSleep');
-    if (SLEEP[k1]) return true;
-    if (SLEEP[`${k2}@${k1}`]) return true;
-    if (SLEEP.__ALWAYS__) return true;
-    return false;
-  };
-  S.cleanSleep = async () => {
+  }
+  async function cleanSleep () {
     S.tr3('[BRAIN] cleanSleep');
     let update;
     const Now = T.unix();
@@ -105,12 +112,9 @@ function build_component (S) {
     }
     if (update) Ref.SLEEP = T.clone(SLEEP);
     return true;
-  };
-  S.wokeup = (check, bow) => {
-    return new WOKEUP (S, check, bow);
-  };
+  }
   const Reg = Ref.Reg;
-  S.isCall = (str, RES) => {
+  function isCall (str, RES) {
     S.tr3('[BRAIN] isCall');
     S.isCall_result = T.c(null);
     let cmd, crum;
@@ -144,23 +148,28 @@ function build_component (S) {
       });
     }
     return RES({ post: true });
-  };
-  S.buildK = (str) => {
-    if (Ref.ANALYS) return Ref.ANALYS;
-    const Builder = T.kuromoji().builder
-      ({ dicPath: '../node_modules/kuromoji/dict/' });
-    Ref.ANALYS = new Promise ( resolve => {
+  }
+  function mkTalk () {
+    return new (require('./lib/markingTalk.js')).Unit(S.root);
+  }
+  function talk (keys) {
+    if (! Ref.Talk) Ref.Talk = require('./BRAIN/ybTalk.js');
+    return Ref.Talk.build(S, keys);
+  }
+  function buildK () {
+    return new Promise ( resolve => {
+      if (Ref.ANALYS) return resolve(Ref.ANALYS);
+      const Builder = T.kuromoji()
+           .builder({ dicPath: S.conf.kuromojiDicPath });
       Builder.build((err, parse) => {
         if (err) S.throw(ver, err);
-        return resolve (parse);
+        return resolve(Ref.ANALYS = parse);
       });
     });
-    return Ref.ANALYS;
-  };
-  S.txt2token = async (txt) => {
-    let token;
-    await S.buildK()
-        .then( ps => { token = ps.tokenize(txt) });
+  }
+  async function txt2token (txt) {
+    let token; await S.buildK()
+      .then( ps=> { token = ps.tokenize(txt) });
     return token;
   }
 };
