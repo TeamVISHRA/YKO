@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ycJOBS.js';
-const ver = `yko/${my} v191121`;
+const ver = `yko/${my} v191127`;
 //
 module.exports.Collect = P => {
   const R = P.root;
@@ -29,6 +29,9 @@ module.exports.Collect = P => {
     },
     brainCleanSleep: () => {
       R.brain.cleanSleep().then(x=> { R.finish() });
+    },
+    liquidReport: () => {
+      R.Liquid.report().then(x=> R.finish() );
     }
   }
   return JOBS;

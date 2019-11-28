@@ -1,7 +1,7 @@
 //
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
-exports.ver = 'y-config.js v191125';
+exports.ver = 'y-config.js v191127';
 //
 const stc = require('./secrets/y-configuration.js');
 //
@@ -45,6 +45,28 @@ exports.box = {
      cash: {
        name: 'Cash',
      schema: 'cash'
+    },
+    asset: {
+       name: 'CryptoAsset',
+     schema: 'general',
+       conf: {
+      columns: [
+        ['type',     null, ['isKey']],
+        ['year',     null, ['isString']],
+        ['month',    null, ['isString']],
+        ['day',      null, ['isString']],
+        ['hour',     null, ['isString']],
+        ['minute',   null, ['isString']],
+        ['product',  null, ['isString']],
+        ['highAsk',   '0', ['toString']],
+        ['Ask',       '0', ['toString']],
+        ['Bid',       '0', ['toString']],
+        ['lowBid',    '0', ['toString']],
+        ['price',     '0', ['toString']],
+        ['symbol',   null, ['isString']],
+        ['currency', null, ['isString']]
+        ]
+      }
     },
      line: {
        name: 'LineUsers',
@@ -171,6 +193,25 @@ exports.line = {
 //        toUserID: '[ to Discord userID ]'
 //      },
       ...(stc.line.responce.froms)
+    }
+  }
+};
+exports.liquid = {
+  public: {
+    report: {
+      rate: 0.02,
+      toDiscordCH: stc.discord.channels.asset
+    },
+    URL: 'https://api.liquid.com/products/',
+    products: {
+      BTCJPY: {
+    code:  5,
+   chart: 'https://sekai-kabuka.com/%E4%BB%AE%E6%83%B3%E9%80%9A%E8%B2%A8%E3%83%81%E3%83%A3%E3%83%BC%E3%83%88/%E3%83%93%E3%83%83%E3%83%88%E3%82%B3%E3%82%A4%E3%83%B3%E5%9B%BD%E5%86%85.html'
+      },
+      XRPJPY: {
+    code: 83,
+   chart: 'https://sekai-kabuka.com/%E4%BB%AE%E6%83%B3%E9%80%9A%E8%B2%A8%E3%83%81%E3%83%A3%E3%83%BC%E3%83%88/%E3%83%AA%E3%83%83%E3%83%97%E3%83%AB.html'
+      }
     }
   }
 };

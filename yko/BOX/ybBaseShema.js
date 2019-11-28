@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const  my = 'ybBaseSchema.js';
-const ver = `yko/${my} v191114`;
+const ver = `yko/${my} v191127`;
 //
 const T = new (require('../TOOL.js'));
 //
@@ -20,10 +20,11 @@ const VALIDS = {
   { return { err: (T.isNumber(x) ? false: 'isNumber') } },
   isUTC        : (x)=>
   { return { err: (T.isNumber(x) ? false: 'isUTC') } },
-   toLowerCase : (x)=> { return { conv: [T.A2a(x)  ] } },
-   toUpperCase : (x)=> { return { conv: [T.a2A(x)  ] } },
-     toHankaku : (x)=> { return { conv: [T.z2h(x)  ] } },
-     canonical : (x)=> { return { conv: [T.canon(x)] } },
+      toString: (x)=> { return { conv: [x.toString()] } },
+   toLowerCase: (x)=> { return { conv: [T.A2a(x)  ] } },
+   toUpperCase: (x)=> { return { conv: [T.a2A(x)  ] } },
+     toHankaku: (x)=> { return { conv: [T.z2h(x)  ] } },
+     canonical: (x)=> { return { conv: [T.canon(x)] } },
   regex : (x, reg, opt) => {
     return {
       err: (x.match(new RegExp(reg, opt)) ? false: 'regex')
@@ -132,11 +133,11 @@ function isReserv (key) {
 }
 const Qo = '[\\\'\\"\\/\\`]';
 module.exports.init = function (S) {
-  if (! S.columns)
-      S.throw(`[${S.ver}] 'S.columns' setup required`);
-  S.$DEFAULTS = T.c(null);
-  S.$VALIDS   = T.c(null);
-  S.$COLUMNS  = T.c(null);
+  if (! S.columns) S.throw
+      (`[${S.ver}] 'S.columns' setup required.`);
+  S.$DEFAULTS = {};
+  S.$VALIDS   = {};
+  S.$COLUMNS  = {};
   const uniqueKeys = [];
   let ReservUniqueValue = [];
   for (let key of T.v(S.columns)) {
@@ -176,16 +177,17 @@ module.exports.init = function (S) {
         : (() => { return Init });
   }
   const Len = uniqueKeys.length;
-  if (Len < 1)
-      S.throw(`[${S.ver}] There is no key setting.`);
-  S.$KeyCheck = (Keys) => {
+  if (Len < 1) S.throw(`[${S.ver}] There is no key setting.`);
+  S.$KeyCheck = $KeyCheck;
+  //
+  function $KeyCheck (Keys) {
     if (! Keys) {
       Keys = S.ARGS || (()=> {
         return ReservUniqueValue.length > 0
                   ? ReservUniqueValue: false;
       }) () || S.throw(`[${S.ver}] Key is unknown.`);
     }
-    S.UNIQUE = T.c(null);
+    S.UNIQUE = {};
     const tmpKeys = T.isArray(Keys)
                   ? Keys: T.canon(Keys).split('.');
     S.tr3(`[${S.ver}] keyCheck:`, tmpKeys, Len);  
@@ -216,17 +218,53 @@ function _SETUP_ (judge, B, S, Db) {
         B._id = () => { return Db._id };
      B.hasNew = () => { return false  };
   } else {
-    B.lawData = Db = { value: S.tool.c(null) };7
+    B.lawData = Db = { value: {} };
         B._id = () => { return false };
      B.hasNew = () => { return true  };
   }
   return B;
 }
 module.exports.component = function (B, S) {
-  let UPDATE, Db = B.lawData;
-  B.Reserv = T.clone(exports.Reserv);
+  let UPDATE, UTILOBJ, Db = B.lawData;
+    B.Reserv = T.clone(exports.Reserv);
   B.isReserv = isReserv;
-  B.$HOOKS = { INSERT:() => {}, UPDATE:() => {} };
+    B.$HOOKS = { INSERT:() => {}, UPDATE:() => {} };
+  let COLS; if (COLS = S.$COLUMNS) {
+    if (B.hasNew()) {
+      for (let [key, func] of T.e(S.$DEFAULTS)) {
+        Db[key] = func();
+      };
+      Db.timeInsert = Db.timeMdify = T.utc();
+      Db.timeStamp = new Date();
+    }
+    B.has = COLS_HAS;
+    B.get = COLS_GET;
+    B.set = COLS_SET;
+ B.delete = COLS_DELETE;
+  } else {
+    S.$DEFAULTS = {};
+      S.$VALIDS = {};
+     S.$COLUMNS = {};
+    B.has = (key)  => { return (key in Db.value) };
+    B.get = (key)  => { return Db.value[key] };
+    B.set = (k, v) => { Db.value[k] = v; UPDATE = 1; return B };
+    B.delete = DELETE;
+  }
+  for (let method of exports.Reserv) {
+    B[method] = () => { return Db[method] };
+  }
+    B.regist = S.par.regist;
+    B.update = Update;
+      B.keys = ()  => { return T.k(Db.value) };
+       B.ref = ()  => { return Db.value };
+ B.Reference = ()  => { return Db };
+    B.export = ()  => { return T.clone(Db.value) };
+    B.import = IMPORT;
+      B.util = UTIL;
+    B.prepar = PREPAR;
+B.DataRemove = DataRemove;
+    B.commit = () => { return S.par.commit() };
+  //
   function VALID (key, value) {
     const Vs = S.$VALIDS[key] || [];
     for (let v of Vs) {
@@ -238,58 +276,41 @@ module.exports.component = function (B, S) {
       }
     }
     return value;
-  };
-  let COLS; if (COLS = S.$COLUMNS) {
-    if (B.hasNew()) {
-      for (let [key, func] of T.e(S.$DEFAULTS)) {
-        Db[key] = func();
-      };
-      Db.timeInsert = Db.timeMdify = T.utc();
-      Db.timeStamp = new Date();
+  }
+  function COLS_HAS (key) {
+    return ((key in COLS) || (key in Db.value));
+  }
+  function COLS_GET (key) {
+    return COLS[key] ? Db[key]: Db.value[key];
+  }
+  function COLS_SET (key, val) {
+    if (COLS[key]) {
+      COLS[key] = [1];
+      Db[key] = VALID(key, val);
+    } else {
+      Db.value[key] = val;
     }
-    B.has = (key) => {
-      return ((key in COLS) || (key in Db.value));
-    }
-    B.get = (key) => {
-      return COLS[key] ? Db[key]: Db.value[key];
-    };
-    B.set = (key, val) => {
-      if (COLS[key]) {
-        COLS[key] = [1];
-        Db[key] = VALID(key, val);
-      } else {
-        Db.value[key] = val;
-      }
+    UPDATE = 1;
+    return B
+  }
+  function COLS_DELETE (key) {
+    if (key in Db.value) {
+      delete Db.value[key];
       UPDATE = 1;
-      return B
-    };
-    B.delete = (key) => {
-      if (key in Db.value) {
-        delete Db.value[key];
-        UPDATE = 1;
-      } else if (key in COLS) {
-        S.throw
-        (`[${B.ver}] Cannot delete data in predefined columns.`);
-      }
-      return B
-    };
-  } else {
-    S.$DEFAULTS = T.c(null);
-    S.$VALIDS   = T.c(null);
-    S.$COLUMNS  = T.c(null);
-    B.has = (key)  => { return (key in Db.value) };
-    B.get = (key)  => { return Db.value[key] };
-    B.set = (k, v) => { Db.value[k] = v; UPDATE = 1; return B };
-    B.delete = (key) => {
-      if (B.has(key)) { delete Db.value[key]; UPDATE = 1 }
-      return B;
-    };
+    } else if (key in COLS) {
+      S.throw
+      (`[${B.ver}] Cannot delete data in predefined columns.`);
+    }
+    return B
   }
-  for (let method of exports.Reserv) {
-    B[method] = () => { return Db[method] };
+  function DELETE (key) {
+    if (B.has(key)) { delete Db.value[key]; UPDATE = 1 }
+    return B;
   }
-  B.regist = S.par.regist;
-  B.update = (key) => {
+  function UTIL () {
+    return UTILOBJ || (UTILOBJ = new _UTIL_ (B, S, Db));
+  }
+  function Update (key) {
     UPDATE = 1;
     if (key) {
       for (let k of (T.isArray(key) ? key: [key])) {
@@ -297,30 +318,23 @@ module.exports.component = function (B, S) {
       }
     }
     return B;
-  };
-     B.keys = ()  => { return T.k(Db.value) };
-      B.ref = ()  => { return Db.value };
-B.Reference = ()  => { return Db };
-   B.export = ()  => { return T.clone(Db.value) };
-   B.import = (o) => {
+  }
+  function IMPORT (o) {
     if(! T.isHashArray(o))
-        S.throw(`[${B.ver}] Type is different.`);
+       S.throw(`[${B.ver}] Type is different.`);
     UPDATE = true;
     Db.value = o;
     return B;
-  };
-  let UTIL;
-  B.util = () => {
-    return UTIL || (UTIL = new _UTIL_ (B, S, Db));
-  };
-  B.prepar = () => {
+  }
+  function PREPAR () {
     S.tr3(`[${B.ver}] preper`);
     if (! UPDATE) return B;
     S.tr3(`[${B.ver}] preper`, 'Update is active.');
     let save;
     if (B.hasNew()) {
       S.tr3(`[${B.ver}] preper !! insert !!`);
-      save = { ...S.UNIQUE, value: Db.value };
+      if (! S.UNIQUE) S.throw(`[BaseSchema] Empty key.`);
+      save = { ...(S.UNIQUE), value: Db.value };
       for (let key of ['timeStamp', 'timeMdify', 'timeInsert'])
         { save[key] = Db[key] }
       for (let [key, v] of T.e(S.$COLUMNS))
@@ -338,9 +352,8 @@ B.Reference = ()  => { return Db };
     }
     S.tr7(`[${B.ver}] preper`, save);
     return B;
-  };
-  B.commit = () => { return S.par.commit() };
-  B.DataRemove = () => {
+  }
+  function DataRemove () {
     S.tr3(`[${B.ver}] DataRemove`);
     if (! B.$ID) S.throw(I, 'This data does not exist.');
       // Equivalent to preper
@@ -350,13 +363,16 @@ B.Reference = ()  => { return Db };
     });
     B.DataRemove = B.update = B.prepar = false;
     return B;
-  };
+  }
 }
 module.exports.trash = function (B, S, Db) {
   if (! Db.timeTrash) return false;
   B.hasTrash = true;
   B.lawTrash = () => { return Db };
-  B.Recycle  = () => {
+  B.Recycle  = Recycle;
+  return true;
+  //
+  function Recycle () {
     S.tr3(`[${B.ver}] Recycle`);
     return (new Promise (async (resolve, reject) => {
       let BOX;
@@ -371,6 +387,5 @@ module.exports.trash = function (B, S, Db) {
       return resolve(B);
     }))
     .catch(e=> S.tr(`[${B.ver}] !! Recycle:Warning !!`, e));
-  };
-  return true;
+  }
 }

@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'TOOL.js';
-const ver = `yko/${my} v191115`;
+const ver = `yko/${my} v191128`;
 //
 const TM_FORMAT = '/DD HH:mm:ss';
 let tr = console.log,
@@ -28,13 +28,12 @@ T.a = (x, z) => { return Object.assign(x, z) };
           T.util = util;
        T.counter = counter;
        T.inspect = inspect;
-  //
            T.utc = utc;
           T.unix = unix;
       T.unix_add = unix_add;
      T.unix_form = unix_form;
      T.time_form = time_form;
-  //
+         T.Floor = Floor;
          T.canon = canonical;
             T.p0 = p0;
            T.z2h = z2h;
@@ -48,17 +47,14 @@ T.a = (x, z) => { return Object.assign(x, z) };
       T.min2form = min2form;
           T.tmpl = tmpl;
       T.validPSW = validPSW;
-  //
       T.txt2json = txt2json;
       T.json2txt = json2txt;
-  //
         T.FSread = FSread;
        T.FSwrite = FSwrite;
       T.FSappend = FSappend;
       T.FSunlink = FSunlink;
     T.FSreadJson = FSreadJson;
    T.FSwriteJson = FSwriteJson;
-  //
         T.hasKey = hasKey;
        T.isArray = isArray;
    T.isHashArray = isHashArray;
@@ -72,11 +68,9 @@ T.a = (x, z) => { return Object.assign(x, z) };
          T.quest = quest;
           T.Sort = Sort;
        T.revSort = revSort;
-  //
        T.shuffle = shuffle;
       T.push2cut = push2cut;
      T.array2cut = array2cut;
-  //
        T.digest  = digest;
        T.encrypt = encrypt;
        T.decrypt = decrypt;
@@ -159,6 +153,10 @@ function unix_form (n, f) {
 function time_form (n, f) {
   return moment()
     (n ? Number(n): undefined).format(f || TM_FORMAT);
+}
+function Floor (n, pos) {
+  if (! pos) pos = 1;
+  return Math.floor(n* pos)/ pos;
 }
 function canonical (v) {
   if (! v) return '';
@@ -260,16 +258,18 @@ function FSunlink (path) {
   return status;
 }
 function txt2json (txt) {
+  if (isHashArray(txt)) return txt;
   try { return JSON.parse(txt) } catch (e) {
-    tr(`[TOOL] Warning Error:`, e);
-    return Object.create(null);
+    console.log(`[TOOL] Warning Error:`, e);
+    return {};
   }
 }
 function json2txt (json) {
+  if (isString(json)) return json;
   try { return JSON.stringify(json, null, '  ') }
   catch (e) {
-    tr(`[TOOL] Warning Error:`, e);
-    return Object.create(null);
+    console.log(`[TOOL] Warning Error:`, e);
+    return {};
   };
 }
 function hasKey (o, key) {

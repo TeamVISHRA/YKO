@@ -3,7 +3,7 @@
 //
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
-const ver = `y-discord.js v191121`;
+const ver = `y-discord.js v191126`;
 //
 const yko = require('./yko/CORE.js');
 const Y = new yko ();
@@ -14,7 +14,7 @@ Y.Discord.DebugCall().run()
   .then(Y.Next).catch(e => { Y.throw(e) });
 
 function include () {
-Y.init('yDiscord yTwitch yLINE yCRON yHTTP'); 
+Y.init('yDiscord yTwitch yLINE yHTTP yLiquid yCRON'); 
 }
 function advance () {
 // ===== < Discord > =====
@@ -70,16 +70,19 @@ Y.on('cron_day', (JOB, day, Now) => {
   }
 });
 Y.on('cron_minute', (JOB, minute, Now) => {
-  if ((minute% 5) == 0) {
-    JOB('DiscordRSS');	// Main
+  if ((minute% 30) == 0) {
+    JOB('cleanProcCash');
+    JOB('brainCleanSleep');
   }
   if ((minute% 15) == 0) {
     JOB('DiscordAskRefresh');
     JOB('boxCleanCash');
   }
-  if ((minute% 30) == 0) {
-    JOB('cleanProcCash');
-    JOB('brainCleanSleep');
+  if ((minute% 5) == 0) {
+    JOB('DiscordRSS');	// Main
+  }
+  if ((minute% 2) == 0) {
+    JOB('liquidReport');
   }
 });
 Y.on('cron_count', (JOB, count, Now) => {

@@ -2,7 +2,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'WEB.js';
-const ver = `yko/${my} v191123`;
+const ver = `yko/${my} v191127`;
 //
 const metaReg =
   new RegExp(/<meta\s+[^>\n]+charset=([^\"\']+)/im);
@@ -109,6 +109,7 @@ S.getContent = getContent;
 function HTML (S, T, RE) {
 	S.tr1('CharCode', RE.char);
 	const CS = this;
+  CS.ver = `${my}:HTML`;
 	const Length = RE.html ? RE.html.length : 0;
 	S.tr1('Content Length', Length);
 	      CS.invalid = () => { return RE.invalid };
