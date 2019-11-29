@@ -42,6 +42,9 @@ Y.on('discord_message', (ydM, is) => {
     case 'to':
       ydM.App('ToTwitch').run(is.crum);
       break;
+    case 'asset':
+      ydM.App('CryptoAsset').run(is.crum);
+      break;
     default:
       ydM.App('Help').run();
       break;

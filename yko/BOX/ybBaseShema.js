@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const  my = 'ybBaseSchema.js';
-const ver = `yko/${my} v191127`;
+const ver = `yko/${my} v191129`;
 //
 const T = new (require('../TOOL.js'));
 //
@@ -20,7 +20,7 @@ const VALIDS = {
   { return { err: (T.isNumber(x) ? false: 'isNumber') } },
   isUTC        : (x)=>
   { return { err: (T.isNumber(x) ? false: 'isUTC') } },
-      toString: (x)=> { return { conv: [x.toString()] } },
+      toString: (x)=> { return { conv: [x ? x.toString(): ''] } },
    toLowerCase: (x)=> { return { conv: [T.A2a(x)  ] } },
    toUpperCase: (x)=> { return { conv: [T.a2A(x)  ] } },
      toHankaku: (x)=> { return { conv: [T.z2h(x)  ] } },
@@ -178,7 +178,8 @@ module.exports.init = function (S) {
   }
   const Len = uniqueKeys.length;
   if (Len < 1) S.throw(`[${S.ver}] There is no key setting.`);
-  S.$KeyCheck = $KeyCheck;
+   S.$KeyCheck = $KeyCheck;
+  S.cleanLimit = CLEAN;
   //
   function $KeyCheck (Keys) {
     if (! Keys) {
@@ -200,6 +201,11 @@ module.exports.init = function (S) {
     }
     return S.UNIQUE;
   };
+  async function CLEAN (limit) {
+    if (! limit) limit = (3* 31); // 3 month (day).
+    const LIMIT = T.unix_add((0- limit), 'd')* 1000; // UTC
+    return await S.cls.deleteMeny({ timeInsert: { $lt: LIMIT } });
+  }
 };
 module.exports.setupTrashStyle = function (B, S, Db) {
   return _SETUP_

@@ -199,7 +199,7 @@ exports.line = {
 exports.liquid = {
   public: {
     report: {
-      rate: 0.02,
+      rate: 0.015,
       toDiscordCH: stc.discord.channels.asset
     },
     URL: 'https://api.liquid.com/products/',

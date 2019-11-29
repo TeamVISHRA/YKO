@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const  my = 'ybGeneral.js';
-const ver = `yko/${my} v191127`;
+const ver = `yko/${my} v191129`;
 //
 const Base = require('./ybBaseShema.js');
 //

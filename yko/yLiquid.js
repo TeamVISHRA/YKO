@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'yLiquid.js';
-const ver = `yko/${my} v191128`;
+const ver = `yko/${my} v191129`;
 //
 module.exports.Super = function (Y, Ref) {
   Y.throw(`[Liquid] ${my}`, 'Cannot operate with Super.');
@@ -26,15 +26,16 @@ function build_guest_comps (G) {
 function build_unit_comps (U) {
   const R = U.root,
         T = U.tool;
-        U.report = Report;
-     U.appendPar = appendPar;
-     U.pickPrice = pickPrice;
-  U.pickProducts = pickProducts;
+         U.report = Report;
+      U.appendPar = appendPar;
+      U.pickPrice = pickPrice;
+   U.pickProducts = pickProducts;
+U.targetDiscordCH = targetDiscordCH;
+       U.Products = Products;
   //
   async function Report () {
-    const Plc = U.conf.public;
     const Cash = U.Ref.reports || (U.Ref.reports = {});
-    for (let [prod, v] of T.e(Plc.products)) {
+    for (let [prod, v] of T.e(Products())) {
       let json; await appendPar(prod).then(x=> json = x);
       if (! json) continue;
       const PriceNow = priceNow_(json);
@@ -53,31 +54,31 @@ function build_unit_comps (U) {
         initReport_(prod, v, PriceNow);
       }
     }
-    function reportHigh (result, v, json) {
+    function reportHigh (old, v, json) {
       const diff = T.Floor
-          ((result.price - priceNow_(json)), 1000);
-      return makeReportEmbed(result, v, json, {
+          ((old.price - priceNow_(json)), 1000);
+      return makeReportEmbed(old, v, json, {
         color: 0x005eff,
         title: `${makeSymbol(json)} 🔼${diff}`,
         description: `【 価格 - 上昇中 】`
       });
     }
-    function reportLow (result, v, json) {
+    function reportLow (old, v, json) {
       const diff = T.Floor
-          ((priceNow_(json) - result.price), 1000);
-      return makeReportEmbed(result, v, json, {
+          ((priceNow_(json) - old.price), 1000);
+      return makeReportEmbed(old, v, json, {
         color: 0xfe0035,
         title: `${makeSymbol(json)} 🔻${diff}`,
         description: `【 価格 - 下降中 】`
       });
     }
-    function makeReportEmbed (res, v, json, base) {
+    function makeReportEmbed (old, v, json, base) {
       const priceNow = T.Floor(priceNow_(json), 1000);
-      const priceOld = T.Floor(res.price, 1000);
+      const priceOld = T.Floor(old.price, 1000);
       const embed = {
           url: v.chart,
        fields: [ {
-       name: res.timeForm,
+       name: old.timeForm,
       value: `${priceOld} (${json.currency})`
         } ],
         timestamp: new Date (),
@@ -89,7 +90,7 @@ function build_unit_comps (U) {
     }
     function toDiscord (embed) {
       return R.Discord.Client().channel_send
-        (Plc.report.toDiscordCH, { embed: embed });
+          (targetDiscordCH(), { embed: embed });
     }
     function makeSymbol () {
       return `${json.base_currency}/${json.currency}`;
@@ -98,17 +99,28 @@ function build_unit_comps (U) {
       return json.last_traded_price;
     }
     function initReport_ (prod, cf, price) {
-      const Rate = cf.rate || Plc.report.rate || 0.03;
+      const Rate = cf.rate || Public().report.rate || 0.03;
       const Low = T.Floor((price* (1 - Rate)), 1000),
            High = T.Floor((price* (1 + Rate)), 1000),
              cs = Cash[prod] = { res: {
           price: price,
+        rateLow: Low,
+       rateHigh: High,
        timeForm: T.time_form(0, `/DD HH:MM`)
       } };
       U.tr3(`[Liquid] initReport: ${price} (${High}/${Low})`);
       cs.high = (p) => { return p >= High ? cs.res: false };
       cs.low  = (p) => { return p <= Low  ? cs.res: false };
     }
+  }
+  function Public () {
+    return U.conf.public;
+  }
+  function Products () {
+    return Public().products;
+  }
+  function targetDiscordCH () {
+    return Public().report.toDiscordCH;
   }
   async function appendPar (prod) {
     let json; await pickPrice(prod).then(x=> json = x);
@@ -137,10 +149,9 @@ function build_unit_comps (U) {
       (U.conf.public.URL).then(x=> { return x.jsonBody });
   }
   async function pickPrice (prod) {
-    const Plc = U.conf.public;
-    const Pcode = Plc.products[prod] ||
-        U.throw(`[Liquid] product is unknown.`);
-    const URL = `${Plc.URL}${Pcode.code}`;
+    const Pcode = Products()[prod] ||
+                  U.throw(`[Liquid] product is unknown.`);
+    const URL = `${Public().URL}${Pcode.code}`;
     U.tr3(`[Liquid] request:`, URL);
     return await R.web.get(URL).then(x=> { return x.jsonBody() });
   }
