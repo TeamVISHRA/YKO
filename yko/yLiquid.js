@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'yLiquid.js';
-const ver = `yko/${my} v191129`;
+const ver = `yko/${my} v191130`;
 //
 module.exports.Super = function (Y, Ref) {
   Y.throw(`[Liquid] ${my}`, 'Cannot operate with Super.');
@@ -138,7 +138,7 @@ U.targetDiscordCH = targetDiscordCH;
          Bid: json.market_bid,
       lowBid: json.low_market_bid,
        price: json.last_traded_price,
-      symbol: json.base_currency,
+      symbol: (json.base_currency || json.symbol || 'N/A'),
     currency: json.currency,
 //       orign: json
     });

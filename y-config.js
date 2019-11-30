@@ -1,7 +1,7 @@
 //
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
-exports.ver = 'y-config.js v191127';
+exports.ver = 'y-config.js v191130';
 //
 const stc = require('./secrets/y-configuration.js');
 //
@@ -156,14 +156,21 @@ username: stc.discord.username,
     id: stc.discord.devel.webhook.id,
  token: stc.discord.devel.webhook.token
     }
-	}
+	},
+channels: stc.discord.channels,
+   roles: stc.discord.roles,
+   asset: {
+    lawRole: stc.discord.roles.asset.id,
+    channel: stc.discord.channels.asset,
+   registCH: stc.discord.channels.memberRoom
+  }
 };
 exports.twitch = {
    sleep: stc.sleeps.twitch,
 clientID: stc.twitch.clientID,
 secretID: stc.twitch.secretID,
    devel: {
-    chatChannel: stc.twitch.devel.chatChannel
+chatChannel: stc.twitch.devel.chatChannel
   },
    color: 0x7506394,
      url: {  base: 'https://www.twitch.tv/' },

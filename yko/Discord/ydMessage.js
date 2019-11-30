@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ydMessage.js';
-const ver = `yko/Discord/${my} v191125`;
+const ver = `yko/Discord/${my} v191130`;
 //
 const Defaults = {
   twitch: {
@@ -199,6 +199,7 @@ U.guildMemberCount = () => { return 0 };
          U.guildID = () => { return TMP.guild_id };
        U.channelID = () => { return TMP.channel_id };
           U.userID = () => { return TMP.user_id };
+          U.member = () => { return H.member };
         U.nickname = () =>
          { return (H.member.nickname || H.author.username) };
         U.username = () => { return H.author.username  };
@@ -300,40 +301,63 @@ U.guildMemberCount = () => { return (H.guild.memberCount || 0) };
   }
   async function memberNow () {
     if (MemberDB) return MemberDB;
-    const Uid = U.userID();
+    const Uid = U.userID() ||
+        U.throw(`[Discord:M] memberNow: user unknown.`);
     let mD;
     await R.sysDB(`Discord`).member(Uid).then(x=> mD = x);
+     mD.getRoles = getRoles;
+     mD.hasGuild = hasGuild;
+      mD.hasRole = hasRole;
     mD.hasExpert = hasExpert;
+    mD.resetCash = resetCash;
     return (MemberDB = mD);
     //
+    async function hasGuild (gid) {
+      return await refreshGuild(gid || U.guildID())
+      .then(x=> { return Promise.resolve(x || {}) });
+    }
+    async function getRoles (gid) {
+      return await hasGuild(gid)
+      .then(x=> { return Promise.resolve(x.roles || {}) });
+    }
+    async function hasRole (gid, roleID) {
+      if (! roleID) U.throw(`[Discord:M] hasRole: id is unknown.`);
+      return await getRoles(gid)
+      .then(x=> { return Promise.resolve(x[roleID] || false) });
+    }
     async function hasExpert (gid) {
-      let guild; await refreshGuild
-          (gid || U.guildID()).then(x=> guild = x);
-      return (guild.$success && guild.imExpert) ? true: false;
+      return await hasGuild(gid)
+      .then(x=> { return Promise.resolve(x.imExpert ? true: false) });
+    }
+    function resetCash () {
+      return mD.set('refreshTTL', T.unix_add(-1, 'm'));
     }
     async function refreshGuild (gid) {
       if (! gid) return { $unknown: true };
       const TTL = mD.get('refreshTTL'),
          Guilds = mD.get('guilds');
-      if (! mD.hasNew() && TTL && TTL < T.unix())
-          { return { ...(Guilds[gid]), $success: true } }
+      if (! mD.hasNew() && TTL && TTL < T.unix()) {
+        return { ...(Guilds[gid]), $success: true }
+      }
       if (Guilds[gid]) delete Guilds[gid];
       let Mdb; await P.Client()
           .get_guild_member(gid, Uid).then(x=> Mdb = x);
-      if (Mdb.$success) {
+      if (Mdb.id) {
         const Gm = Guilds[gid] = { roles: {}, games: {} };
         const Ex = P.ask.experts(gid) || {};
-        Mdb.roles.forEach(v=> {
-          Gm.roles[v.id] = { id: v.id, name: v.name };
-          let game; if (game = P.ask.extGameName(v.name)) {
-            Gm.games[game] = { id: v.id, name: v.name };
-          }
-          if (! Gm.imExpert)
-            { Gm.imExpert = Ex[v.id] ? true : false }
-        });
-        mD.update('guilds');
+        if (Mdb.roles) {
+          Mdb.roles.forEach(v=> {
+            Gm.roles[v.id] = { id: v.id, name: v.name };
+            let game; if (game = P.ask.extGameName(v.name)) {
+              Gm.games[game] = { id: v.id, name: v.name };
+            }
+            if (! Gm.imExpert)
+              { Gm.imExpert = Ex[v.id] ? true : false }
+          });
+          mD.update('guilds');
+        }
       }
-      mD.set('refreshTTL', T.unix_add(60, 'm'));
+      mD.set('refreshTTL', T.unix_add(15, 'm'));
       return { ...(Guilds[gid]), $success: true };
     }
   }

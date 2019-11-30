@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'TOOL.js';
-const ver = `yko/${my} v191128`;
+const ver = `yko/${my} v191130`;
 //
 const TM_FORMAT = '/DD HH:mm:ss';
 let tr = console.log,
@@ -63,6 +63,7 @@ T.a = (x, z) => { return Object.assign(x, z) };
          T.isStr = isString;
       T.isString = isString;
   T.isStringEasy = isStringEasy;
+    T.isFunction = isFunction;
          T.clone = clone;
          T.reset = reset;
          T.quest = quest;

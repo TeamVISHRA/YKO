@@ -3,7 +3,7 @@
 //
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
-const ver = `y-discord.js v191126`;
+const ver = `y-discord.js v191130`;
 //
 const yko = require('./yko/CORE.js');
 const Y = new yko ();
@@ -44,6 +44,9 @@ Y.on('discord_message', (ydM, is) => {
       break;
     case 'asset':
       ydM.App('CryptoAsset').run(is.crum);
+      break;
+    case 'now':
+      ydM.App('CryptoAsset').run(`now ${is.crum}`);
       break;
     default:
       ydM.App('Help').run();

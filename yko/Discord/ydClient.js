@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ydClient.js';
-const ver = `yko/Discord/${my} v191115`;
+const ver = `yko/Discord/${my} v191130`;
 //
 module.exports.Unit = function (P) {
    const R = P.root;
@@ -72,7 +72,7 @@ module.exports.Unit = function (P) {
 	};
 	S.get_guild_member = async (gid, mid) => {
 		if (! gid) S.throw(`[Discord:C] Unknown 'guild id'.`);
-		if (! id)  S.throw(`[Discord:C] Unknown 'member id'.`);
+		if (! mid) S.throw(`[Discord:C] Unknown 'member id'.`);
     S.tr3('[Discord:C] get_guild_member', `[${gid}] [${mid}]`);
     const Key = `${gid}.${mid}`;
     return Ca.GMM[Key] || (async () => {
@@ -81,7 +81,7 @@ module.exports.Unit = function (P) {
         return (Ca.GMM[Key] = o); 
       }
       S.tr3(`[Discord:C]`
-          + `Warning: get_guild_member: Unknown '${id}'.`);
+          + `Warning: get_guild_member: Unknown '${mid}'.`);
       return (Ca.GMM[Key] = {});
     }) ();
 		// nickname, joinedTimestamp, _roles [],
