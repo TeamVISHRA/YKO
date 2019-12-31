@@ -1,7 +1,7 @@
 //
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
-exports.ver = 'y-config.js v191130';
+exports.ver = 'y-config.js v191229';
 //
 const stc = require('./secrets/y-configuration.js');
 //
@@ -63,8 +63,26 @@ exports.box = {
         ['Bid',       '0', ['toString']],
         ['lowBid',    '0', ['toString']],
         ['price',     '0', ['toString']],
-        ['symbol',   null, ['isString']],
-        ['currency', null, ['isString']]
+        ['symbol',   null, ['toString']],
+        ['currency', null, ['toString']]
+        ]
+      }
+    },
+    assetTrade: {
+       name: 'CryptoAssetTrade',
+     schema: 'general',
+       conf: {
+      columns: [
+        ['userID',   null, ['isKey']],
+        ['product',  null, ['isKey']],
+        ['ident',    null, ['isKey']],
+        ['type',     null, ['isKey']],
+        ['price',       0, ['isNumber']],
+        ['currency', null, ['isString']],
+        ['period',      0, ['isNumber']],
+        ['status',   null, ['isStringEasy']],
+        ['report',   null, ['isStringEasy']],
+        ['close',   false]
         ]
       }
     },

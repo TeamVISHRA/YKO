@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'yLiquid.js';
-const ver = `yko/${my} v191130`;
+const ver = `yko/${my} v191202`;
 //
 module.exports.Super = function (Y, Ref) {
   Y.throw(`[Liquid] ${my}`, 'Cannot operate with Super.');
@@ -32,53 +32,55 @@ function build_unit_comps (U) {
    U.pickProducts = pickProducts;
 U.targetDiscordCH = targetDiscordCH;
        U.Products = Products;
+       U.tradeBox = tradeBox;
   //
   async function Report () {
-    const Cash = U.Ref.reports || (U.Ref.reports = {});
+    const Cash = U.Ref.notice || (U.Ref.notice = {});
     for (let [prod, v] of T.e(Products())) {
       let json; await appendPar(prod).then(x=> json = x);
       if (! json) continue;
       const PriceNow = priceNow_(json);
       if (! PriceNow) continue;
-      const cp = Cash[prod];
-      if (! cp) {
-        initReport_(prod, v, PriceNow);
+      if (! Cash[prod]) {
+        initNotice_(prod, v, PriceNow);
         continue;
       }
-      let result;
-      if (result = cp.high(PriceNow)) {
-        toDiscord(reportHigh(result, v, json));
-        initReport_(prod, v, PriceNow);
-      } else if (result = cp.low(PriceNow)) {
-        toDiscord(reportLow(result, v, json));
-        initReport_(prod, v, PriceNow);
-      }
+      let RES;
+      await noticeLow(prod).findOne
+        ({ price: { $lt: PriceNow } }).then(x=> RES = x);
+      if (RES._id()) return sendNoticeLow(RES, v, json);
+      await noticeHigh(prod).findOne
+        ({ price: { $gt: PriceNow } }).then(x=> RES = x);
+      if (RES._id()) return sendNoticeHigh(RES, v, json);
+      return {};
     }
-    function reportHigh (old, v, json) {
-      const diff = T.Floor
-          ((old.price - priceNow_(json)), 1000);
-      return makeReportEmbed(old, v, json, {
-        color: 0x005eff,
-        title: `${makeSymbol(json)} 🔼${diff}`,
-        description: `【 価格 - 上昇中 】`
-      });
-    }
-    function reportLow (old, v, json) {
-      const diff = T.Floor
-          ((priceNow_(json) - old.price), 1000);
-      return makeReportEmbed(old, v, json, {
+    function sendNoticeLow (RES, v, json) {
+      const PriceNow = priceNow_(json);
+      const diff = T.Floor((PriceNow - RES.get('oldPrice')), 1000);
+      toDiscord(makeNoticeEmbed(RES, v, json, {
         color: 0xfe0035,
         title: `${makeSymbol(json)} 🔻${diff}`,
         description: `【 価格 - 下降中 】`
-      });
+      }));
+      return initNotice_(RES.get('product'), cf, json);
     }
-    function makeReportEmbed (old, v, json, base) {
+    function sendNoticeHigh (RES, v, json) {
+      const PriceNow = priceNow_(json);
+      const diff = T.Floor((RES.get('oldPrice') - PriceNow), 1000);
+      toDiscord(makeNoticeEmbed(RES, v, json, {
+        color: 0x005eff,
+        title: `${makeSymbol(json)} 🔼${diff}`,
+        description: `【 価格 - 上昇中 】`
+      }));
+      return initNotice_(RES.get('product'), cf, json);
+    }
+    function makeNoticeEmbed (RES, v, json) {
       const priceNow = T.Floor(priceNow_(json), 1000);
-      const priceOld = T.Floor(old.price, 1000);
+      const priceOld = T.Floor(RES.get('oldPrice'), 1000);
       const embed = {
           url: v.chart,
        fields: [ {
-       name: old.timeForm,
+       name: RES.get('timeForm'),
       value: `${priceOld} (${json.currency})`
         } ],
         timestamp: new Date (),
@@ -88,30 +90,47 @@ U.targetDiscordCH = targetDiscordCH;
           `\n現在値： ${priceNow} (${json.currency})`;
       return embed;
     }
-    function toDiscord (embed) {
-      return R.Discord.Client().channel_send
-          (targetDiscordCH(), { embed: embed });
-    }
     function makeSymbol () {
       return `${json.base_currency}/${json.currency}`;
     }
     function priceNow_ (json) {
       return json.last_traded_price;
     }
-    function initReport_ (prod, cf, price) {
-      const Rate = cf.rate || Public().report.rate || 0.03;
-      const Low = T.Floor((price* (1 - Rate)), 1000),
-           High = T.Floor((price* (1 + Rate)), 1000),
-             cs = Cash[prod] = { res: {
-          price: price,
-        rateLow: Low,
-       rateHigh: High,
-       timeForm: T.time_form(0, `/DD HH:MM`)
-      } };
-      U.tr3(`[Liquid] initReport: ${price} (${High}/${Low})`);
-      cs.high = (p) => { return p >= High ? cs.res: false };
-      cs.low  = (p) => { return p <= Low  ? cs.res: false };
+    async function initNotice_ (prod, cf, json) {
+      const Price = priceNow_(json);
+      const Rate = cf.rate || Public().report.rate || 0.015;
+      const Low = T.Floor((Price* (1 - Rate)), 1000),
+           High = T.Floor((Price* (1 + Rate)), 1000);
+      Cash[prod] = { res: { rateLow: Low, rateHigh: High } };
+      U.tr3(`[Liquid] initReport: ${Price} (${High}/${Low})`);
+      return await setNotice(prod, 'low',  Low,  json)
+         .then(x=> setNotice(prod, 'high', High, json) );
     }
+    async function setNotice (prod, type, value, json) {
+      return (type == 'low' ? noticeLow(prod): noticeHigh(prod))
+        .get().then(box=> {
+        box.set('price', value)
+           .set('status', 'active')
+           .set('currency', json.currency)
+           .set('oldPrice', Price)
+           .set('timeForm', T.time_form(0, `/DD HH:MM`))
+           .prepar();
+        return box;
+      });
+    }
+  }
+  function toDiscord (embed) {
+    return R.Discord.Client().channel_send
+        (targetDiscordCH(), { embed: embed });
+  }
+  function noticeLow (prod) {
+    return tradeBox(`system.${prod}.notice.low`);
+  }
+  function noticeHigh (prod) {
+    return tradeBox(`system.${prod}.notice.high`);
+  }
+  function tradeBox (key) {
+    return R.box.assetTrade(key);
   }
   function Public () {
     return U.conf.public;

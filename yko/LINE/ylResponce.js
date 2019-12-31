@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ylResponce.js';
-const ver = `yko/${my} v191116`;
+const ver = `yko/${my} v191202`;
 //
 const ImageStamp = {
   S: '/iPhone/sticker_key.png',
@@ -45,7 +45,6 @@ module.exports.toDiscord = function (P) {
           return $warning_(json).then(x=> resolve(x));
       U.tr3(`[LINE:R] toDiscord > Type:`, Type);
       const Proc = MediaTypes[Type] || MediaTypes.default;
-U.tr(json.message);
       msg = Proc(PF, json.message);
       if (! msg) return $warning_(json).then(x=> resolve(x));
       if (CF.toUserID) {

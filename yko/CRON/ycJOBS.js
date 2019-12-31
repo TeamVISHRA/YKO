@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ycJOBS.js';
-const ver = `yko/${my} v191129`;
+const ver = `yko/${my} v191201`;
 //
 module.exports.Collect = P => {
   const R = P.root;
@@ -34,8 +34,7 @@ module.exports.Collect = P => {
       R.Liquid.report().then(x=> R.finish() );
     },
     liquidClean: () => {
-      R.box.CryptoAsset()
-           .cleanLimit(2* 31).then(x=> R.finish() );
+      R.box.asset().cleanLimit(2* 31).then(x=> R.finish() );
     }
   }
   return JOBS;

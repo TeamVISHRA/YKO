@@ -3,13 +3,13 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'yLINE.js';
-const ver = `yko/${my} v191122`;
+const ver = `yko/${my} v191202`;
 //
  const SDK = require('@line/bot-sdk'),
     Accept = require('./LINE/ylAccept.js'),
   Responce = require('./LINE/ylResponce.js'),
  FlexStyle = require('./LINE/ylFlexStyle.js'),
-RefreshTTL = 12* 60, // minute.
+RefreshTTL = 48* 60, // minute.
   Defaults = {
        MaxText: 800,
     MaxaltText: 400
@@ -36,9 +36,9 @@ module.exports.initFake = function (Y, Ref) {
 }
 function build_guest_comps (G) {
   const CF = G.conf;
-  if (! CF.CHtoken || ! CF.CHsecret)
-      G.throw(`[Line] Need to check configuration.`);
-  //
+  if (! CF.CHtoken || ! CF.CHsecret) {
+    G.throw(`[Line] Need to check configuration.`);
+  }
   const Meth = G.rack.has('Discord') ? 'toDiscord': 'unDiscord';
   //
   G.Ref.$unit = U => {
@@ -58,45 +58,51 @@ function build_unit_comps (U, Meth) {
         T = U.tool;
            U.accept = new Accept.Unit(U),
          U.responce = new Responce[Meth](U),
+           U.replys = new REPLYS (U),
      U.replyMessage = replyMessage,
       U.pushMessage = pushMessage,
       U.textMessage = textMessage,
       U.flexMessage = flexMessage,
  U.flexMessageStyle = flexMessageStyle,
        U.getProfile = getProfile,
-  U.profileFromLine = profileFromLine,
-      U.replys = new REPLYS (U);
+  U.profileFromLine = profileFromLine;
   //
-  function replyMessage (token, json) {
+  async function replyMessage (token, json) {
     U.tr4(`[LINE] replyMessage:`, token, json);
     return U.client().replyMessage(token, json);
   }
-  function pushMessage (id, json) {
-    U.tr3(`[LINE] pushMessage:`, id, json);
-    return U.client().pushMessage(id, json);
+  async function pushMessage (id, json) {
+    U.tr4(`[LINE] pushMessage:`, id, json);
+    return U.replys.hasInvalid()
+      ? false: U.client().pushMessage(id, json);
   }
   async function switchSend (to, json) {
-    const is = U.replys.get(to);
-    
-    if (is.code429) return is;
-    if (is.token) {
-      return replyMessage(is.token, json).catch(e=> {
+    const Token = U.replys.get(to);
+    if (Token) {
+      return replyMessage(Token, json).catch(e=> {
         if (e.statusCode) {
           if (e.statusCode == 400) {
-            U.replys.del(to, is.token);
             return switchSend(to, json);
           } else if (e.statusCode == 429) {
-            return U.replys.set429();
+            return SetInvalid();
           }
         }
+        pushMSG().catch
+        (e=> { U.throw(`[LINE:switchSend] push Error:`, e) });
+      });
+    } else {
+      pushMSG();
+    }
+    async function pushMSG () {
+      return pushMessage(to, json).catch(e=> {
+        if (e.statusCode && e.statusCode == 429) return SetInvalid();
         U.throw(`[LINE:switchSend] push Error:`, e);
       });
     }
-    return pushMessage(to, json).catch(e=> {
-      if (e.statusCode && e.statusCode == 429)
-          { return U.replys.set429() }
-      U.throw(`[LINE:switchSend] push Error:`, e);
-    });
+  }
+  function SetInvalid () {
+    U.replys.setInvalid();
+    return false;
   }
   function textMessage (id, msg) {
     return switchSend(id, {
@@ -114,8 +120,9 @@ function build_unit_comps (U, Meth) {
   async function flexMessageStyle (id, arg) {
     if (! arg.text) return;
     if (/^text\>\s*(.+)/i.exec(arg.text)) {
-      return pushMessage(id, `🔷 *${arg.userName}* 🔷`
-            + `\n${RegExp.$1}\n📌 _by Discord_`);
+      return pushMessage(id,
+      `🔷 *${arg.userName}* 🔷\n${RegExp.$1}\n📌 _by Discord_`
+      );
     }
     let result;
     await FlexStyle.create(U, arg).then(x=> result = x);
@@ -170,46 +177,51 @@ function build_unit_comps (U, Meth) {
 }
 function REPLYS (U) {
   const Se = this,
-        Ca = U.root.procCash(),
-       TTL = (6* 60); // minute.
-    Se.set = SET;
-    Se.get = GET;
-    Se.del = DEL;
- Se.set429 = SET429;
+  DATA = U.Ref.replys || (x=> {
+    return (U.Ref.replys = { list: {}, invalid: false });
+  })();
+  Se.get = GET;
+  Se.set = SET;
+  Se.setInvalid = setINVALID;
+  Se.hasInvalid = hasINVALID;
   //
-  function GET (to) {
-    const key = $KEY(to);
-    const Tokens = Ca.get(key);
-    if (! Tokens) return false;
-    return Ca.has(key) ? Ca.get(key)[0]: {};
-  }
-  function SET (from, token) {
-    const key = $KEY(from);
-    const Tokens = (Ca.get(key) || []);
-    if (Tokens.find(x=> x.code429 == true)) return Se;
-    if (! Tokens.find(x=> from == x)) {
-      Tokens.push({ token: token });
-      Ca.set(key, Tokens, TTL);
+  function GET (chID) {
+    let X;
+    if (X = TOKENS(chID).shift()) return X.token;
+    if (X = DATA.invalid) {
+      if (X == MonthNow()) return false;
+      DATA.invalid = false;
     }
+    return false;
+  }
+  function hasINVALID () {
+    return DATA.invalid ? true: false;
+  }
+  function setINVALID () {
+    DATA.invalid = MonthNow();
     return Se;
   }
-  function DEL (to, token) {
-    if (! to || ! token)
-      { U.throw(`[LINE:REPLYS] DEL: Incomplete argument.`) }
-    const key = $KEY(to);
-    const Tokens = Ca.get(key);
-    if (! Tokens) return false;
-    Tokens.shift();
-    Tokens.length > 0 ? Ca.set(key, Tokens): Ca.del(key);
+  function SET (chID, postTime, token) {
+    const Tokens = LISTDATA(chID);
+    Tokens.push({
+      token: token,
+        ttl: (postTime + 29500) // see LINE messageAPI.
+    });
     return Se;
   }
-  function SET429 (to) {
-    const key = $KEY(to);
-    const result = { code429: true };
-    Ca.set(key, [result], TTL);
-    return { ...Se, ...result };
+  function LISTDATA (chID) {
+    return DATA.list[chID] || (DATA.list[chID] = []);
   }
-  function $KEY (id) {
-    return `LINE:REPLY-${id}`;
+  function TOKENS (chID) {
+    const Now = U.tool.utc(),
+      NewData = [];
+    for (let data of Object.values(LISTDATA(chID))) {
+      if (data.ttl < Now) continue;
+      NewData.push(data);
+    }
+    return (DATA.list[chID] = NewData);
+  }
+  function MonthNow () {
+    return U.tool.time_form('MM');
   }
 }

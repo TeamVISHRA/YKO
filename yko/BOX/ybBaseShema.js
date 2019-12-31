@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const  my = 'ybBaseSchema.js';
-const ver = `yko/${my} v191129`;
+const ver = `yko/${my} v191201`;
 //
 const T = new (require('../TOOL.js'));
 //
@@ -169,7 +169,7 @@ module.exports.init = function (S) {
           S.$COLUMNS[Name] = [0];
         }
       }
-    } else {i
+    } else {
       S.$COLUMNS[Name] = [0];
     }
     S.$DEFAULTS[Name] = Init
@@ -177,7 +177,7 @@ module.exports.init = function (S) {
         : (() => { return Init });
   }
   const Len = uniqueKeys.length;
-  if (Len < 1) S.throw(`[${S.ver}] There is no key setting.`);
+//  if (Len < 1) S.throw(`[${S.ver}] There is no key setting.`);
    S.$KeyCheck = $KeyCheck;
   S.cleanLimit = CLEAN;
   //
@@ -204,7 +204,7 @@ module.exports.init = function (S) {
   async function CLEAN (limit) {
     if (! limit) limit = (3* 31); // 3 month (day).
     const LIMIT = T.unix_add((0- limit), 'd')* 1000; // UTC
-    return await S.cls.deleteMeny({ timeInsert: { $lt: LIMIT } });
+    return await S.cls.deleteMany({ timeInsert: { $lt: LIMIT } });
   }
 };
 module.exports.setupTrashStyle = function (B, S, Db) {

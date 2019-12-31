@@ -75,6 +75,11 @@ Y.on('cron_day', (JOB, day, Now) => {
     JOB('boxCleanTrash');
   }
 });
+Y.on('cron_hour', (JOB, hour, Now) => {
+  if (hour == 1) {
+    JOB('liquidClean');
+  }
+});
 Y.on('cron_minute', (JOB, minute, Now) => {
   if ((minute% 30) == 0) {
     JOB('cleanProcCash');

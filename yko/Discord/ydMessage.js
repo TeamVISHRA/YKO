@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ydMessage.js';
-const ver = `yko/Discord/${my} v191130`;
+const ver = `yko/Discord/${my} v191202`;
 //
 const Defaults = {
   twitch: {
@@ -139,7 +139,7 @@ U.$countUpMemberDB = $countUpMemberDB;
         userName: (name || U.nickname()),
             text: (text || U.content() || '...')
       }).then(x=> resolve({ success: true }))
-        .catch(e=> U.throw(`[Discord:toTwitch]`, e));
+        .catch(e=> U.throw(`[Discord:toLine]`, e));
     });
   }
   function unitKit (nm, X, ...arg) {
