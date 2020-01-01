@@ -19,7 +19,9 @@ module.exports.Unit = function (P) {
       if (Soc && Msg) {
         const From =
         (Soc.type == 'user') ? Soc.userId: Soc[`${Soc.type}Id`];
-        if (json.replyToken) P.replys.set(From, json.replyToken);
+        if (json.timestamp && json.replyToken) {
+          P.replys.set(From, json.timestamp, json.replyToken);
+        }
         await P.responce.toDiscord
         (Msg.type, From, Soc.userId, json).then(cd=> resolve(cd));
       } else {

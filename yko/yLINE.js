@@ -73,60 +73,81 @@ function build_unit_comps (U, Meth) {
   }
   async function pushMessage (id, json) {
     U.tr4(`[LINE] pushMessage:`, id, json);
-    return U.replys.hasInvalid()
-      ? false: U.client().pushMessage(id, json);
+    if (U.replys.hasInvalid()) return { invalid: true };
+    await U.client().pushMessage(id, json);
+    return { success: true };
   }
-  async function switchSend (to, json) {
+  async function switchSend (DiscordCH, to, json) {
     const Token = U.replys.get(to);
     if (Token) {
-      return replyMessage(Token, json).catch(e=> {
+      let success;
+      await replyMessage(Token, json)
+      .then(x=> success = true)
+      .catch(e=> {
         if (e.statusCode) {
           if (e.statusCode == 400) {
-            return switchSend(to, json);
+            return switchSend(DiscordCH, to, json);
           } else if (e.statusCode == 429) {
             return SetInvalid();
           }
         }
-        pushMSG().catch
-        (e=> { U.throw(`[LINE:switchSend] push Error:`, e) });
+        pushMSG(DiscordCH, to, json)
+          .then(x=> pushReport(DiscordCH, x));
       });
     } else {
-      pushMSG();
-    }
-    async function pushMSG () {
-      return pushMessage(to, json).catch(e=> {
-        if (e.statusCode && e.statusCode == 429) return SetInvalid();
-        U.throw(`[LINE:switchSend] push Error:`, e);
-      });
+      pushMSG(DiscordCH, to, json)
+        .then(x=> pushReport(DiscordCH, x));
     }
   }
-  function SetInvalid () {
-    U.replys.setInvalid();
-    return false;
-  }
-  function textMessage (id, msg) {
-    return switchSend(id, {
+  function textMessage (DiscordCH, id, msg) {
+    return switchSend(DiscordCH, id, {
       type: 'text',
       text: T.Zcut(msg, Defaults.MaxText, '...')
     });
   }
-  function flexMessage (id, alt, flex) {
-    return switchSend(id, {
+  function flexMessage (DiscordCH, id, alt, flex) {
+    return switchSend(DiscordCH, id, {
         type: 'flex',
      altText: (alt || '... <N/A>'),
     contents: flex
     });
   }
-  async function flexMessageStyle (id, arg) {
+  async function pushMSG (DiscordCH, to, json) {
+    let result;
+    await pushMessage(to, json)
+    .then(x=> result = { success: true })
+    .catch(e=> {
+      result = (e.statusCode && e.statusCode == 429)
+        ? SetInvalid() : (x=> {
+          U.throw(`[LINE:switchSend] push Error:`, e);
+          return { error: true };
+        })();
+    });
+    return result;
+  }
+  function pushReport (DiscordCH, cd) {
+    if (cd && ! cd.success) {
+      R.Discord.Client().channel_send
+        (DiscordCH, 'LINE側に投稿できませんでした。', 5);
+    }
+  }
+  function SetInvalid () {
+    U.replys.setInvalid();
+    return { invaled: true };
+  }
+  async function flexMessageStyle (DiscordCH, id, arg) {
     if (! arg.text) return;
     if (/^text\>\s*(.+)/i.exec(arg.text)) {
-      return pushMessage(id,
-      `🔷 *${arg.userName}* 🔷\n${RegExp.$1}\n📌 _by Discord_`
-      );
+      return pushMSG(DiscordCH, id, {
+        type: 'text',
+        text: `🔷 *${arg.userName}* 🔷\n${RegExp.$1}\n📌 _by Discord_`
+      }).then(x=> pushReport(x));
     }
     let result;
-    await FlexStyle.create(U, arg).then(x=> result = x);
-    return flexMessage(id, ...result);
+    await FlexStyle.create
+      (U, arg).then(x=> result = x);
+    return flexMessage(DiscordCH, id, ...result)
+      .then(x=> pushReport(DiscordCH, x));
   }
   let BOX;
   async function getProfile (type, id, from) {

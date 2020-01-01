@@ -3,7 +3,7 @@
 // (C) 2019 MilkyVishra <lushe@live.jp>
 //
 const my  = 'ydMessage.js';
-const ver = `yko/Discord/${my} v191202`;
+const ver = `yko/Discord/${my} v200101`;
 //
 const Defaults = {
   twitch: {
@@ -135,7 +135,7 @@ U.$countUpMemberDB = $countUpMemberDB;
         { return resolve({ failed: 'Not available from DM' }) }
       if (! toID)
         { return resolve({ failed: 'Incomplete argument.' }) }
-      return R.LINE.flexMessageStyle(toID, {
+      return R.LINE.flexMessageStyle(channelID(), toID, {
         userName: (name || U.nickname()),
             text: (text || U.content() || '...')
       }).then(x=> resolve({ success: true }))
